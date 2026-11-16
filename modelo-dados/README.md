@@ -6,7 +6,11 @@ Marco da Aula 7 (PEL220): entidades, atributos (tipo, unidade e origem), relacio
 - **Chave do grupo no IoT Agent (apikey):** `estufa`
 - **Unidades:** metadado `unitCode` com códigos UN/CEFACT: `CEL` = °C · `P1` = % · `MTK` = m²
 
-## Diagrama
+## MER (notação de Chen)
+
+![MER da estufa](mer-estufa.png)
+
+## Diagrama de arquitetura e comunicação
 
 ![Modelo de dados da estufa](modelo-dados-estufa.png)
 
