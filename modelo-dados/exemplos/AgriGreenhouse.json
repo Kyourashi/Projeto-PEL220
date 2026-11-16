@@ -1,0 +1,50 @@
+{
+  "id": "urn:ngsi-ld:AgriGreenhouse:001",
+  "type": "AgriGreenhouse",
+  "name": {
+    "type": "Text",
+    "value": "Estufa 001"
+  },
+  "location": {
+    "type": "geo:json",
+    "value": {
+      "type": "Point",
+      "coordinates": [-46.5793, -23.7245]
+    }
+  },
+  "area": {
+    "type": "Number",
+    "value": 50,
+    "metadata": {
+      "unitCode": { "type": "Text", "value": "MTK" }
+    }
+  },
+  "fanOnTemperature": {
+    "type": "Number",
+    "value": 28,
+    "metadata": {
+      "unitCode": { "type": "Text", "value": "CEL" }
+    }
+  },
+  "fanOffTemperature": {
+    "type": "Number",
+    "value": 24,
+    "metadata": {
+      "unitCode": { "type": "Text", "value": "CEL" }
+    }
+  },
+  "irrigationOnSoilMoisture": {
+    "type": "Number",
+    "value": 30,
+    "metadata": {
+      "unitCode": { "type": "Text", "value": "P1" }
+    }
+  },
+  "irrigationOffSoilMoisture": {
+    "type": "Number",
+    "value": 45,
+    "metadata": {
+      "unitCode": { "type": "Text", "value": "P1" }
+    }
+  }
+}

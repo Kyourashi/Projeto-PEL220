@@ -1,0 +1,115 @@
+{
+  "id": "urn:ngsi-ld:Device:ESP32-001",
+  "type": "Device",
+  "TimeInstant": {
+    "type": "DateTime",
+    "value": "2026-11-16T18:44:03.284Z",
+    "metadata": {}
+  },
+  "controlledAsset": {
+    "type": "Relationship",
+    "value": "urn:ngsi-ld:AgriGreenhouse:001",
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-16T18:44:03.284Z"
+      }
+    }
+  },
+  "fanState": {
+    "type": "Text",
+    "value": "OFF",
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-16T18:44:03.284Z"
+      }
+    }
+  },
+  "lightLevel": {
+    "type": "Number",
+    "value": 71,
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-16T18:44:03.284Z"
+      },
+      "unitCode": {
+        "type": "Text",
+        "value": "P1"
+      }
+    }
+  },
+  "pumpState": {
+    "type": "Text",
+    "value": "OFF",
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-16T18:44:03.284Z"
+      }
+    }
+  },
+  "relativeHumidity": {
+    "type": "Number",
+    "value": 62,
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-16T18:44:03.284Z"
+      },
+      "unitCode": {
+        "type": "Text",
+        "value": "P1"
+      }
+    }
+  },
+  "soilMoisture": {
+    "type": "Number",
+    "value": 38.5,
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-16T18:44:03.284Z"
+      },
+      "unitCode": {
+        "type": "Text",
+        "value": "P1"
+      }
+    }
+  },
+  "temperature": {
+    "type": "Number",
+    "value": 26.4,
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-16T18:44:03.284Z"
+      },
+      "unitCode": {
+        "type": "Text",
+        "value": "CEL"
+      }
+    }
+  },
+  "fanOn": {
+    "type": "command",
+    "value": "",
+    "metadata": {}
+  },
+  "fanOff": {
+    "type": "command",
+    "value": "",
+    "metadata": {}
+  },
+  "pumpOn": {
+    "type": "command",
+    "value": "",
+    "metadata": {}
+  },
+  "pumpOff": {
+    "type": "command",
+    "value": "",
+    "metadata": {}
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "devices": [
+    {
+      "device_id": "estufa001",
+      "apikey": "estufa",
+      "entity_name": "urn:ngsi-ld:Device:ESP32-001",
+      "entity_type": "Device",
+      "transport": "MQTT",
+      "attributes": [
+        { "object_id": "t", "name": "temperature",      "type": "Number", "metadata": { "unitCode": { "type": "Text", "value": "CEL" } } },
+        { "object_id": "h", "name": "relativeHumidity", "type": "Number", "metadata": { "unitCode": { "type": "Text", "value": "P1" } } },
+        { "object_id": "m", "name": "soilMoisture",     "type": "Number", "metadata": { "unitCode": { "type": "Text", "value": "P1" } } },
+        { "object_id": "l", "name": "lightLevel",       "type": "Number", "metadata": { "unitCode": { "type": "Text", "value": "P1" } } },
+        { "object_id": "f", "name": "fanState",         "type": "Text" },
+        { "object_id": "p", "name": "pumpState",        "type": "Text" }
+      ],
+      "commands": [
+        { "name": "fanOn",   "type": "command" },
+        { "name": "fanOff",  "type": "command" },
+        { "name": "pumpOn",  "type": "command" },
+        { "name": "pumpOff", "type": "command" }
+      ],
+      "static_attributes": [
+        { "name": "controlledAsset", "type": "Relationship", "value": "urn:ngsi-ld:AgriGreenhouse:001" }
+      ]
+    }
+  ]
+}
