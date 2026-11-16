@@ -8,6 +8,10 @@ Marco da Aula 7 (PEL220): entidades, atributos (tipo, unidade e origem), relacio
 
 ## Diagrama
 
+![Modelo de dados da estufa](modelo-dados-estufa.png)
+
+Versão em texto (Mermaid):
+
 ```mermaid
 erDiagram
     AgriGreenhouse ||--o{ Device : "controlledAsset (Device → AgriGreenhouse)"

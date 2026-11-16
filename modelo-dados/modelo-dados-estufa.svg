@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="800" viewBox="0 0 1300 800" style="font-family:Arial,Helvetica,sans-serif">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#4A5568"/></marker><marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#2B6CB0"/></marker></defs>
+<rect width="1300" height="800" fill="#fff"/>
+<text x="40" y="38" font-size="22" font-weight="bold" fill="#1A202C">Modelo de dados NGSI-v2 — Estufa agrícola inteligente</text>
+<rect x="40" y="70" width="220" height="90" rx="10" fill="#FFF4E5" stroke="#C05621" stroke-width="1.8"/>
+<text x="150" y="108" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A202C">DHT22</text>
+<text x="150" y="134" text-anchor="middle" font-size="14" fill="#2D3748">temperatura e umidade do ar</text>
+<rect x="290" y="70" width="220" height="90" rx="10" fill="#FFF4E5" stroke="#C05621" stroke-width="1.8"/>
+<text x="400" y="108" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A202C">Sensor capacitivo</text>
+<text x="400" y="134" text-anchor="middle" font-size="14" fill="#2D3748">umidade do solo</text>
+<rect x="540" y="70" width="220" height="90" rx="10" fill="#FFF4E5" stroke="#C05621" stroke-width="1.8"/>
+<text x="650" y="108" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A202C">LDR</text>
+<text x="650" y="134" text-anchor="middle" font-size="14" fill="#2D3748">luminosidade</text>
+<rect x="790" y="70" width="220" height="90" rx="10" fill="#FFF4E5" stroke="#C05621" stroke-width="1.8"/>
+<text x="900" y="108" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A202C">Relé 1</text>
+<text x="900" y="134" text-anchor="middle" font-size="14" fill="#2D3748">ventilador</text>
+<rect x="1040" y="70" width="220" height="90" rx="10" fill="#FFF4E5" stroke="#C05621" stroke-width="1.8"/>
+<text x="1150" y="108" text-anchor="middle" font-size="17" font-weight="bold" fill="#1A202C">Relé 2</text>
+<text x="1150" y="134" text-anchor="middle" font-size="14" fill="#2D3748">bomba de irrigação</text>
+<line x1="150" y1="160" x2="150" y2="256" stroke="#4A5568" stroke-width="2" marker-end="url(#ar)"/>
+<rect x="158" y="196" width="88" height="22" rx="4" fill="#fff"/>
+<text x="162" y="212" font-size="13" fill="#4A5568">medida (t, h)</text>
+<line x1="400" y1="160" x2="400" y2="256" stroke="#4A5568" stroke-width="2" marker-end="url(#ar)"/>
+<rect x="408" y="196" width="80" height="22" rx="4" fill="#fff"/>
+<text x="412" y="212" font-size="13" fill="#4A5568">medida (m)</text>
+<line x1="650" y1="160" x2="650" y2="256" stroke="#4A5568" stroke-width="2" marker-end="url(#ar)"/>
+<rect x="658" y="196" width="80" height="22" rx="4" fill="#fff"/>
+<text x="662" y="212" font-size="13" fill="#4A5568">medida (l)</text>
+<polyline points="700,282 900,282 900,164" fill="none" stroke="#2B6CB0" stroke-width="2.5" marker-end="url(#ab)"/>
+<polyline points="700,304 1150,304 1150,164" fill="none" stroke="#2B6CB0" stroke-width="2.5" marker-end="url(#ab)"/>
+<text x="910" y="230" font-size="13" fill="#2B6CB0">fanOn / fanOff</text>
+<text x="1160" y="230" font-size="13" fill="#2B6CB0">pumpOn / pumpOff</text>
+<rect x="40" y="260" width="660" height="430" rx="12" fill="#E8F1FB" stroke="#2B6CB0" stroke-width="2.2"/>
+<text x="60" y="292" font-size="20" font-weight="bold" fill="#1A365D">Device — nó ESP32</text>
+<text x="60" y="314" font-size="14" font-style="italic" fill="#2D3748">urn:ngsi-ld:Device:ESP32-001</text>
+<text x="60" y="334" font-size="13" fill="#4A5568">escrito pelo IoT Agent a partir do MQTT</text>
+<text x="60" y="368" font-size="13" font-weight="bold" fill="#2B6CB0">atributo</text>
+<text x="265" y="368" font-size="13" font-weight="bold" fill="#2B6CB0">tipo</text>
+<text x="400" y="368" font-size="13" font-weight="bold" fill="#2B6CB0">unidade</text>
+<text x="500" y="368" font-size="13" font-weight="bold" fill="#2B6CB0">origem (MQTT)</text>
+<line x1="55" y1="376" x2="685" y2="376" stroke="#90B4DD"/>
+<text x="60" y="402" font-size="15" fill="#1A202C">temperature</text>
+<text x="265" y="402" font-size="15" fill="#1A202C">Number</text>
+<text x="400" y="402" font-size="15" fill="#1A202C">°C</text>
+<text x="500" y="402" font-size="15" fill="#1A202C">DHT22 · t</text>
+<text x="60" y="434" font-size="15" fill="#1A202C">relativeHumidity</text>
+<text x="265" y="434" font-size="15" fill="#1A202C">Number</text>
+<text x="400" y="434" font-size="15" fill="#1A202C">%</text>
+<text x="500" y="434" font-size="15" fill="#1A202C">DHT22 · h</text>
+<text x="60" y="466" font-size="15" fill="#1A202C">soilMoisture</text>
+<text x="265" y="466" font-size="15" fill="#1A202C">Number</text>
+<text x="400" y="466" font-size="15" fill="#1A202C">%</text>
+<text x="500" y="466" font-size="15" fill="#1A202C">sensor solo · m</text>
+<text x="60" y="498" font-size="15" fill="#1A202C">lightLevel</text>
+<text x="265" y="498" font-size="15" fill="#1A202C">Number</text>
+<text x="400" y="498" font-size="15" fill="#1A202C">% (relativo)</text>
+<text x="500" y="498" font-size="15" fill="#1A202C">LDR · l</text>
+<text x="60" y="530" font-size="15" fill="#1A202C">fanState</text>
+<text x="265" y="530" font-size="15" fill="#1A202C">Text</text>
+<text x="400" y="530" font-size="15" fill="#1A202C">ON/OFF</text>
+<text x="500" y="530" font-size="15" fill="#1A202C">relé 1 · f</text>
+<text x="60" y="562" font-size="15" fill="#1A202C">pumpState</text>
+<text x="265" y="562" font-size="15" fill="#1A202C">Text</text>
+<text x="400" y="562" font-size="15" fill="#1A202C">ON/OFF</text>
+<text x="500" y="562" font-size="15" fill="#1A202C">relé 2 · p</text>
+<text x="60" y="594" font-size="15" fill="#1A202C">controlledAsset</text>
+<text x="265" y="594" font-size="15" fill="#1A202C">Relationship</text>
+<text x="400" y="594" font-size="15" fill="#1A202C">—</text>
+<text x="500" y="594" font-size="15" fill="#1A202C">provisionamento</text>
+<text x="60" y="626" font-size="15" fill="#1A202C">TimeInstant</text>
+<text x="265" y="626" font-size="15" fill="#1A202C">DateTime</text>
+<text x="400" y="626" font-size="15" fill="#1A202C">UTC</text>
+<text x="500" y="626" font-size="15" fill="#1A202C">IoT Agent</text>
+<text x="60" y="658" font-size="15" fill="#1A202C">fanOn, fanOff, pumpOn, pumpOff</text><text x="400" y="658" font-size="15" fill="#2D3748">command → atuadores</text>
+<line x1="700" y1="510" x2="816" y2="510" stroke="#4A5568" stroke-width="2.2" marker-end="url(#ar)"/>
+<text x="758" y="496" text-anchor="middle" font-size="13" font-weight="bold" fill="#2D3748">controlledAsset</text>
+<text x="758" y="532" text-anchor="middle" font-size="12" fill="#4A5568">(Relationship)</text>
+<rect x="820" y="340" width="440" height="350" rx="12" fill="#E6F4EA" stroke="#2F855A" stroke-width="2.2"/>
+<text x="840" y="372" font-size="20" font-weight="bold" fill="#22543D">AgriGreenhouse — estufa</text>
+<text x="840" y="394" font-size="14" font-style="italic" fill="#2D3748">urn:ngsi-ld:AgriGreenhouse:001</text>
+<text x="840" y="414" font-size="13" fill="#4A5568">escrita pela aplicação</text>
+<text x="840" y="446" font-size="13" font-weight="bold" fill="#2F855A">atributo</text>
+<text x="1050" y="446" font-size="13" font-weight="bold" fill="#2F855A">tipo</text>
+<text x="1150" y="446" font-size="13" font-weight="bold" fill="#2F855A">valor</text>
+<line x1="835" y1="454" x2="1245" y2="454" stroke="#8CC9A0"/>
+<text x="840" y="480" font-size="14.5" fill="#1A202C">name</text>
+<text x="1050" y="480" font-size="14.5" fill="#1A202C">Text</text>
+<text x="1150" y="480" font-size="14.5" fill="#1A202C">Estufa 001</text>
+<text x="840" y="510" font-size="14.5" fill="#1A202C">location</text>
+<text x="1050" y="510" font-size="14.5" fill="#1A202C">geo:json</text>
+<text x="1150" y="510" font-size="14.5" fill="#1A202C">ponto</text>
+<text x="840" y="540" font-size="14.5" fill="#1A202C">area</text>
+<text x="1050" y="540" font-size="14.5" fill="#1A202C">Number</text>
+<text x="1150" y="540" font-size="14.5" fill="#1A202C">50 m²</text>
+<text x="840" y="570" font-size="14.5" fill="#1A202C">fanOnTemperature</text>
+<text x="1050" y="570" font-size="14.5" fill="#1A202C">Number</text>
+<text x="1150" y="570" font-size="14.5" fill="#1A202C">28 °C</text>
+<text x="840" y="600" font-size="14.5" fill="#1A202C">fanOffTemperature</text>
+<text x="1050" y="600" font-size="14.5" fill="#1A202C">Number</text>
+<text x="1150" y="600" font-size="14.5" fill="#1A202C">24 °C</text>
+<text x="840" y="630" font-size="14.5" fill="#1A202C">irrigationOnSoilMoisture</text>
+<text x="1050" y="630" font-size="14.5" fill="#1A202C">Number</text>
+<text x="1150" y="630" font-size="14.5" fill="#1A202C">30 %</text>
+<text x="840" y="660" font-size="14.5" fill="#1A202C">irrigationOffSoilMoisture</text>
+<text x="1050" y="660" font-size="14.5" fill="#1A202C">Number</text>
+<text x="1150" y="660" font-size="14.5" fill="#1A202C">45 %</text>
+<text x="40" y="735" font-size="14" fill="#2D3748"><tspan font-weight="bold">Tenant:</tspan> fiware-service = estufa · fiware-servicepath = /   ·   <tspan font-weight="bold">Unidades (unitCode):</tspan> CEL = °C · P1 = % · MTK = m²</text>
+<text x="40" y="762" font-size="14" fill="#2D3748"><tspan font-weight="bold">Tópicos MQTT:</tspan> medidas /json/estufa/estufa001/attrs · comandos /estufa/estufa001/cmd · resultado /json/estufa/estufa001/cmdexe</text>
+</svg>
