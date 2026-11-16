@@ -1,0 +1,273 @@
+# WARNING: Não faça deploy deste arquivo em produção; ele é apenas um exemplo para fins de aprendizado.
+# CCM130 - Conectividade e IoT | Aula 10 - Fluxo de dados completo
+#
+# A solução é construída aos poucos: cada etapa da aula sobe só o que ela precisa.
+#
+#   Etapa 1  docker compose up -d orion                      Orion + MongoDB
+#   Etapa 2  docker compose up -d iot-agent                  IoT Agent + Mosquitto
+#   Etapa 3  docker compose up -d --build esp32-simulada     o dispositivo
+#   Etapa 4  (nada novo: comandos pelo Orion)
+#   Etapa 5  docker compose up -d --build clima-externo      provedor de contexto
+#   Etapa 6  docker compose up -d cygnus                     Cygnus + MySQL
+#   Etapa 7  docker compose up -d grafana                    painéis
+#   Etapa 8  docker compose up -d --build controlador        aplicação de controle
+#   Etapa 9  (nada novo: indicadores no Grafana)
+#
+# Versões prontas (perfil "pronto", para o professor ou para conferir):
+#   docker compose up -d --build controlador-pronto      controle automático, porta 5002
+#   docker compose up -d grafana-pronto                  painel configurado, porta 3001
+# Para parar ou remover também as versões prontas, inclua o perfil:
+#   docker compose --profile pronto stop     ·     docker compose --profile pronto down
+#
+# Não use "docker compose up -d" sem nomes no começo da aula: a ESP32 subiria antes do
+# provisionamento (etapa 2), e a medida de um dispositivo desconhecido vira Thing:esp32001.
+#
+# Endereços: do seu computador use localhost:<porta>; entre contêineres use <nome do serviço>:<porta>.
+#
+# Antes de subir este ambiente, pare o da aula anterior (docker compose down na pasta da Aula 9):
+# os contêineres têm os mesmos nomes e usam as mesmas portas.
+
+services:
+
+  # --- Etapa 1: gestão de contexto --------------------------------------------------
+  orion:
+    image: quay.io/fiware/orion:4.1.0
+    hostname: orion
+    container_name: fiware-orion
+    depends_on:
+      mongo-db:
+        condition: service_healthy
+    ports:
+      - "1026:1026" # API NGSI v2
+    command: -dbURI mongodb://mongo-db -logLevel DEBUG
+    healthcheck:
+      test: curl --fail -s http://orion:1026/version || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  mongo-db:
+    image: mongo:6.0
+    hostname: mongo-db
+    container_name: db-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-db:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # --- Etapa 2: comunicação com o dispositivo ---------------------------------------
+  iot-agent:
+    image: quay.io/fiware/iotagent-json:3.7.0-distroless
+    hostname: iot-agent-json
+    container_name: fiware-iot-agent
+    depends_on:
+      orion:
+        condition: service_healthy
+      mongo-db:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    ports:
+      - "4041:4041" # API de provisionamento
+    environment:
+      - IOTA_CB_HOST=orion
+      - IOTA_CB_PORT=1026
+      - IOTA_NORTH_PORT=4041
+      - IOTA_REGISTRY_TYPE=mongodb
+      - IOTA_LOG_LEVEL=DEBUG
+      - IOTA_MONGO_HOST=mongo-db
+      - IOTA_MONGO_PORT=27017
+      - IOTA_MONGO_DB=iotagentjson
+      - IOTA_MQTT_HOST=mosquitto
+      - IOTA_MQTT_PORT=1883
+      - IOTA_DEFAULT_TRANSPORT=MQTT
+      - IOTA_PROVIDER_URL=http://iot-agent-json:4041
+      - IOTA_DEFAULT_RESOURCE=/iot/json
+      - IOTA_TIMESTAMP=true
+      - IOTA_CB_NGSI_VERSION=v2
+      - IOTA_AUTOCAST=true
+    # Sem healthcheck aqui: a imagem já traz o seu. Um "curl" não funciona (a imagem distroless não tem curl).
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0.18
+    hostname: mosquitto
+    container_name: mosquitto
+    ports:
+      - "1883:1883" # MQTT: IoT Agent, ESP32 e MQTTX
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto-data:/mosquitto/data
+
+  # --- Etapa 3: o dispositivo -------------------------------------------------------
+  esp32-simulada:
+    # ESP32 com DHT22 e relé, em software. Acompanhe com: docker logs -f esp32-simulada
+    # Para usar a placa real no lugar dela: docker compose stop esp32-simulada
+    build: ./esp32_simulada
+    image: ccm130/esp32-simulada
+    container_name: esp32-simulada
+    depends_on:
+      - mosquitto
+    environment:
+      - DEVICE_ID=esp32001
+      - APIKEY=ccm130
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - INTERVALO=5
+
+  # --- Etapa 5: dados externos ------------------------------------------------------
+  clima-externo:
+    # Provedor de contexto (proxy NGSI v2): clima atual do campus pela API Open-Meteo.
+    # Sem internet, responde valores simulados (source = simulado). Teste: http://localhost:3010/health
+    build: ./clima
+    image: ccm130/clima-externo
+    hostname: clima-externo
+    container_name: clima-externo
+    ports:
+      - "3010:3010"
+    environment:
+      - PORTA=3010
+      - LATITUDE=-23.7245
+      - LONGITUDE=-46.5793
+      - CACHE=60
+      - MODO=api # "simulado" para não depender da internet
+
+  # --- Etapa 6: histórico -----------------------------------------------------------
+  cygnus:
+    # O Orion notifica http://cygnus:5050/notify e o Cygnus grava no MySQL:
+    # um banco por fiware-service (ccm130) e uma tabela por entidade.
+    image: quay.io/fiware/cygnus-ngsi:3.11.0
+    hostname: cygnus
+    container_name: fiware-cygnus
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    ports:
+      - "5050:5050" # notificações do Orion
+      - "5080:5080" # API de gerenciamento (GET /v1/version)
+    environment:
+      - CYGNUS_MYSQL_SERVICE_PORT=5050
+      - CYGNUS_MYSQL_HOST=mysql-db
+      - CYGNUS_MYSQL_PORT=3306
+      - CYGNUS_MYSQL_USER=root
+      - CYGNUS_MYSQL_PASS=123
+      - CYGNUS_SERVICE_PORT=5050
+      - CYGNUS_API_PORT=5080
+      - CYGNUS_LOG_LEVEL=DEBUG
+    healthcheck:
+      test: curl --fail -s http://localhost:5080/v1/version || exit 1
+      interval: 10s
+
+  mysql-db:
+    image: mysql:8.0
+    hostname: mysql-db
+    container_name: db-mysql
+    ports:
+      - "3306:3306" # acesso direto: docker exec -it db-mysql mysql -uroot -p123
+    environment:
+      - MYSQL_ROOT_PASSWORD=123
+      - MYSQL_ROOT_HOST=%
+    volumes:
+      - mysql-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p123"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # --- Etapa 7: painéis -------------------------------------------------------------
+  grafana:
+    # http://localhost:3000 (admin/admin). A fonte de dados e os painéis você cria pela interface.
+    image: grafana/grafana:10.4.0
+    hostname: grafana
+    container_name: grafana
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+  # --- Etapa 8: decisão -------------------------------------------------------------
+  controlador:
+    # Aplicação de controle: recebe notificações do Orion e comanda o relé (histerese).
+    # ESQUELETO para os alunos: a regra (decidir) e a subscrição (pasta Etapa 8) são feitas na aula.
+    # Depois de editar controlador/controlador.py: docker compose up -d --build controlador
+    # Acompanhe: docker logs -f controlador  ·  status: http://localhost:5001/status
+    build: ./controlador
+    image: ccm130/controlador
+    hostname: controlador
+    container_name: controlador
+    depends_on:
+      - orion
+    ports:
+      - "5001:5001"
+    environment:
+      - ORION=http://orion:1026
+      - SERVICE=ccm130
+      - SERVICEPATH=/
+      - LIGA=28
+      - DESLIGA=24
+      - ESPERA=10
+      - PORTA=5001
+
+  # --- Versões prontas (perfil "pronto") --------------------------------------------
+  # Só sobem quando chamadas pelo nome; "docker compose up -d" sem nomes não as inclui.
+
+  controlador-pronto:
+    # Controlador PRONTO: a regra já implementada e a subscrição criada sozinha na partida.
+    # Comanda o relé automaticamente a partir das medidas da ESP32 (ou de qualquer ClimateStation).
+    #   docker compose up -d --build controlador-pronto
+    # Acompanhe: docker logs -f controlador-pronto  ·  status: http://localhost:5002/status
+    # Não deixe o esqueleto (já completado) e a versão pronta decidindo ao mesmo tempo.
+    profiles: ["pronto"]
+    build: ./controlador_pronto
+    image: ccm130/controlador-pronto
+    hostname: controlador-pronto
+    container_name: controlador-pronto
+    depends_on:
+      - orion
+    ports:
+      - "5002:5002"
+    environment:
+      - ORION=http://orion:1026
+      - SERVICE=ccm130
+      - SERVICEPATH=/
+      - LIGA=28
+      - DESLIGA=24
+      - ESPERA=10
+      - PORTA=5002
+      - NOTIFICAR_EM=http://controlador-pronto:5002/notify
+
+  grafana-pronto:
+    # Grafana PRONTO: fonte de dados MySQL e o painel da sala K501 já configurados (provisionamento).
+    #   docker compose up -d grafana-pronto  ·  http://localhost:3001 (abre direto no painel, sem login;
+    #   admin/admin para editar). Precisa do histórico: Etapa 6 (cygnus + subscrição) no ar.
+    profiles: ["pronto"]
+    image: grafana/grafana:10.4.0
+    hostname: grafana-pronto
+    container_name: grafana-pronto
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true          # visitante só lê (Viewer)
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/paineis/painel_pronto.json
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro   # fonte de dados e provedor de painéis
+      - ./grafana/paineis:/etc/grafana/paineis:ro             # o painel pronto (JSON)
+
+volumes:
+  mongo-db:
+  mosquitto-data:
+  mysql-db:
+  grafana-data:

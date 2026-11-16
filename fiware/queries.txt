@@ -1,0 +1,48 @@
+-- ============================================================================
+-- CCM130 - Conectividade e IoT | Aula 10 - Consultas para os painéis do Grafana
+-- ----------------------------------------------------------------------------
+-- Fonte de dados: a sua, criada na etapa 7 (MySQL, banco ccm130). Editor em modo Code.
+-- O Cygnus cria uma tabela por entidade e grava tudo como texto, por isso:
+--   recvTimeTs / 1000                    milissegundos -> segundos
+--   CAST(attrValue AS DECIMAL(6,1))      texto -> número
+--
+-- $__unixEpochFilter(x)                  x dentro do período escolhido no painel
+-- $__unixEpochGroupAlias(x, '1m')        agrupa em janelas de 1 minuto (coluna time)
+-- ============================================================================
+
+-- ETAPA 7, painel 1 - HISTÓRICO: temperatura (Time series)
+SELECT
+  recvTimeTs / 1000 AS "time",
+  CAST(attrValue AS DECIMAL(6,1)) AS "temperatura"
+FROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation`
+WHERE attrName = 'temperature'
+  AND $__unixEpochFilter(recvTimeTs / 1000)
+ORDER BY recvTimeTs ASC;
+
+-- ETAPA 7, painel 2 - PRESENTE: última temperatura (Stat)
+SELECT
+  recvTimeTs / 1000 AS "time",
+  CAST(attrValue AS DECIMAL(6,1)) AS "agora"
+FROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation`
+WHERE attrName = 'temperature'
+ORDER BY recvTimeTs DESC
+LIMIT 1;
+
+-- ETAPA 7, painel 3 - HISTÓRICO: estado do relé (State timeline)
+SELECT
+  recvTimeTs / 1000 AS "time",
+  attrValue AS "relé"
+FROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation`
+WHERE attrName = 'state'
+  AND $__unixEpochFilter(recvTimeTs / 1000)
+ORDER BY recvTimeTs ASC;
+
+-- ETAPA 9 - ANÁLISE: média da temperatura por minuto (Bar chart)
+SELECT
+  $__unixEpochGroupAlias(recvTimeTs / 1000, '1m'),
+  AVG(CAST(attrValue AS DECIMAL(6,1))) AS "média"
+FROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation`
+WHERE attrName = 'temperature'
+  AND $__unixEpochFilter(recvTimeTs / 1000)
+GROUP BY 1
+ORDER BY 1;

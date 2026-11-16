@@ -1,0 +1,387 @@
+{
+  "uid": "pel220-painel-pronto",
+  "title": "PEL 220 - Sala K501 - painel pronto",
+  "description": "Plataforma FIWARE da PEL 220: histórico gravado pelo Cygnus no MySQL (banco ccm130). Painéis das Etapas 7 e 9, com os indicadores do desafio.",
+  "editable": true,
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "tags": [
+    "aula10",
+    "desafio",
+    "pronto"
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Temperatura agora",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-ccm130"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-ccm130"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"agora\"\nFROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation`\nWHERE attrName = 'temperature'\nORDER BY recvTimeTs DESC\nLIMIT 1"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 24
+              },
+              {
+                "color": "red",
+                "value": 28
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Temperatura e os limites da regra (24 °C e 28 °C)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-ccm130"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 18,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-ccm130"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"temperatura\"\nFROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation`\nWHERE attrName = 'temperature'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "transparent",
+                "value": 24
+              },
+              {
+                "color": "red",
+                "value": 28
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "showPoints": "never",
+            "thresholdsStyle": {
+              "mode": "dashed+area"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "title": "Relé da ESP32",
+      "type": "state-timeline",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-ccm130"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-ccm130"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  attrValue AS \"relé\"\nFROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation`\nWHERE attrName = 'state'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "ON": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "Ligado"
+                },
+                "OFF": {
+                  "color": "gray",
+                  "index": 1,
+                  "text": "Desligado"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "auto",
+        "mergeValues": true,
+        "legend": {
+          "showLegend": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Média da temperatura por minuto",
+      "type": "barchart",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-ccm130"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-ccm130"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__unixEpochGroupAlias(recvTimeTs / 1000, '1m'),\n  AVG(CAST(attrValue AS DECIMAL(6,1))) AS \"média\"\nFROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation`\nWHERE attrName = 'temperature'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nGROUP BY 1\nORDER BY 1"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 1,
+          "min": 20,
+          "max": 30,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "xTickLabelRotation": 0,
+        "showValue": "auto",
+        "legend": {
+          "showLegend": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Acionamentos do relé",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-ccm130"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 8,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-ccm130"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS \"acionamentos\"\nFROM (\n  SELECT attrValue,\n         LAG(attrValue) OVER (ORDER BY recvTimeTs) AS anterior\n  FROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation`\n  WHERE attrName = 'state'\n    AND $__unixEpochFilter(recvTimeTs / 1000)\n) AS mudancas\nWHERE attrValue = 'ON' AND anterior = 'OFF'"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 6,
+      "title": "Tempo com o relé ligado",
+      "type": "gauge",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-ccm130"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 15,
+        "w": 8,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-ccm130"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT 100 * AVG(attrValue = 'ON') AS \"tempo ligado\"\nFROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation`\nWHERE attrName = 'state'\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Temperatura no período",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-ccm130"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 15,
+        "w": 8,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-ccm130"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  MIN(CAST(attrValue AS DECIMAL(6,1))) AS \"mínima\",\n  MAX(CAST(attrValue AS DECIMAL(6,1))) AS \"máxima\",\n  AVG(CAST(attrValue AS DECIMAL(6,1))) AS \"média\"\nFROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation`\nWHERE attrName = 'temperature'\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "textMode": "value_and_name"
+      }
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  }
+}

@@ -1,0 +1,2907 @@
+{
+	"info": {
+		"_postman_id": "0438b716-f079-5e72-b3a4-a0dbc4ecdc46",
+		"name": "PEL220 - Aula 06 - Introdução ao FIWARE",
+		"description": "PEL 220 — Internet das Coisas e Gêmeos Digitais · Aula 6 — Introdução ao FIWARE: contexto e dispositivos. Prof. Rafael Gomes Alves (FEI).\n\nA1–A6: a API do Orion com o exemplo das lojas (tenant padrão, sem cabeçalhos fiware-service), herdado da CCM130 (Aula 7). X: experimentos com o comportamento conferido. As Etapas 1 a 4 da plataforma ficam na coleção da Base.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "A1 - Primeiras requisições",
+			"description": "Slides 20 a 25. Verifica se o Orion está no ar e cria as duas primeiras entidades do tipo Store.\n\nToda entidade tem `id` e `type`; cada atributo tem `type` e `value` (e, opcionalmente, `metadata`).",
+			"item": [
+				{
+					"name": "Verificando a saúde do Orion",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/version",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"version"
+							]
+						},
+						"description": "Retorna a versão do Orion. Se responder, o contêiner está no ar e conectado ao MongoDB."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Resposta em JSON\", () => pm.response.to.be.json);",
+									"pm.test(\"Orion respondeu com sua versão\", () => pm.expect(pm.response.json().orion.version).to.be.a(\"string\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Cria a loja Store:001",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"urn:ngsi-ld:Store:001\",\n    \"type\": \"Store\",\n    \"address\": {\n        \"type\": \"PostalAddress\",\n        \"value\": {\n            \"streetAddress\": \"Bornholmer Straße 65\",\n            \"addressRegion\": \"Berlin\",\n            \"addressLocality\": \"Prenzlauer Berg\",\n            \"postalCode\": \"10439\"\n        }\n    },\n    \"location\": {\n        \"type\": \"geo:json\",\n        \"value\": {\n            \"type\": \"Point\",\n            \"coordinates\": [\n                13.3986,\n                52.5547\n            ]\n        }\n    },\n    \"name\": {\n        \"type\": \"Text\",\n        \"value\": \"Bösebrücke Einkauf\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": "POST /v2/entities cria a entidade. Atenção: em geo:json as coordenadas são [longitude, latitude]."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));",
+									"pm.test(\"Header Location aponta para a entidade\", () => pm.expect(pm.response.headers.get(\"Location\")).to.include(\"urn:ngsi-ld:Store:001\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Cria a loja Store:002",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"urn:ngsi-ld:Store:002\",\n    \"type\": \"Store\",\n    \"address\": {\n        \"type\": \"PostalAddress\",\n        \"value\": {\n            \"streetAddress\": \"Friedrichstraße 44\",\n            \"addressRegion\": \"Berlin\",\n            \"addressLocality\": \"Kreuzberg\",\n            \"postalCode\": \"10969\"\n        }\n    },\n    \"location\": {\n        \"type\": \"geo:json\",\n        \"value\": {\n            \"type\": \"Point\",\n            \"coordinates\": [\n                13.3903,\n                52.5075\n            ]\n        }\n    },\n    \"name\": {\n        \"type\": \"Text\",\n        \"value\": \"Checkpoint Markt\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "A2 - Consultas",
+			"description": "Slide 27. Recuperando informações de contexto com GET /v2/entities.\n\nObservação: requisições GET e DELETE **não** podem ter o cabeçalho Content-Type (o Orion responde 400).",
+			"item": [
+				{
+					"name": "Todas as entidades",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							]
+						},
+						"description": "Por padrão o Orion devolve no máximo 20 entidades (use limit/offset para paginar)."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Retorna uma lista\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Por id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Store:001",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Store:001"
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Formato normalizado (type/value)\", () => pm.expect(pm.response.json().name.value).to.eql(\"Bösebrücke Einkauf\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Por id - somente valores (keyValues)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Store:001?options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Store:001"
+							],
+							"query": [
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Formato keyValues\", () => pm.expect(pm.response.json().name).to.eql(\"Bösebrücke Einkauf\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Por tipo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities?type=Store&options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "Store"
+								},
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Duas lojas\", () => pm.expect(pm.response.json()).to.have.lengthOf(2));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Apenas o nome das lojas (attrs)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities?type=Store&attrs=name&options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "Store"
+								},
+								{
+									"key": "attrs",
+									"value": "name"
+								},
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						},
+						"description": "Exercício rápido do slide 27: attrs projeta apenas os atributos pedidos."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Somente id, type e name\", () => pm.response.json().forEach(e => pm.expect(Object.keys(e)).to.have.members([\"id\", \"type\", \"name\"])));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Por valor (q) - texto",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities?type=Store&q=name=='Checkpoint Markt'&options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "Store"
+								},
+								{
+									"key": "q",
+									"value": "name=='Checkpoint Markt'"
+								},
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						},
+						"description": "Filtro q: operadores ==, !=, >, >=, <, <=, .. (intervalo) e ~= (padrão). Combine condições com ;"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Encontra a Store:002\", () => { const r = pm.response.json(); pm.expect(r).to.have.lengthOf(1); pm.expect(r[0].id).to.eql(\"urn:ngsi-ld:Store:002\"); });"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Por valor (q) - atributo composto",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities?type=Store&q=address.addressLocality=='Kreuzberg'&options=keyValues&attrs=name,address",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "Store"
+								},
+								{
+									"key": "q",
+									"value": "address.addressLocality=='Kreuzberg'"
+								},
+								{
+									"key": "options",
+									"value": "keyValues"
+								},
+								{
+									"key": "attrs",
+									"value": "name,address"
+								}
+							]
+						},
+						"description": "Filtra por um campo dentro de um atributo estruturado (PostalAddress)."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Encontra a loja de Kreuzberg\", () => pm.expect(pm.response.json()[0].id).to.eql(\"urn:ngsi-ld:Store:002\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Por distância (georel near)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities?type=Store&georel=near;maxDistance:1500&geometry=point&coords=52.5162,13.3777&options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "Store"
+								},
+								{
+									"key": "georel",
+									"value": "near;maxDistance:1500"
+								},
+								{
+									"key": "geometry",
+									"value": "point"
+								},
+								{
+									"key": "coords",
+									"value": "52.5162,13.3777"
+								},
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						},
+						"description": "Lojas a até 1500 m do Portão de Brandemburgo. Na URL, coords usa lat,lng; no geo:json, [lng, lat]."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Somente a Store:002 está a menos de 1,5 km\", () => { const r = pm.response.json(); pm.expect(r).to.have.lengthOf(1); pm.expect(r[0].id).to.eql(\"urn:ngsi-ld:Store:002\"); });"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Paginação (limit/offset) com contagem",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities?type=Store&limit=1&offset=1&options=count,keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "Store"
+								},
+								{
+									"key": "limit",
+									"value": "1"
+								},
+								{
+									"key": "offset",
+									"value": "1"
+								},
+								{
+									"key": "options",
+									"value": "count,keyValues"
+								}
+							]
+						},
+						"description": "options=count devolve o total no cabeçalho Fiware-Total-Count."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Uma entidade por página\", () => pm.expect(pm.response.json()).to.have.lengthOf(1));",
+									"pm.test(\"Header Fiware-Total-Count = 2\", () => pm.expect(pm.response.headers.get(\"Fiware-Total-Count\")).to.eql(\"2\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Metadados de data (dateCreated, dateModified)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Store:001?attrs=name&metadata=dateCreated,dateModified",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Store:001"
+							],
+							"query": [
+								{
+									"key": "attrs",
+									"value": "name"
+								},
+								{
+									"key": "metadata",
+									"value": "dateCreated,dateModified"
+								}
+							]
+						},
+						"description": "Os metadados de data só aparecem quando solicitados."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Atributo traz dateCreated\", () => pm.expect(pm.response.json().name.metadata.dateCreated.type).to.eql(\"DateTime\"));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "A3 - Relações",
+			"description": "Slides 29 e 30. Store 1:N Shelf (refStore em Shelf); Product N:N Store resolvido pela entidade associativa InventoryItem (refProduct, refStore, refShelf).",
+			"item": [
+				{
+					"name": "Cria 4 produtos",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/op/update",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"op",
+								"update"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionType\": \"append\",\n    \"entities\": [\n        {\n            \"id\": \"urn:ngsi-ld:Product:001\",\n            \"type\": \"Product\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"Beer\"\n            },\n            \"size\": {\n                \"type\": \"Text\",\n                \"value\": \"S\"\n            },\n            \"price\": {\n                \"type\": \"Number\",\n                \"value\": 99\n            }\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Product:002\",\n            \"type\": \"Product\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"Red Wine\"\n            },\n            \"size\": {\n                \"type\": \"Text\",\n                \"value\": \"M\"\n            },\n            \"price\": {\n                \"type\": \"Number\",\n                \"value\": 1099\n            }\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Product:003\",\n            \"type\": \"Product\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"White Wine\"\n            },\n            \"size\": {\n                \"type\": \"Text\",\n                \"value\": \"M\"\n            },\n            \"price\": {\n                \"type\": \"Number\",\n                \"value\": 1499\n            }\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Product:004\",\n            \"type\": \"Product\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"Vodka\"\n            },\n            \"size\": {\n                \"type\": \"Text\",\n                \"value\": \"XL\"\n            },\n            \"price\": {\n                \"type\": \"Number\",\n                \"value\": 5000\n            }\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": "Operação em lote: cria (ou atualiza) várias entidades em uma única requisição."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Cria 4 prateleiras",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/op/update",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"op",
+								"update"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionType\": \"append\",\n    \"entities\": [\n        {\n            \"id\": \"urn:ngsi-ld:Shelf:unit001\",\n            \"type\": \"Shelf\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"Corner Unit\"\n            },\n            \"location\": {\n                \"type\": \"geo:json\",\n                \"value\": {\n                    \"type\": \"Point\",\n                    \"coordinates\": [\n                        13.398611,\n                        52.554699\n                    ]\n                }\n            },\n            \"maxCapacity\": {\n                \"type\": \"Number\",\n                \"value\": 50\n            }\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Shelf:unit002\",\n            \"type\": \"Shelf\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"Wall Unit 1\"\n            },\n            \"location\": {\n                \"type\": \"geo:json\",\n                \"value\": {\n                    \"type\": \"Point\",\n                    \"coordinates\": [\n                        13.398722,\n                        52.554664\n                    ]\n                }\n            },\n            \"maxCapacity\": {\n                \"type\": \"Number\",\n                \"value\": 100\n            }\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Shelf:unit003\",\n            \"type\": \"Shelf\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"Wall Unit 2\"\n            },\n            \"location\": {\n                \"type\": \"geo:json\",\n                \"value\": {\n                    \"type\": \"Point\",\n                    \"coordinates\": [\n                        13.398722,\n                        52.554664\n                    ]\n                }\n            },\n            \"maxCapacity\": {\n                \"type\": \"Number\",\n                \"value\": 100\n            }\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Shelf:unit004\",\n            \"type\": \"Shelf\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"Corner Unit\"\n            },\n            \"location\": {\n                \"type\": \"geo:json\",\n                \"value\": {\n                    \"type\": \"Point\",\n                    \"coordinates\": [\n                        13.390311,\n                        52.507522\n                    ]\n                }\n            },\n            \"maxCapacity\": {\n                \"type\": \"Number\",\n                \"value\": 50\n            }\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Obtém as informações de uma prateleira",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Shelf:unit001/attrs/maxCapacity/value?type=Shelf",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Shelf:unit001",
+								"attrs",
+								"maxCapacity",
+								"value"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "Shelf"
+								}
+							]
+						},
+						"description": "GET .../attrs/{attr}/value devolve apenas o valor do atributo."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"maxCapacity = 50\", () => pm.expect(Number(pm.response.text())).to.eql(50));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Adicionando chaves estrangeiras (refStore)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/op/update",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"op",
+								"update"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionType\": \"append\",\n    \"entities\": [\n        {\n            \"id\": \"urn:ngsi-ld:Shelf:unit001\",\n            \"type\": \"Shelf\",\n            \"refStore\": {\n                \"type\": \"Relationship\",\n                \"value\": \"urn:ngsi-ld:Store:001\"\n            }\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Shelf:unit002\",\n            \"type\": \"Shelf\",\n            \"refStore\": {\n                \"type\": \"Relationship\",\n                \"value\": \"urn:ngsi-ld:Store:001\"\n            }\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Shelf:unit003\",\n            \"type\": \"Shelf\",\n            \"refStore\": {\n                \"type\": \"Relationship\",\n                \"value\": \"urn:ngsi-ld:Store:001\"\n            }\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Shelf:unit004\",\n            \"type\": \"Shelf\",\n            \"refStore\": {\n                \"type\": \"Relationship\",\n                \"value\": \"urn:ngsi-ld:Store:002\"\n            }\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": "Acrescenta o atributo refStore (tipo Relationship) em cada prateleira."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Obtém informações atualizadas da prateleira",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Shelf:unit001?type=Shelf&options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Shelf:unit001"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "Shelf"
+								},
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Prateleira agora tem refStore\", () => pm.expect(pm.response.json().refStore).to.eql(\"urn:ngsi-ld:Store:001\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Obtém a chave estrangeira (filho → pai)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Shelf:unit001/attrs/refStore/value",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Shelf:unit001",
+								"attrs",
+								"refStore",
+								"value"
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Aponta para a Store:001\", () => pm.expect(pm.response.json()).to.eql(\"urn:ngsi-ld:Store:001\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Prateleiras de uma loja (pai → filhos)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities?type=Shelf&q=refStore==urn:ngsi-ld:Store:001&attrs=name,refStore&options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "Shelf"
+								},
+								{
+									"key": "q",
+									"value": "refStore==urn:ngsi-ld:Store:001"
+								},
+								{
+									"key": "attrs",
+									"value": "name,refStore"
+								},
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"A Store:001 tem 3 prateleiras\", () => pm.expect(pm.response.json()).to.have.lengthOf(3));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Cria item de inventário (N:N)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"urn:ngsi-ld:InventoryItem:001\",\n    \"type\": \"InventoryItem\",\n    \"refStore\": {\n        \"type\": \"Relationship\",\n        \"value\": \"urn:ngsi-ld:Store:001\"\n    },\n    \"refShelf\": {\n        \"type\": \"Relationship\",\n        \"value\": \"urn:ngsi-ld:Shelf:unit001\"\n    },\n    \"refProduct\": {\n        \"type\": \"Relationship\",\n        \"value\": \"urn:ngsi-ld:Product:001\"\n    },\n    \"stockCount\": {\n        \"type\": \"Number\",\n        \"value\": 10000\n    },\n    \"shelfCount\": {\n        \"type\": \"Number\",\n        \"value\": 50\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": "InventoryItem liga Product, Store e Shelf, como uma tabela de junção em um banco relacional."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Itens de inventário de uma loja",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities?type=InventoryItem&q=refStore==urn:ngsi-ld:Store:001&options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "InventoryItem"
+								},
+								{
+									"key": "q",
+									"value": "refStore==urn:ngsi-ld:Store:001"
+								},
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Um item na Store:001\", () => pm.expect(pm.response.json()).to.have.lengthOf(1));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Produtos com preço acima de 1000 (q numérico)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities?type=Product&q=price>1000&attrs=name,price&options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "Product"
+								},
+								{
+									"key": "q",
+									"value": "price>1000"
+								},
+								{
+									"key": "attrs",
+									"value": "name,price"
+								},
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Três produtos\", () => pm.expect(pm.response.json()).to.have.lengthOf(3));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "A4 - CRUD",
+			"description": "Slides 32 a 36. Um exemplo de cada linha do mapa de requisições, usando a entidade Product:005.\n\nExecute na ordem: algumas requisições dependem das anteriores.",
+			"item": [
+				{
+					"name": "Create - cria entidade",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"urn:ngsi-ld:Product:005\",\n    \"type\": \"Product\",\n    \"name\": {\n        \"type\": \"Text\",\n        \"value\": \"Lager\"\n    },\n    \"size\": {\n        \"type\": \"Text\",\n        \"value\": \"M\"\n    },\n    \"price\": {\n        \"type\": \"Number\",\n        \"value\": 199\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create - id repetido (erro 422)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"urn:ngsi-ld:Product:005\",\n    \"type\": \"Product\",\n    \"name\": {\n        \"type\": \"Text\",\n        \"value\": \"Lager\"\n    },\n    \"size\": {\n        \"type\": \"Text\",\n        \"value\": \"M\"\n    },\n    \"price\": {\n        \"type\": \"Number\",\n        \"value\": 199\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": "Repetir a criação de um id existente gera 422 Unprocessable."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 422 Unprocessable\", () => pm.response.to.have.status(422));",
+									"pm.test(\"Already Exists\", () => pm.expect(pm.response.json().description).to.eql(\"Already Exists\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create - acrescenta atributo (POST .../attrs)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Product:005/attrs",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Product:005",
+								"attrs"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"category\": {\n        \"type\": \"Text\",\n        \"value\": \"beverage\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": "POST .../attrs cria o atributo se não existir ou atualiza se já existir (append)."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Read - entidade resumida (keyValues)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Product:005?options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Product:005"
+							],
+							"query": [
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Tem o novo atributo category\", () => pm.expect(pm.response.json().category).to.eql(\"beverage\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Read - apenas o valor de um atributo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Product:005/attrs/price/value",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Product:005",
+								"attrs",
+								"price",
+								"value"
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"price = 199\", () => pm.expect(Number(pm.response.text())).to.eql(199));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update - atualiza atributos existentes (PATCH)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Product:005/attrs",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Product:005",
+								"attrs"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"price\": {\n        \"type\": \"Number\",\n        \"value\": 249\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update - PATCH em atributo inexistente (erro 422)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Product:005/attrs",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Product:005",
+								"attrs"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"color\": {\n        \"type\": \"Text\",\n        \"value\": \"gold\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": "PATCH só atualiza atributos que já existem; para criar, use POST .../attrs."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 422 Unprocessable\", () => pm.response.to.have.status(422));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update - substitui todos os atributos (PUT .../attrs)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Product:005/attrs",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Product:005",
+								"attrs"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": {\n        \"type\": \"Text\",\n        \"value\": \"Lager Premium\"\n    },\n    \"price\": {\n        \"type\": \"Number\",\n        \"value\": 299\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": "PUT .../attrs apaga os atributos que não forem enviados (aqui, size e category)."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Read - confere a substituição",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Product:005?options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Product:005"
+							],
+							"query": [
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"size e category foram removidos\", () => pm.expect(pm.response.json()).to.have.all.keys(\"id\", \"type\", \"name\", \"price\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete - remove um atributo",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Product:005/attrs/price",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Product:005",
+								"attrs",
+								"price"
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete - remove a entidade",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Product:005",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Product:005"
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Read - entidade removida (erro 404)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Product:005",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Product:005"
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 404 Not Found\", () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "A5 - Operações em lote",
+			"description": "Slides 32 a 36. POST /v2/op/update com actionType: append, appendStrict, update, replace e delete.",
+			"item": [
+				{
+					"name": "Lote append - cria ou atualiza",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/op/update",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"op",
+								"update"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionType\": \"append\",\n    \"entities\": [\n        {\n            \"id\": \"urn:ngsi-ld:Product:006\",\n            \"type\": \"Product\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"Cider\"\n            },\n            \"size\": {\n                \"type\": \"Text\",\n                \"value\": \"S\"\n            },\n            \"price\": {\n                \"type\": \"Number\",\n                \"value\": 299\n            }\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Product:007\",\n            \"type\": \"Product\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"Gin\"\n            },\n            \"size\": {\n                \"type\": \"Text\",\n                \"value\": \"L\"\n            },\n            \"price\": {\n                \"type\": \"Number\",\n                \"value\": 4500\n            }\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Lote appendStrict - só cria (erro 422 se já existir)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/op/update",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"op",
+								"update"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionType\": \"appendStrict\",\n    \"entities\": [\n        {\n            \"id\": \"urn:ngsi-ld:Product:006\",\n            \"type\": \"Product\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"Cider\"\n            },\n            \"size\": {\n                \"type\": \"Text\",\n                \"value\": \"S\"\n            },\n            \"price\": {\n                \"type\": \"Number\",\n                \"value\": 299\n            }\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Product:007\",\n            \"type\": \"Product\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"Gin\"\n            },\n            \"size\": {\n                \"type\": \"Text\",\n                \"value\": \"L\"\n            },\n            \"price\": {\n                \"type\": \"Number\",\n                \"value\": 4500\n            }\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": "appendStrict não sobrescreve: como os atributos já existem, o Orion responde 422."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 422 Unprocessable\", () => pm.response.to.have.status(422));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Lote update - só atualiza",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/op/update",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"op",
+								"update"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionType\": \"update\",\n    \"entities\": [\n        {\n            \"id\": \"urn:ngsi-ld:Product:006\",\n            \"type\": \"Product\",\n            \"price\": {\n                \"type\": \"Number\",\n                \"value\": 349\n            }\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Product:007\",\n            \"type\": \"Product\",\n            \"price\": {\n                \"type\": \"Number\",\n                \"value\": 4900\n            }\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Lote replace - substitui os atributos",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/op/update",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"op",
+								"update"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionType\": \"replace\",\n    \"entities\": [\n        {\n            \"id\": \"urn:ngsi-ld:Product:006\",\n            \"type\": \"Product\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"Cider\"\n            },\n            \"price\": {\n                \"type\": \"Number\",\n                \"value\": 399\n            }\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Confere os produtos do lote",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities?type=Product&q=price>300&attrs=name,size,price&options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "Product"
+								},
+								{
+									"key": "q",
+									"value": "price>300"
+								},
+								{
+									"key": "attrs",
+									"value": "name,size,price"
+								},
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Cider perdeu o atributo size (replace)\", () => pm.expect(pm.response.json().find(e => e.id === \"urn:ngsi-ld:Product:006\")).to.not.have.property(\"size\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Lote delete - remove entidades",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/op/update",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"op",
+								"update"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionType\": \"delete\",\n    \"entities\": [\n        {\n            \"id\": \"urn:ngsi-ld:Product:006\",\n            \"type\": \"Product\"\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Product:007\",\n            \"type\": \"Product\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "X - Experimentos (comportamento conferido)",
+			"description": "Cada experimento mostra um comportamento do Orion ou do IoT Agent que costuma surpreender. Todos se desfazem no fim. Conferidos com Orion 4.1.0 e IoT Agent JSON 3.7.0 em 11/11/2026.",
+			"item": [
+				{
+					"name": "X1 - Entidade sem type",
+					"description": "No NGSI-v2 o type é opcional na requisição: o Orion usa Thing para a entidade e infere o tipo do atributo pelo valor JSON (aqui, Number).",
+					"item": [
+						{
+							"name": "Cria sem type",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities"
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id\": \"urn:ngsi-ld:Teste:X1\",\n    \"temperature\": {\n        \"value\": 21\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+											"pm.test(\"Location com type=Thing\", () => pm.expect(pm.response.headers.get(\"Location\")).to.include(\"type=Thing\"));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Lê: type Thing e atributo Number",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Teste:X1",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities",
+										"urn:ngsi-ld:Teste:X1"
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+											"const e = pm.response.json();",
+											"pm.test(\"type da entidade = Thing\", () => pm.expect(e.type).to.eql(\"Thing\"));",
+											"pm.test(\"type do atributo inferido = Number\", () => pm.expect(e.temperature.type).to.eql(\"Number\"));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Remove",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Teste:X1",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities",
+										"urn:ngsi-ld:Teste:X1"
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"204 No Content\", () => pm.response.to.have.status(204));"
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "X2 - Content-Type em GET (400)",
+					"description": "O Orion não aceita corpo em GET e DELETE; o cabeçalho Content-Type nessas requisições é recusado com 400.",
+					"item": [
+						{
+							"name": "GET com Content-Type",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "http://{{orion}}/version",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"version"
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"400 Bad Request\", () => pm.response.to.have.status(400));",
+											"pm.test(\"Mensagem do Orion\", () => pm.expect(pm.response.json().description).to.include(\"Content-Type\"));"
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "X3 - Número entre aspas",
+					"description": "O Orion não valida o value contra o type: \"25\" entre aspas é gravado como texto, mesmo com type Number, e o filtro numérico q=capacity>20 não o encontra.",
+					"item": [
+						{
+							"name": "Cria capacity \"25\" (texto)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities"
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id\": \"urn:ngsi-ld:Teste:X3\",\n    \"type\": \"Teste\",\n    \"capacity\": {\n        \"type\": \"Number\",\n        \"value\": \"25\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"201 Created: o Orion aceitou\", () => pm.response.to.have.status(201));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "q=capacity>20 não acha",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities?type=Teste&q=capacity>20&options=keyValues",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "Teste"
+										},
+										{
+											"key": "q",
+											"value": "capacity>20"
+										},
+										{
+											"key": "options",
+											"value": "keyValues"
+										}
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+											"pm.test(\"Lista vazia: o valor é texto\", () => pm.expect(pm.response.json()).to.have.length(0));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "O valor voltou como string",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Teste:X3?options=keyValues",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities",
+										"urn:ngsi-ld:Teste:X3"
+									],
+									"query": [
+										{
+											"key": "options",
+											"value": "keyValues"
+										}
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"capacity é string\", () => pm.expect(pm.response.json().capacity).to.be.a(\"string\"));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Corrige: número sem aspas",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Teste:X3/attrs",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities",
+										"urn:ngsi-ld:Teste:X3",
+										"attrs"
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"capacity\": {\n        \"type\": \"Number\",\n        \"value\": 25\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"204 No Content\", () => pm.response.to.have.status(204));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Agora o filtro acha",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities?type=Teste&q=capacity>20&options=keyValues",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "Teste"
+										},
+										{
+											"key": "q",
+											"value": "capacity>20"
+										},
+										{
+											"key": "options",
+											"value": "keyValues"
+										}
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Uma entidade\", () => pm.expect(pm.response.json()).to.have.length(1));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Remove",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Teste:X3",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities",
+										"urn:ngsi-ld:Teste:X3"
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"204 No Content\", () => pm.response.to.have.status(204));"
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "X4 - Atributos embutidos sob demanda",
+					"description": "dateCreated e dateModified não vêm na resposta comum: são atributos (e metadados) embutidos, devolvidos só quando pedidos em attrs (ou metadata).",
+					"item": [
+						{
+							"name": "Cria",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities"
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id\": \"urn:ngsi-ld:Teste:X4\",\n    \"type\": \"Teste\",\n    \"capacity\": {\n        \"type\": \"Number\",\n        \"value\": 30\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"201 Created\", () => pm.response.to.have.status(201));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Leitura comum: sem datas",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Teste:X4?options=keyValues",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities",
+										"urn:ngsi-ld:Teste:X4"
+									],
+									"query": [
+										{
+											"key": "options",
+											"value": "keyValues"
+										}
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Sem dateCreated\", () => pm.expect(pm.response.json()).to.not.have.property(\"dateCreated\"));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Pedindo as datas",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Teste:X4?attrs=dateCreated,dateModified,capacity&options=keyValues",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities",
+										"urn:ngsi-ld:Teste:X4"
+									],
+									"query": [
+										{
+											"key": "attrs",
+											"value": "dateCreated,dateModified,capacity"
+										},
+										{
+											"key": "options",
+											"value": "keyValues"
+										}
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"const e = pm.response.json();",
+											"pm.test(\"Com dateCreated e dateModified\", () => pm.expect(e).to.include.keys(\"dateCreated\", \"dateModified\"));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Remove",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Teste:X4",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities",
+										"urn:ngsi-ld:Teste:X4"
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"204 No Content\", () => pm.response.to.have.status(204));"
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "X5 - Unário: existência e ausência",
+					"description": "Na linguagem de consulta simples, q=atributo seleciona as entidades QUE TÊM o atributo; q=!atributo, as que NÃO têm. Usa as lojas: rode depois de A1 e antes de A6.",
+					"item": [
+						{
+							"name": "q=address (existe)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities?type=Store&q=address&attrs=name&options=keyValues",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "Store"
+										},
+										{
+											"key": "q",
+											"value": "address"
+										},
+										{
+											"key": "attrs",
+											"value": "name"
+										},
+										{
+											"key": "options",
+											"value": "keyValues"
+										}
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"As duas lojas têm address\", () => pm.expect(pm.response.json()).to.have.length(2));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "q=!address (não existe)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities?type=Store&q=!address&attrs=name&options=keyValues",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "Store"
+										},
+										{
+											"key": "q",
+											"value": "!address"
+										},
+										{
+											"key": "attrs",
+											"value": "name"
+										},
+										{
+											"key": "options",
+											"value": "keyValues"
+										}
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Nenhuma loja sem address\", () => pm.expect(pm.response.json()).to.have.length(0));"
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "X6 - Caractere proibido (400)",
+					"description": "O Orion recusa < > \" ' = ; ( ) nos valores de texto. É por isso que a ESP32 simulada responde \"OK - rele ligado\", e não \"OK: rele=ON\".",
+					"item": [
+						{
+							"name": "Valor com = e :",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities"
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id\": \"urn:ngsi-ld:Teste:X6\",\n    \"type\": \"Teste\",\n    \"info\": {\n        \"type\": \"Text\",\n        \"value\": \"OK: rele=ON\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"400 Bad Request\", () => pm.response.to.have.status(400));",
+											"pm.test(\"Invalid characters\", () => pm.expect(pm.response.json().description).to.include(\"Invalid characters\"));"
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "X7 - Comando sem ?type e sem dispositivo",
+					"description": "Tenant ccm130, mas com ids próprios (teste001, Lamp:T01): não interfere nas Etapas da Base. Antes da primeira medida a entidade só existe por encaminhamento ao IoT Agent; sem o ?type o Orion não acha o registro (404). Sem dispositivo no ar, o comando fica PENDING para sempre. Requer as Etapas 1 e 2 da Base (grupo de serviço ccm130).",
+					"item": [
+						{
+							"name": "Provisiona uma lâmpada só com comando",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "fiware-service",
+										"value": "{{service}}"
+									},
+									{
+										"key": "fiware-servicepath",
+										"value": "{{servicepath}}"
+									}
+								],
+								"url": {
+									"raw": "http://{{iota}}/iot/devices",
+									"protocol": "http",
+									"host": [
+										"{{iota}}"
+									],
+									"path": [
+										"iot",
+										"devices"
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"devices\": [\n        {\n            \"device_id\": \"teste001\",\n            \"apikey\": \"{{apikey}}\",\n            \"entity_name\": \"urn:ngsi-ld:Lamp:T01\",\n            \"entity_type\": \"Lamp\",\n            \"transport\": \"MQTT\",\n            \"commands\": [\n                {\n                    \"name\": \"on\",\n                    \"type\": \"command\"\n                }\n            ]\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"201 Created\", () => pm.response.to.have.status(201));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "PATCH sem ?type (404)",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "fiware-service",
+										"value": "{{service}}"
+									},
+									{
+										"key": "fiware-servicepath",
+										"value": "{{servicepath}}"
+									}
+								],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Lamp:T01/attrs",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities",
+										"urn:ngsi-ld:Lamp:T01",
+										"attrs"
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"on\": {\n        \"type\": \"command\",\n        \"value\": \"\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"404 Not Found\", () => pm.response.to.have.status(404));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "PATCH com ?type=Lamp (204)",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "fiware-service",
+										"value": "{{service}}"
+									},
+									{
+										"key": "fiware-servicepath",
+										"value": "{{servicepath}}"
+									}
+								],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Lamp:T01/attrs?type=Lamp",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities",
+										"urn:ngsi-ld:Lamp:T01",
+										"attrs"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "Lamp"
+										}
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"on\": {\n        \"type\": \"command\",\n        \"value\": \"\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"204: encaminhado ao IoT Agent\", () => pm.response.to.have.status(204));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Sem dispositivo: PENDING",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "fiware-service",
+										"value": "{{service}}"
+									},
+									{
+										"key": "fiware-servicepath",
+										"value": "{{servicepath}}"
+									}
+								],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Lamp:T01?options=keyValues&attrs=on_status",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities",
+										"urn:ngsi-ld:Lamp:T01"
+									],
+									"query": [
+										{
+											"key": "options",
+											"value": "keyValues"
+										},
+										{
+											"key": "attrs",
+											"value": "on_status"
+										}
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"on_status = PENDING\", () => pm.expect(pm.response.json().on_status).to.eql(\"PENDING\"));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Remove o dispositivo",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "fiware-service",
+										"value": "{{service}}"
+									},
+									{
+										"key": "fiware-servicepath",
+										"value": "{{servicepath}}"
+									}
+								],
+								"url": {
+									"raw": "http://{{iota}}/iot/devices/teste001",
+									"protocol": "http",
+									"host": [
+										"{{iota}}"
+									],
+									"path": [
+										"iot",
+										"devices",
+										"teste001"
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"204 No Content\", () => pm.response.to.have.status(204));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Remove a entidade",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "fiware-service",
+										"value": "{{service}}"
+									},
+									{
+										"key": "fiware-servicepath",
+										"value": "{{servicepath}}"
+									}
+								],
+								"url": {
+									"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Lamp:T01",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"entities",
+										"urn:ngsi-ld:Lamp:T01"
+									]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"204 ou 404\", () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+										]
+									}
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "A6 - Limpeza das lojas",
+			"description": "Remove todas as entidades criadas pela coleção, permitindo executá-la novamente do zero. Alternativa: `docker compose down -v` (apaga o volume do MongoDB).",
+			"item": [
+				{
+					"name": "Remove as entidades da aula",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/op/update",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"op",
+								"update"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionType\": \"delete\",\n    \"entities\": [\n        {\n            \"id\": \"urn:ngsi-ld:Store:001\",\n            \"type\": \"Store\"\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Store:002\",\n            \"type\": \"Store\"\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Product:001\",\n            \"type\": \"Product\"\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Product:002\",\n            \"type\": \"Product\"\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Product:003\",\n            \"type\": \"Product\"\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Product:004\",\n            \"type\": \"Product\"\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Shelf:unit001\",\n            \"type\": \"Shelf\"\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Shelf:unit002\",\n            \"type\": \"Shelf\"\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Shelf:unit003\",\n            \"type\": \"Shelf\"\n        },\n        {\n            \"id\": \"urn:ngsi-ld:Shelf:unit004\",\n            \"type\": \"Shelf\"\n        },\n        {\n            \"id\": \"urn:ngsi-ld:InventoryItem:001\",\n            \"type\": \"InventoryItem\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": "Se alguma entidade já tiver sido removida, o Orion responde 404/422 e remove as demais."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "orion",
+			"value": "localhost:1026",
+			"type": "string"
+		},
+		{
+			"key": "iota",
+			"value": "localhost:4041",
+			"type": "string"
+		},
+		{
+			"key": "service",
+			"value": "ccm130",
+			"type": "string"
+		},
+		{
+			"key": "servicepath",
+			"value": "/",
+			"type": "string"
+		},
+		{
+			"key": "apikey",
+			"value": "ccm130",
+			"type": "string"
+		}
+	]
+}

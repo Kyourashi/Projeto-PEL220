@@ -1,0 +1,18 @@
+# Grafana pronto (serviço grafana-pronto): a fonte de dados MySQL, criada sozinha na partida.
+# É a mesma que os alunos criam pela interface na Etapa 7: o banco ccm130 que o Cygnus grava.
+apiVersion: 1
+
+datasources:
+  - name: MySQL (histórico ccm130)
+    uid: mysql-ccm130              # os painéis de grafana/paineis/ usam este uid
+    type: mysql
+    access: proxy
+    url: mysql-db:3306             # o MySQL visto de dentro da rede Docker
+    user: root
+    jsonData:
+      database: ccm130             # um banco por fiware-service, criado pelo Cygnus
+      maxOpenConns: 10
+    secureJsonData:
+      password: "123"              # senha de laboratório (docker-compose.yml): não use em produção
+    isDefault: true
+    editable: false

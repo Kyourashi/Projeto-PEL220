@@ -1,0 +1,11 @@
+# Grafana pronto (serviço grafana-pronto): carrega na partida os painéis de grafana/paineis/.
+apiVersion: 1
+
+providers:
+  - name: paineis-prontos
+    folder: PEL 220
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false          # o arquivo manda: mudanças pela interface não são gravadas
+    options:
+      path: /etc/grafana/paineis   # onde o docker-compose.yml monta a pasta grafana/paineis

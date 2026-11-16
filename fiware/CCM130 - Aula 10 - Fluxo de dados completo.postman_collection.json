@@ -1,0 +1,2439 @@
+{
+	"info": {
+		"_postman_id": "5c907b62-a032-5d6f-84ef-42e37538f59e",
+		"name": "CCM130 - Aula 10 - Fluxo de dados completo",
+		"description": "Uma pasta por etapa da aula: a solução é construída aos poucos, da entidade ao painel. A descrição de cada pasta diz o que subir antes. Execute em ordem; cada requisição tem testes (aba Test Results).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Etapa 1 - Contexto",
+			"item": [
+				{
+					"name": "O Orion está no ar",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{orion}}/version",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"version"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Versão 4.1.0\", () => pm.expect(pm.response.json().orion.version).to.eql(\"4.1.0\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Cria a sala K501",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/op/update",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"op",
+								"update"
+							]
+						},
+						"description": "O modelo de dados começa pelo lugar. `append` cria ou atualiza: pode executar de novo.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionType\": \"append\",\n    \"entities\": [\n        {\n            \"id\": \"urn:ngsi-ld:Room:K501\",\n            \"type\": \"Room\",\n            \"name\": {\n                \"type\": \"Text\",\n                \"value\": \"Laboratório K5-01\"\n            },\n            \"capacity\": {\n                \"type\": \"Number\",\n                \"value\": 40\n            }\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Lê a sala",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501?options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Room:K501"
+							],
+							"query": [
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Capacidade 40\", () => pm.expect(pm.response.json().capacity).to.eql(40));"
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "Suba: `docker compose up -d orion`. Sobe também o MongoDB, de que o Orion depende."
+		},
+		{
+			"name": "Etapa 2 - IoT Agent",
+			"item": [
+				{
+					"name": "O IoT Agent está no ar",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{iota}}/iot/about",
+							"protocol": "http",
+							"host": [
+								"{{iota}}"
+							],
+							"path": [
+								"iot",
+								"about"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Cria o grupo de serviço",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{iota}}/iot/services",
+							"protocol": "http",
+							"host": [
+								"{{iota}}"
+							],
+							"path": [
+								"iot",
+								"services"
+							]
+						},
+						"description": "A chave `ccm130` vai aparecer nos tópicos MQTT. `cbroker`: o Orion visto de dentro da rede Docker.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"services\": [\n        {\n            \"apikey\": \"{{apikey}}\",\n            \"cbroker\": \"http://orion:1026\",\n            \"entity_type\": \"Thing\",\n            \"resource\": \"/iot/json\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Criado (201) ou já existente (409)\", () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Provisiona a ESP32",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{iota}}/iot/devices",
+							"protocol": "http",
+							"host": [
+								"{{iota}}"
+							],
+							"path": [
+								"iot",
+								"devices"
+							]
+						},
+						"description": "O contrato do dispositivo: quem ele é, o que mede, o que obedece e onde está.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"devices\": [\n        {\n            \"device_id\": \"esp32001\",\n            \"apikey\": \"{{apikey}}\",\n            \"entity_name\": \"urn:ngsi-ld:ClimateStation:ESP32001\",\n            \"entity_type\": \"ClimateStation\",\n            \"transport\": \"MQTT\",\n            \"attributes\": [\n                {\n                    \"object_id\": \"t\",\n                    \"name\": \"temperature\",\n                    \"type\": \"Number\"\n                },\n                {\n                    \"object_id\": \"h\",\n                    \"name\": \"humidity\",\n                    \"type\": \"Number\"\n                },\n                {\n                    \"object_id\": \"s\",\n                    \"name\": \"state\",\n                    \"type\": \"Text\"\n                }\n            ],\n            \"commands\": [\n                {\n                    \"name\": \"on\",\n                    \"type\": \"command\"\n                },\n                {\n                    \"name\": \"off\",\n                    \"type\": \"command\"\n                }\n            ],\n            \"static_attributes\": [\n                {\n                    \"name\": \"refRoom\",\n                    \"type\": \"Relationship\",\n                    \"value\": \"urn:ngsi-ld:Room:K501\"\n                }\n            ]\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Lista os dispositivos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{iota}}/iot/devices",
+							"protocol": "http",
+							"host": [
+								"{{iota}}"
+							],
+							"path": [
+								"iot",
+								"devices"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"A ESP32 está cadastrada em MQTT\", () => pm.expect(pm.response.json().devices[0]).to.include({\"device_id\": \"esp32001\", \"transport\": \"MQTT\"}));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Registro de provedor dos comandos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/registrations",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"registrations"
+							]
+						},
+						"description": "O provisionamento criou isto no Orion: é por este registro que os comandos chegarão ao IoT Agent na etapa 4."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const r = pm.response.json();",
+									"pm.test(\"O IoT Agent é o provedor de on e off\", () => { pm.expect(r[0].provider.http.url).to.eql(\"http://iot-agent-json:4041\"); pm.expect(r[0].dataProvided.attrs).to.include.members([\"on\", \"off\"]); });"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "A entidade já existe, só com os comandos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:ClimateStation:ESP32001?options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:ClimateStation:ESP32001"
+							],
+							"query": [
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const e = pm.response.json();",
+									"pm.test(\"Tem on e off\", () => pm.expect(e).to.include.keys(\"on\", \"off\"));",
+									"pm.test(\"Ainda sem medidas\", () => pm.expect(e).to.not.have.property(\"temperature\"));"
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "Suba: `docker compose up -d iot-agent`. Sobe também o Mosquitto."
+		},
+		{
+			"name": "Etapa 3 - A ESP32 publica medidas",
+			"item": [
+				{
+					"name": "As medidas chegaram ao Orion",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:ClimateStation:ESP32001?options=keyValues&attrs=temperature,humidity,state,refRoom,TimeInstant",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:ClimateStation:ESP32001"
+							],
+							"query": [
+								{
+									"key": "options",
+									"value": "keyValues"
+								},
+								{
+									"key": "attrs",
+									"value": "temperature,humidity,state,refRoom,TimeInstant"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"setTimeout(() => {}, 6000);   // dá tempo de a mensagem percorrer a plataforma"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const e = pm.response.json();",
+									"pm.test(\"temperature e humidity numéricas\", () => [\"temperature\", \"humidity\"].forEach(a => pm.expect(e[a], a).to.be.a(\"number\")));",
+									"pm.test(\"Relé desligado\", () => pm.expect(e.state).to.eql(\"OFF\"));",
+									"pm.test(\"Na sala K501\", () => pm.expect(e.refRoom).to.eql(\"urn:ngsi-ld:Room:K501\"));",
+									"pm.test(\"Medida recente (menos de 60 s)\", () => pm.expect(Date.now() - Date.parse(e.TimeInstant)).to.be.below(60000));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Formato normalizado - os tipos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:ClimateStation:ESP32001?attrs=temperature,state,TimeInstant",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:ClimateStation:ESP32001"
+							],
+							"query": [
+								{
+									"key": "attrs",
+									"value": "temperature,state,TimeInstant"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const e = pm.response.json();",
+									"pm.test(\"temperature: Number\", () => pm.expect(e.temperature.type).to.eql(\"Number\"));",
+									"pm.test(\"state: Text\", () => pm.expect(e.state.type).to.eql(\"Text\"));",
+									"pm.test(\"TimeInstant acrescentado pelo IoT Agent\", () => pm.expect(e.TimeInstant.type).to.eql(\"DateTime\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Não surgiu uma entidade Thing",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/Thing:esp32001",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"Thing:esp32001"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"404 - o provisionamento veio antes da ESP32\", () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "Suba: `docker compose up -d --build esp32-simulada`. Veja: `docker logs -f esp32-simulada`. No MQTTX (`localhost:1883`), assine `/json/ccm130/#` e `/ccm130/#`."
+		},
+		{
+			"name": "Etapa 4 - Comandos",
+			"item": [
+				{
+					"name": "Comando on",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:ClimateStation:ESP32001/attrs?type=ClimateStation",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:ClimateStation:ESP32001",
+								"attrs"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "ClimateStation"
+								}
+							]
+						},
+						"description": "`204` = encaminhado ao IoT Agent. Olhe o MQTTX: a mensagem aparece em `/ccm130/esp32001/cmd`.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"on\": {\n        \"type\": \"command\",\n        \"value\": \"\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Resultado do on",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:ClimateStation:ESP32001?options=keyValues&attrs=on_status,on_info,state",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:ClimateStation:ESP32001"
+							],
+							"query": [
+								{
+									"key": "options",
+									"value": "keyValues"
+								},
+								{
+									"key": "attrs",
+									"value": "on_status,on_info,state"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"setTimeout(() => {}, 2500);   // dá tempo de a mensagem percorrer a plataforma"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const e = pm.response.json();",
+									"pm.test(\"on_status = OK\", () => pm.expect(e.on_status).to.eql(\"OK\"));",
+									"pm.test(\"on_info começa com OK\", () => pm.expect(e.on_info).to.match(/^OK/));",
+									"pm.test(\"state = ON\", () => pm.expect(e.state).to.eql(\"ON\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Comando off",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:ClimateStation:ESP32001/attrs?type=ClimateStation",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:ClimateStation:ESP32001",
+								"attrs"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "ClimateStation"
+								}
+							]
+						},
+						"description": "`204` = encaminhado ao IoT Agent. Olhe o MQTTX: a mensagem aparece em `/ccm130/esp32001/cmd`.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"off\": {\n        \"type\": \"command\",\n        \"value\": \"\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Resultado do off",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:ClimateStation:ESP32001?options=keyValues&attrs=off_status,off_info,state",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:ClimateStation:ESP32001"
+							],
+							"query": [
+								{
+									"key": "options",
+									"value": "keyValues"
+								},
+								{
+									"key": "attrs",
+									"value": "off_status,off_info,state"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"setTimeout(() => {}, 2500);   // dá tempo de a mensagem percorrer a plataforma"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const e = pm.response.json();",
+									"pm.test(\"off_status = OK\", () => pm.expect(e.off_status).to.eql(\"OK\"));",
+									"pm.test(\"off_info começa com OK\", () => pm.expect(e.off_info).to.match(/^OK/));",
+									"pm.test(\"state = OFF\", () => pm.expect(e.state).to.eql(\"OFF\"));"
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "Nada novo para subir. Você é a aplicação: o comando sai do Postman para o Orion, e não para a ESP32."
+		},
+		{
+			"name": "Etapa 5 - Dados externos",
+			"item": [
+				{
+					"name": "O provedor de clima está no ar",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{clima}}/health",
+							"protocol": "http",
+							"host": [
+								"{{clima}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "`source: simulado` = o contêiner não alcançou a internet; a aula continua."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const c = pm.response.json().clima;",
+									"pm.test(\"Temperatura numérica\", () => pm.expect(c.temperature).to.be.a(\"number\"));",
+									"pm.test(\"Fonte: open-meteo ou simulado\", () => pm.expect(c.source).to.be.oneOf([\"open-meteo\", \"simulado\"]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Registra o provedor do clima",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/registrations",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"registrations"
+							]
+						},
+						"description": "O Orion acrescenta `/op/query` à URL. Código do provedor: `clima/provedor.py`.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"description\": \"Clima atual do campus pela Open-Meteo\",\n    \"dataProvided\": {\n        \"entities\": [\n            {\n                \"id\": \"urn:ngsi-ld:WeatherObserved:FEI\",\n                \"type\": \"WeatherObserved\"\n            }\n        ],\n        \"attrs\": [\n            \"temperature\",\n            \"relativeHumidity\",\n            \"windSpeed\",\n            \"dateObserved\",\n            \"source\"\n        ]\n    },\n    \"provider\": {\n        \"http\": {\n            \"url\": \"http://clima-externo:3010/v2\"\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Lê o clima pelo Orion",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:WeatherObserved:FEI?type=WeatherObserved&options=keyValues",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:WeatherObserved:FEI"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "WeatherObserved"
+								},
+								{
+									"key": "options",
+									"value": "keyValues"
+								}
+							]
+						},
+						"description": "Para a aplicação é só mais uma entidade. Veja a consulta chegar em `docker logs clima-externo`."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const e = pm.response.json();",
+									"pm.test(\"Temperatura numérica\", () => pm.expect(e.temperature).to.be.a(\"number\"));",
+									"pm.test(\"Umidade relativa entre 0 e 1\", () => pm.expect(e.relativeHumidity).to.be.within(0, 1));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Tentativa - subscrição sobre o clima",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/subscriptions",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"subscriptions"
+							]
+						},
+						"description": "Parece razoável guardar o clima. Veja o próximo passo.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"description\": \"Clima externo para o Cygnus\",\n    \"subject\": {\n        \"entities\": [\n            {\n                \"id\": \"urn:ngsi-ld:WeatherObserved:FEI\",\n                \"type\": \"WeatherObserved\"\n            }\n        ],\n        \"condition\": {\n            \"attrs\": [\n                \"temperature\"\n            ]\n        }\n    },\n    \"notification\": {\n        \"http\": {\n            \"url\": \"http://cygnus:5050/notify\"\n        },\n        \"attrsFormat\": \"normalized\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set(\"subClima\", pm.response.headers.get(\"Location\").split(\"/\").pop());"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Presente, não histórico - a subscrição não dispara",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/subscriptions/{{subClima}}",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"subscriptions",
+								"{{subClima}}"
+							]
+						},
+						"description": "O Orion não guarda atributo de provedor, então não percebe mudança. Para ter histórico, alguém precisa gravar no Orion."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"setTimeout(() => {}, 8000);   // dá tempo de a mensagem percorrer a plataforma"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"pm.test(\"timesSent zero\", () => pm.expect(pm.response.json().notification.timesSent || 0).to.eql(0));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Remove a subscrição do clima",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/subscriptions/{{subClima}}",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"subscriptions",
+								"{{subClima}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "Suba: `docker compose up -d --build clima-externo`."
+		},
+		{
+			"name": "Etapa 6 - Histórico",
+			"item": [
+				{
+					"name": "O Cygnus está no ar",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{cygnus}}/v1/version",
+							"protocol": "http",
+							"host": [
+								"{{cygnus}}"
+							],
+							"path": [
+								"v1",
+								"version"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Subscrição do histórico para o Cygnus",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/subscriptions",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"subscriptions"
+							]
+						},
+						"description": "Use `normalized`: o Orion 4 recusa `legacy`. Depois confira no banco: `docker exec -it db-mysql mysql -uroot -p123` e `SHOW TABLES FROM ccm130;`",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"description\": \"Historico da ESP32 para o Cygnus\",\n    \"subject\": {\n        \"entities\": [\n            {\n                \"idPattern\": \".*\",\n                \"type\": \"ClimateStation\"\n            }\n        ],\n        \"condition\": {\n            \"attrs\": [\n                \"temperature\",\n                \"humidity\",\n                \"state\"\n            ]\n        }\n    },\n    \"notification\": {\n        \"http\": {\n            \"url\": \"http://cygnus:5050/notify\"\n        },\n        \"attrs\": [\n            \"temperature\",\n            \"humidity\",\n            \"state\"\n        ],\n        \"attrsFormat\": \"normalized\"\n    },\n    \"throttling\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set(\"subCygnus\", pm.response.headers.get(\"Location\").split(\"/\").pop());"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Status da subscrição - o Orion está notificando",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/subscriptions/{{subCygnus}}",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"subscriptions",
+								"{{subCygnus}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"setTimeout(() => {}, 12000);   // dá tempo de a mensagem percorrer a plataforma"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const n = pm.response.json().notification;",
+									"pm.test(\"Já notificou\", () => pm.expect(n.timesSent).to.be.above(0));",
+									"pm.test(\"Última resposta 200\", () => pm.expect(n.lastSuccessCode).to.eql(200));"
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "Suba: `docker compose up -d cygnus`. Sobe também o MySQL; espere o Cygnus ficar `healthy` em `docker ps`."
+		},
+		{
+			"name": "Etapa 7 - Painéis no Grafana",
+			"item": [
+				{
+					"name": "O Grafana está no ar",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{grafana}}/api/health",
+							"protocol": "http",
+							"host": [
+								"{{grafana}}"
+							],
+							"path": [
+								"api",
+								"health"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "A fonte de dados foi criada",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{grafana}}/api/datasources",
+							"protocol": "http",
+							"host": [
+								"{{grafana}}"
+							],
+							"path": [
+								"api",
+								"datasources"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{grafanaUser}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{grafanaPass}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Connections → Data sources → MySQL. Se você trocou a senha do admin, ajuste a variável `grafanaPass` da coleção."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const ds = pm.response.json().find(d => d.type === \"mysql\");",
+									"pm.test(\"Existe uma fonte MySQL\", () => pm.expect(ds).to.be.an(\"object\"));",
+									"pm.test(\"Aponta para mysql-db:3306\", () => pm.expect(ds.url).to.eql(\"mysql-db:3306\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "A fonte de dados enxerga o histórico",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{grafana}}/api/ds/query",
+							"protocol": "http",
+							"host": [
+								"{{grafana}}"
+							],
+							"path": [
+								"api",
+								"ds",
+								"query"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{grafanaUser}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{grafanaPass}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "O Postman pergunta ao Grafana, pela fonte de dados que você criou. É a mesma consulta dos painéis.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"from\": \"now-1h\",\n    \"to\": \"now\",\n    \"queries\": [\n        {\n            \"refId\": \"A\",\n            \"datasource\": {\n                \"uid\": \"{{dsUid}}\"\n            },\n            \"rawSql\": \"SELECT recvTimeTs / 1000 AS time, CAST(attrValue AS DECIMAL(6,1)) AS value FROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation` WHERE attrName = 'temperature' ORDER BY recvTimeTs DESC LIMIT 50\",\n            \"format\": \"table\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const u = pm.variables.get(\"grafanaUser\") + \":\" + pm.variables.get(\"grafanaPass\");",
+									"pm.sendRequest({url: pm.variables.replaceIn(\"http://{{grafana}}/api/datasources\"),",
+									"                header: {\"Authorization\": \"Basic \" + btoa(u)}}, (err, res) => {",
+									"  const ds = res.json().find(d => d.type === \"mysql\");",
+									"  if (ds) pm.variables.set(\"dsUid\", ds.uid);",
+									"});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const f = pm.response.json().results.A.frames[0];",
+									"const col = f.data.values;",
+									"const linhas = col.length ? col[0].length : 0;",
+									"pm.test(\"Há medidas gravadas\", () => pm.expect(linhas).to.be.above(0));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "O seu painel tem as três visualizações",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{grafana}}/api/search?tag=aula10&type=dash-db",
+							"protocol": "http",
+							"host": [
+								"{{grafana}}"
+							],
+							"path": [
+								"api",
+								"search"
+							],
+							"query": [
+								{
+									"key": "tag",
+									"value": "aula10"
+								},
+								{
+									"key": "type",
+									"value": "dash-db"
+								}
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{grafanaUser}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{grafanaPass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const r = pm.response.json();",
+									"pm.test(\"Painel com a etiqueta aula10\", () => pm.expect(r.length).to.be.above(0));",
+									"if (r.length) pm.collectionVariables.set(\"painelAula\", r[0].uid);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Tipos das visualizações",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{grafana}}/api/dashboards/uid/{{painelAula}}",
+							"protocol": "http",
+							"host": [
+								"{{grafana}}"
+							],
+							"path": [
+								"api",
+								"dashboards",
+								"uid",
+								"{{painelAula}}"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{grafanaUser}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{grafanaPass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const tipos = pm.response.json().dashboard.panels.map(p => p.type);",
+									"pm.test(\"Time series, Stat e State timeline\", () => pm.expect(tipos).to.include.members([\"timeseries\", \"stat\", \"state-timeline\"]));"
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "Suba: `docker compose up -d grafana` e abra http://localhost:3000 (admin/admin, pode pular a troca de senha)."
+		},
+		{
+			"name": "Etapa 8 - Fechando o laço",
+			"item": [
+				{
+					"name": "8.1 - A aplicação recebe o contexto",
+					"item": [
+						{
+							"name": "O controlador está no ar",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{controlador}}/status",
+									"protocol": "http",
+									"host": [
+										"{{controlador}}"
+									],
+									"path": [
+										"status"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+											"pm.test(\"Limites 28 e 24\", () => pm.expect(pm.response.json().limites).to.eql({\"liga\": 28, \"desliga\": 24}));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Subscrição da temperatura para o controlador",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "fiware-service",
+										"value": "{{service}}"
+									},
+									{
+										"key": "fiware-servicepath",
+										"value": "{{servicepath}}"
+									}
+								],
+								"url": {
+									"raw": "http://{{orion}}/v2/subscriptions",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"subscriptions"
+									]
+								},
+								"description": "A cada mudança de temperatura, leva também o `state`: a regra precisa saber se o relé já está ligado.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"description\": \"Temperatura da ESP32 para o controlador\",\n    \"subject\": {\n        \"entities\": [\n            {\n                \"idPattern\": \".*\",\n                \"type\": \"ClimateStation\"\n            }\n        ],\n        \"condition\": {\n            \"attrs\": [\n                \"temperature\"\n            ]\n        }\n    },\n    \"notification\": {\n        \"http\": {\n            \"url\": \"http://controlador:5001/notify\"\n        },\n        \"attrs\": [\n            \"temperature\",\n            \"state\"\n        ],\n        \"attrsFormat\": \"keyValues\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));",
+											"pm.collectionVariables.set(\"subControle\", pm.response.headers.get(\"Location\").split(\"/\").pop());"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Status da subscrição - o Orion está notificando",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "fiware-service",
+										"value": "{{service}}"
+									},
+									{
+										"key": "fiware-servicepath",
+										"value": "{{servicepath}}"
+									}
+								],
+								"url": {
+									"raw": "http://{{orion}}/v2/subscriptions/{{subControle}}",
+									"protocol": "http",
+									"host": [
+										"{{orion}}"
+									],
+									"path": [
+										"v2",
+										"subscriptions",
+										"{{subControle}}"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"setTimeout(() => {}, 12000);   // dá tempo de a mensagem percorrer a plataforma"
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+											"const n = pm.response.json().notification;",
+											"pm.test(\"Já notificou\", () => pm.expect(n.timesSent).to.be.above(0));",
+											"pm.test(\"Última resposta 200\", () => pm.expect(n.lastSuccessCode).to.eql(200));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "As notificações chegam ao controlador",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{controlador}}/status",
+									"protocol": "http",
+									"host": [
+										"{{controlador}}"
+									],
+									"path": [
+										"status"
+									]
+								},
+								"description": "Já passa com o esqueleto: o contexto chega, mas `decidir()` ainda não faz nada."
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+											"pm.test(\"Notificações recebidas\", () => pm.expect(pm.response.json().contadores.notificacoes).to.be.above(0));"
+										]
+									}
+								}
+							]
+						}
+					],
+					"description": "Suba: `docker compose up -d --build controlador`."
+				},
+				{
+					"name": "8.2 - Verificação da sua regra",
+					"item": [
+						{
+							"name": "O controlador decidiu",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{controlador}}/status",
+									"protocol": "http",
+									"host": [
+										"{{controlador}}"
+									],
+									"path": [
+										"status"
+									]
+								},
+								"description": "Complete `decidir()`, reconstrua (`docker compose up -d --build controlador`) e espere um ciclo (cerca de 2 minutos)."
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+											"const s = pm.response.json();",
+											"pm.test(\"Ao menos uma decisão\", () => pm.expect(s.contadores.on + s.contadores.off).to.be.above(0));",
+											"pm.test(\"Nenhum erro ao comandar\", () => pm.expect(s.contadores.erros).to.eql(0));",
+											"s.ultimas.forEach(d => pm.test(`${d.quando} ${d.comando} com ${d.temperatura} °C e relé ${d.estado}: coerente`, () => {",
+											"  if (d.comando === \"on\") { pm.expect(d.temperatura).to.be.at.least(s.limites.liga); pm.expect(d.estado).to.not.eql(\"ON\"); }",
+											"  else { pm.expect(d.temperatura).to.be.at.most(s.limites.desliga); pm.expect(d.estado).to.not.eql(\"OFF\"); }",
+											"}));"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "O relé ligou e desligou sozinho",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "http://{{grafana}}/api/ds/query",
+									"protocol": "http",
+									"host": [
+										"{{grafana}}"
+									],
+									"path": [
+										"api",
+										"ds",
+										"query"
+									]
+								},
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "{{grafanaUser}}",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "{{grafanaPass}}",
+											"type": "string"
+										}
+									]
+								},
+								"description": "O Postman pergunta ao Grafana, pela fonte de dados que você criou. É a mesma consulta dos painéis.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"from\": \"now-1h\",\n    \"to\": \"now\",\n    \"queries\": [\n        {\n            \"refId\": \"A\",\n            \"datasource\": {\n                \"uid\": \"{{dsUid}}\"\n            },\n            \"rawSql\": \"SELECT attrValue AS estado, COUNT(*) AS amostras FROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation` WHERE attrName = 'state' AND recvTimeTs / 1000 > UNIX_TIMESTAMP() - 900 GROUP BY attrValue\",\n            \"format\": \"table\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"const u = pm.variables.get(\"grafanaUser\") + \":\" + pm.variables.get(\"grafanaPass\");",
+											"pm.sendRequest({url: pm.variables.replaceIn(\"http://{{grafana}}/api/datasources\"),",
+											"                header: {\"Authorization\": \"Basic \" + btoa(u)}}, (err, res) => {",
+											"  const ds = res.json().find(d => d.type === \"mysql\");",
+											"  if (ds) pm.variables.set(\"dsUid\", ds.uid);",
+											"});"
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+											"const f = pm.response.json().results.A.frames[0];",
+											"const col = f.data.values;",
+											"const linhas = col.length ? col[0].length : 0;",
+											"pm.test(\"ON e OFF nos últimos 15 minutos\", () => pm.expect(col[0]).to.include.members([\"ON\", \"OFF\"]));"
+										]
+									}
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Etapa 9 - Indicadores",
+			"item": [
+				{
+					"name": "Média da temperatura por minuto",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://{{grafana}}/api/ds/query",
+							"protocol": "http",
+							"host": [
+								"{{grafana}}"
+							],
+							"path": [
+								"api",
+								"ds",
+								"query"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{grafanaUser}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{grafanaPass}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "O Postman pergunta ao Grafana, pela fonte de dados que você criou. É a mesma consulta dos painéis.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"from\": \"now-1h\",\n    \"to\": \"now\",\n    \"queries\": [\n        {\n            \"refId\": \"A\",\n            \"datasource\": {\n                \"uid\": \"{{dsUid}}\"\n            },\n            \"rawSql\": \"SELECT $__unixEpochGroupAlias(recvTimeTs / 1000, '1m'), AVG(CAST(attrValue AS DECIMAL(6,1))) AS media FROM `urn_ngsi-ld_ClimateStation_ESP32001_ClimateStation` WHERE attrName = 'temperature' AND $__unixEpochFilter(recvTimeTs / 1000) GROUP BY 1 ORDER BY 1\",\n            \"format\": \"table\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const u = pm.variables.get(\"grafanaUser\") + \":\" + pm.variables.get(\"grafanaPass\");",
+									"pm.sendRequest({url: pm.variables.replaceIn(\"http://{{grafana}}/api/datasources\"),",
+									"                header: {\"Authorization\": \"Basic \" + btoa(u)}}, (err, res) => {",
+									"  const ds = res.json().find(d => d.type === \"mysql\");",
+									"  if (ds) pm.variables.set(\"dsUid\", ds.uid);",
+									"});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const f = pm.response.json().results.A.frames[0];",
+									"const col = f.data.values;",
+									"const linhas = col.length ? col[0].length : 0;",
+									"pm.test(\"Ao menos uma janela\", () => pm.expect(linhas).to.be.above(0));",
+									"pm.test(\"Janelas alinhadas ao minuto\", () => col[0].forEach(t => pm.expect(t % 60000).to.eql(0)));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Verificação do desafio",
+					"item": [
+						{
+							"name": "Existe um painel com a etiqueta desafio",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{grafana}}/api/search?tag=desafio&type=dash-db",
+									"protocol": "http",
+									"host": [
+										"{{grafana}}"
+									],
+									"path": [
+										"api",
+										"search"
+									],
+									"query": [
+										{
+											"key": "tag",
+											"value": "desafio"
+										},
+										{
+											"key": "type",
+											"value": "dash-db"
+										}
+									]
+								},
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "{{grafanaUser}}",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "{{grafanaPass}}",
+											"type": "string"
+										}
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+											"const r = pm.response.json();",
+											"pm.test(\"Painel encontrado\", () => pm.expect(r.length).to.be.above(0));",
+											"if (r.length) pm.collectionVariables.set(\"painelDesafio\", r[0].uid);"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "O painel tem os três indicadores",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{grafana}}/api/dashboards/uid/{{painelDesafio}}",
+									"protocol": "http",
+									"host": [
+										"{{grafana}}"
+									],
+									"path": [
+										"api",
+										"dashboards",
+										"uid",
+										"{{painelDesafio}}"
+									]
+								},
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "{{grafanaUser}}",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "{{grafanaPass}}",
+											"type": "string"
+										}
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+											"const p = pm.response.json().dashboard.panels;",
+											"const c = p.flatMap(x => (x.targets || []).map(t => (t.rawSql || '').toUpperCase()));",
+											"pm.test(\"Ao menos 3 visualizações\", () => pm.expect(p.length).to.be.at.least(3));",
+											"pm.test(\"Uma consulta usa LAG\", () => pm.expect(c.some(s => s.includes('LAG('))).to.be.true);",
+											"pm.test(\"Uma consulta usa AVG\", () => pm.expect(c.some(s => s.includes('AVG('))).to.be.true);"
+										]
+									}
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Limpeza",
+			"item": [
+				{
+					"name": "Remove a ESP32 do IoT Agent",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{iota}}/iot/devices/esp32001",
+							"protocol": "http",
+							"host": [
+								"{{iota}}"
+							],
+							"path": [
+								"iot",
+								"devices",
+								"esp32001"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"204 ou 404\", () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Remove o grupo de serviço",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{iota}}/iot/services?resource=/iot/json&apikey={{apikey}}",
+							"protocol": "http",
+							"host": [
+								"{{iota}}"
+							],
+							"path": [
+								"iot",
+								"services"
+							],
+							"query": [
+								{
+									"key": "resource",
+									"value": "/iot/json"
+								},
+								{
+									"key": "apikey",
+									"value": "{{apikey}}"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"204 ou 404\", () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Remove a entidade da ESP32",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:ClimateStation:ESP32001",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:ClimateStation:ESP32001"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"204 ou 404\", () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Remove Thing:esp32001 se tiver surgido",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/Thing:esp32001",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"Thing:esp32001"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"204 ou 404\", () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Remove Room:K501",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"entities",
+								"urn:ngsi-ld:Room:K501"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"204 ou 404\", () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Remove todos os subscrições do tenant",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/subscriptions?limit=100",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"subscriptions"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const base = pm.variables.replaceIn(\"http://{{orion}}\");",
+									"const hdr = {\"fiware-service\": pm.variables.get(\"service\"), \"fiware-servicepath\": pm.variables.get(\"servicepath\")};",
+									"const itens = pm.response.json();",
+									"itens.forEach(x => pm.sendRequest({url: base + \"/v2/subscriptions/\" + x.id, method: \"DELETE\", header: hdr}, () => {}));",
+									"pm.test(\"Removendo \" + itens.length + \" subscrições\", () => true);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Remove todos os registros do tenant",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "fiware-service",
+								"value": "{{service}}"
+							},
+							{
+								"key": "fiware-servicepath",
+								"value": "{{servicepath}}"
+							}
+						],
+						"url": {
+							"raw": "http://{{orion}}/v2/registrations?limit=100",
+							"protocol": "http",
+							"host": [
+								"{{orion}}"
+							],
+							"path": [
+								"v2",
+								"registrations"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+									"const base = pm.variables.replaceIn(\"http://{{orion}}\");",
+									"const hdr = {\"fiware-service\": pm.variables.get(\"service\"), \"fiware-servicepath\": pm.variables.get(\"servicepath\")};",
+									"const itens = pm.response.json();",
+									"itens.forEach(x => pm.sendRequest({url: base + \"/v2/registrations/\" + x.id, method: \"DELETE\", header: hdr}, () => {}));",
+									"pm.test(\"Removendo \" + itens.length + \" registros\", () => true);"
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "**Pare a ESP32 antes** (`docker compose stop esp32-simulada`). Para recomeçar do zero, com histórico e painéis: `docker compose down -v`."
+		}
+	],
+	"variable": [
+		{
+			"key": "orion",
+			"value": "localhost:1026",
+			"type": "string"
+		},
+		{
+			"key": "iota",
+			"value": "localhost:4041",
+			"type": "string"
+		},
+		{
+			"key": "service",
+			"value": "ccm130",
+			"type": "string"
+		},
+		{
+			"key": "servicepath",
+			"value": "/",
+			"type": "string"
+		},
+		{
+			"key": "apikey",
+			"value": "ccm130",
+			"type": "string"
+		},
+		{
+			"key": "clima",
+			"value": "localhost:3010",
+			"type": "string"
+		},
+		{
+			"key": "cygnus",
+			"value": "localhost:5080",
+			"type": "string"
+		},
+		{
+			"key": "controlador",
+			"value": "localhost:5001",
+			"type": "string"
+		},
+		{
+			"key": "grafana",
+			"value": "localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "grafanaUser",
+			"value": "admin",
+			"type": "string"
+		},
+		{
+			"key": "grafanaPass",
+			"value": "admin",
+			"type": "string"
+		},
+		{
+			"key": "dsUid",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "subClima",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "subCygnus",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "subControle",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "painelAula",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "painelDesafio",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
