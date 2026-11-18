@@ -9,42 +9,64 @@
     "type": "geo:json",
     "value": {
       "type": "Point",
-      "coordinates": [-46.5793, -23.7245]
+      "coordinates": [
+        -46.5793,
+        -23.7245
+      ]
     }
   },
   "area": {
     "type": "Number",
     "value": 50,
     "metadata": {
-      "unitCode": { "type": "Text", "value": "MTK" }
+      "unitCode": {
+        "type": "Text",
+        "value": "MTK"
+      }
     }
   },
   "fanOnTemperature": {
     "type": "Number",
     "value": 28,
     "metadata": {
-      "unitCode": { "type": "Text", "value": "CEL" }
+      "unitCode": {
+        "type": "Text",
+        "value": "CEL"
+      }
     }
   },
   "fanOffTemperature": {
     "type": "Number",
     "value": 24,
     "metadata": {
-      "unitCode": { "type": "Text", "value": "CEL" }
+      "unitCode": {
+        "type": "Text",
+        "value": "CEL"
+      }
     }
   },
   "irrigationOnSoilMoisture": {
     "type": "Number",
     "value": 30,
     "metadata": {
-      "unitCode": { "type": "Text", "value": "P1" }
+      "unitCode": {
+        "type": "Text",
+        "value": "P1"
+      }
     }
   },
   "irrigationOffSoilMoisture": {
     "type": "Number",
     "value": 45,
     "metadata": {
-      "unitCode": { "type": "Text", "value": "P1" }
+      "unitCode": {
+        "type": "Text",
+        "value": "P1"
+      }
     }
+  },
+  "hasWeatherObserved": {
+    "type": "Relationship",
+    "value": "urn:ngsi-ld:WeatherObserved:FEI"
   }
 }

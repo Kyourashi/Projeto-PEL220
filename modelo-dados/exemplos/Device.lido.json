@@ -3,7 +3,7 @@
   "type": "Device",
   "TimeInstant": {
     "type": "DateTime",
-    "value": "2026-11-16T18:44:03.284Z",
+    "value": "2026-11-18T21:02:31.254Z",
     "metadata": {}
   },
   "controlledAsset": {
@@ -12,17 +12,52 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-16T18:44:03.284Z"
+        "value": "2026-11-18T21:02:31.254Z"
+      }
+    }
+  },
+  "controlledProperty": {
+    "type": "StructuredValue",
+    "value": [
+      "temperature",
+      "humidity",
+      "soilMoisture",
+      "light"
+    ],
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-18T21:02:31.254Z"
+      }
+    }
+  },
+  "fanOn_info": {
+    "type": "commandResult",
+    "value": "OK - ventilador ligado",
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-18T21:02:31.173Z"
+      }
+    }
+  },
+  "fanOn_status": {
+    "type": "commandStatus",
+    "value": "OK",
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-18T21:02:31.173Z"
       }
     }
   },
   "fanState": {
     "type": "Text",
-    "value": "OFF",
+    "value": "ON",
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-16T18:44:03.284Z"
+        "value": "2026-11-18T21:02:31.254Z"
       }
     }
   },
@@ -32,7 +67,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-16T18:44:03.284Z"
+        "value": "2026-11-18T21:02:27.034Z"
       },
       "unitCode": {
         "type": "Text",
@@ -46,21 +81,21 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-16T18:44:03.284Z"
+        "value": "2026-11-18T21:02:27.034Z"
       }
     }
   },
   "relativeHumidity": {
     "type": "Number",
-    "value": 62,
+    "value": 0.62,
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-16T18:44:03.284Z"
+        "value": "2026-11-18T21:02:27.034Z"
       },
       "unitCode": {
         "type": "Text",
-        "value": "P1"
+        "value": "C62"
       }
     }
   },
@@ -70,7 +105,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-16T18:44:03.284Z"
+        "value": "2026-11-18T21:02:27.034Z"
       },
       "unitCode": {
         "type": "Text",
@@ -84,7 +119,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-16T18:44:03.284Z"
+        "value": "2026-11-18T21:02:27.034Z"
       },
       "unitCode": {
         "type": "Text",

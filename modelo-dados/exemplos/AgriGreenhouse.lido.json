@@ -31,6 +31,11 @@
       }
     }
   },
+  "hasWeatherObserved": {
+    "type": "Relationship",
+    "value": "urn:ngsi-ld:WeatherObserved:FEI",
+    "metadata": {}
+  },
   "irrigationOffSoilMoisture": {
     "type": "Number",
     "value": 45,

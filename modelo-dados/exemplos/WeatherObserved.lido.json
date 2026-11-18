@@ -1,0 +1,55 @@
+{
+  "id": "urn:ngsi-ld:WeatherObserved:FEI",
+  "type": "WeatherObserved",
+  "dateObserved": {
+    "type": "DateTime",
+    "value": "2026-11-18T20:00:00.000Z",
+    "metadata": {}
+  },
+  "location": {
+    "type": "geo:json",
+    "value": {
+      "type": "Point",
+      "coordinates": [
+        -46.5793,
+        -23.7245
+      ]
+    },
+    "metadata": {}
+  },
+  "relativeHumidity": {
+    "type": "Number",
+    "value": 0.71,
+    "metadata": {
+      "unitCode": {
+        "type": "Text",
+        "value": "C62"
+      }
+    }
+  },
+  "source": {
+    "type": "Text",
+    "value": "open-meteo",
+    "metadata": {}
+  },
+  "temperature": {
+    "type": "Number",
+    "value": 24.8,
+    "metadata": {
+      "unitCode": {
+        "type": "Text",
+        "value": "CEL"
+      }
+    }
+  },
+  "windSpeed": {
+    "type": "Number",
+    "value": 2.5,
+    "metadata": {
+      "unitCode": {
+        "type": "Text",
+        "value": "MTS"
+      }
+    }
+  }
+}

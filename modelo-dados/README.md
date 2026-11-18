@@ -1,95 +1,64 @@
 # Modelo de dados — Estufa agrícola inteligente (NGSI-v2)
 
-Marco da Aula 7 (PEL220): entidades, atributos (tipo, unidade e origem), relacionamentos, ids em URN e um JSON de exemplo por tipo, **aceito pelo Orion e lido de volta**.
+Marco da Aula 7 (PEL220). Ele pede:
+- o diagrama das entidades (3 tipos ou mais) e dos relacionamentos;
+- para cada atributo, o tipo, a unidade e a origem;
+- ids em URN;
+- um JSON de exemplo por tipo, aceito pelo Orion e lido de volta;
+- quem cria, atualiza e apaga cada entidade.
+
+**Documento para apresentar:** [`Modelo de dados - Estufa PEL220.pdf`](Modelo%20de%20dados%20-%20Estufa%20PEL220.pdf), com 4 páginas:
+1. MER;
+2. quem cria, atualiza e apaga cada entidade, e o checklist da Aula 6;
+3. arquitetura e comunicação;
+4. JSON de exemplo e resultado do teste.
 
 - **Tenant:** `fiware-service: estufa` · `fiware-servicepath: /`
 - **Chave do grupo no IoT Agent (apikey):** `estufa`
-- **Unidades:** metadado `unitCode` com códigos UN/CEFACT: `CEL` = °C · `P1` = % · `MTK` = m²
+- **Unidades** (metadado `unitCode`, UN/CEFACT): `CEL` = °C · `P1` = % · `C62` = adimensional (0–1) · `MTK` = m² · `MTS` = m/s
+- **Smart Data Models:** `Device` (dataModel.Device) · `AgriGreenhouse` (dataModel.Agrifood) · `WeatherObserved` (dataModel.Weather)
 
-## MER (notação de Chen)
+![MER](pagina-1.png)
 
-![MER da estufa](mer-estufa.png)
+## Entidades
 
-## Diagrama de arquitetura e comunicação
+| Entidade | id | Papel | Quem escreve |
+|---|---|---|---|
+| `Device` | `urn:ngsi-ld:Device:ESP32-001` | o nó ESP32 da estufa | IoT Agent (MQTT) |
+| `AgriGreenhouse` | `urn:ngsi-ld:AgriGreenhouse:001` | a estufa (ativo físico) | aplicação (API) |
+| `WeatherObserved` | `urn:ngsi-ld:WeatherObserved:FEI` | clima externo no campus | provedor de clima (registro, Aula 7) |
 
-![Modelo de dados da estufa](modelo-dados-estufa.png)
+**Relacionamentos.** Ficam sempre na entidade filha e apontam para o pai:
+- `Device.controlledAsset` → `AgriGreenhouse`: cada nó controla 1 estufa; uma estufa tem de 0 a N nós.
+- `AgriGreenhouse.hasWeatherObserved` → `WeatherObserved`: cada estufa usa 1 clima; um clima serve de 0 a N estufas.
+- Para ir do pai aos filhos, use `GET /v2/entities?q=controlledAsset==urn:ngsi-ld:AgriGreenhouse:001`.
 
-Versão em texto (Mermaid):
+**Origem dos atributos** (categorias da Aula 6):
+- **medida:** `t`, `h`, `m`, `l`, `f` e `p` via MQTT;
+- **estático:** provisionamento ou cadastro;
+- **comando:** `fanOn`, `fanOff`, `pumpOn`, `pumpOff`, com os respectivos `_status` e `_info`;
+- **externo:** o provedor de clima;
+- **calculado:** `TimeInstant`, gerado pelo IoT Agent.
 
-```mermaid
-erDiagram
-    AgriGreenhouse ||--o{ Device : "controlledAsset (Device → AgriGreenhouse)"
-    AgriGreenhouse {
-        URN id "urn:ngsi-ld:AgriGreenhouse:001"
-        Text name
-        geojson location
-        Number area "m²"
-        Number fanOnTemperature "°C"
-        Number fanOffTemperature "°C"
-        Number irrigationOnSoilMoisture "%"
-        Number irrigationOffSoilMoisture "%"
-    }
-    Device {
-        URN id "urn:ngsi-ld:Device:ESP32-001"
-        Number temperature "°C"
-        Number relativeHumidity "%"
-        Number soilMoisture "%"
-        Number lightLevel "%"
-        Text fanState "ON/OFF"
-        Text pumpState "ON/OFF"
-        Relationship controlledAsset
-        DateTime TimeInstant
-        command fanOn_fanOff_pumpOn_pumpOff
-    }
-```
-
-O relacionamento vai **do filho para o pai**: o nó aponta para a estufa que controla. Para listar os nós de uma estufa, use `GET /v2/entities?q=controlledAsset==urn:ngsi-ld:AgriGreenhouse:001`.
-
-## Entidade `AgriGreenhouse`: a estufa (ativo físico)
-
-Ela é criada pela **aplicação** (operador ou gêmeo digital) com `POST /v2/op/update`. Exemplo: [`exemplos/AgriGreenhouse.json`](exemplos/AgriGreenhouse.json).
-
-| Atributo | `type` | Unidade | Exemplo | Origem / quem escreve |
-|---|---|---|---|---|
-| `name` | Text | — | `"Estufa 001"` | aplicação |
-| `location` | geo:json (Point) | graus [lon, lat] | `[-46.5793, -23.7245]` | aplicação (premissa: coordenadas do campus usadas no `clima-externo`) |
-| `area` | Number | m² (`MTK`) | `50` | aplicação (premissa) |
-| `fanOnTemperature` | Number | °C (`CEL`) | `28` | aplicação: limite de histerese que liga o ventilador (igual a `LIGA` do controlador) |
-| `fanOffTemperature` | Number | °C (`CEL`) | `24` | aplicação: desliga o ventilador (igual a `DESLIGA`) |
-| `irrigationOnSoilMoisture` | Number | % (`P1`) | `30` | aplicação: liga a bomba abaixo deste valor (premissa) |
-| `irrigationOffSoilMoisture` | Number | % (`P1`) | `45` | aplicação: desliga a bomba acima deste valor (premissa) |
-
-Os limites ficam na estufa, e não no controlador, para que o gêmeo digital (Aula 9) possa lê-los e ajustá-los pelo Orion.
-
-## Entidade `Device`: o nó ESP32
-
-Quem escreve é o **IoT Agent**, a partir das mensagens MQTT. Provisionamento: [`provisionamento/dispositivo.json`](provisionamento/dispositivo.json). Lido de volta: [`exemplos/Device.lido.json`](exemplos/Device.lido.json).
-
-| Atributo | `object_id` (MQTT) | `type` | Unidade | Origem |
-|---|---|---|---|---|
-| `temperature` | `t` | Number | °C (`CEL`) | DHT22, temperatura do ar |
-| `relativeHumidity` | `h` | Number | % (`P1`) | DHT22, UR do ar |
-| `soilMoisture` | `m` | Number | % (`P1`) | sensor capacitivo, após calibração no firmware |
-| `lightLevel` | `l` | Number | % (`P1`) | LDR, nível **relativo** (0 a 100 % da escala do ADC), não lux |
-| `fanState` | `f` | Text | `ON`/`OFF` | estado do relé do ventilador, informado pela ESP32 |
-| `pumpState` | `p` | Text | `ON`/`OFF` | estado do relé da bomba, informado pela ESP32 |
-| `controlledAsset` | — | Relationship | — | `static_attributes` do provisionamento, enviado com toda medida |
-| `TimeInstant` | — | DateTime | ISO 8601 UTC | IoT Agent (`IOTA_TIMESTAMP=true`) |
-| `fanOn`, `fanOff`, `pumpOn`, `pumpOff` | — | command | — | `commands` do provisionamento; geram `<cmd>_status` e `<cmd>_info` |
+**Umidade relativa:** `relativeHumidity` vai de **0 a 1** (`C62`), como no SDM e no `clima-externo` da Base. O firmware divide a leitura do DHT22 por 100.
 
 **Tópicos MQTT:**
 
 | Mensagem | Tópico | Exemplo |
 |---|---|---|
-| Medidas | `/json/estufa/estufa001/attrs` | `{"t": 26.4, "h": 62.0, "m": 38.5, "l": 71.0, "f": "OFF", "p": "OFF"}` |
+| Medidas | `/json/estufa/estufa001/attrs` | `{"t": 26.4, "h": 0.62, "m": 38.5, "l": 71.0, "f": "OFF", "p": "OFF"}` |
 | Comandos | `/estufa/estufa001/cmd` | `{"fanOn": ""}` |
 | Resultado | `/json/estufa/estufa001/cmdexe` | `{"fanOn": "OK - ventilador ligado"}` |
 
-Os números vão **sem aspas**. Com `"26.4"` entre aspas, o valor vira texto e os filtros `q=temperature>25` deixam de funcionar.
+Os números vão sem aspas. Com `"26.4"` entre aspas, o valor vira texto e os filtros `q=temperature>25` deixam de funcionar.
+
+## Arquivos
+
+- `exemplos/AgriGreenhouse.json` e `exemplos/WeatherObserved.json`: o que a aplicação envia ao Orion (`POST /v2/op/update`).
+- `provisionamento/grupo.json` e `provisionamento/dispositivo.json`: o grupo de serviço e a ESP32 no IoT Agent.
+- `exemplos/*.lido.json`: o que o Orion devolveu no teste, no formato normalizado.
 
 ## Teste: aceito pelo Orion e lido de volta
-
-Com o Orion e o IoT Agent no ar, rode:
 
 ```bash
 cd fiware
@@ -97,19 +66,24 @@ docker compose up -d --wait iot-agent
 python3 ../modelo-dados/testar_modelo.py
 ```
 
-O script cria a estufa, provisiona a ESP32, publica uma medida MQTT de exemplo e lê as duas entidades no formato normalizado. Ele confere:
-- id em URN com o tipo;
-- `value` coerente com o `type`, com as regras da seção 6.7 do material complementar;
-- `unitCode` em toda grandeza numérica;
-- existência do alvo de cada `Relationship`;
-- ausência de uma entidade `Thing:estufa001`.
+O script segue estes passos:
+1. Cria o clima e a estufa no Orion.
+2. Reprovisiona a ESP32 no IoT Agent.
+3. Publica uma medida MQTT.
+4. Faz o ciclo completo de um comando: `PATCH fanOn` → `cmd` → `PENDING` → `cmdexe` → `fanOn_status = OK`.
+5. Lê as três entidades no formato normalizado e confere:
+   - id em URN com o tipo;
+   - `value` coerente com o `type`;
+   - `unitCode` em toda grandeza;
+   - `relativeHumidity` entre 0 e 1;
+   - existência do alvo de cada `Relationship`;
+   - ausência de uma entidade `Thing:estufa001`.
 
-O que o Orion devolve fica salvo em `exemplos/*.lido.json`.
+**Resultado em 18/11/2026** (Orion 4.1.0, IoT Agent JSON 3.7.0, Mosquitto 2.0.18): 63 verificações, 0 falhas.
 
-**Resultado em 16/11/2026** (Orion 4.1.0, IoT Agent JSON 3.7.0, Mosquitto 2.0.18): 41 verificações, 0 falhas.
+## Em aberto para a Aula 7
 
-## Pendências (Aula 7 em diante)
-
-- Conferir os nomes contra os **Smart Data Models** (`AgriGreenhouse`, `Device`), em especial a convenção de `relativeHumidity`: % aqui, ou fração de 0 a 1.
-- Decidir se os atuadores viram entidades próprias, por exemplo `Actuator:Fan001`, em vez de atributos do nó.
-- Firmware da ESP32 da estufa: publicar `t`, `h`, `m`, `l`, `f` e `p` e responder aos quatro comandos.
+- **Prefixo `ref`:** usamos os nomes do catálogo (`controlledAsset`, `hasWeatherObserved`), e não o prefixo `ref…`.
+- **Medidas no `Device`:** no SDM, o `Device` não tem `temperature` nem `soilMoisture`. Seguimos o exemplo da Aula 1.
+- **`hasAgriParcelParent`:** o SDM da `AgriGreenhouse` exige essa referência à parcela de terreno. `AgriParcel` é candidata a 4ª entidade.
+- **Limites de controle:** ficam na estufa. O controlador da Base ainda lê `LIGA`/`DESLIGA` de variáveis de ambiente.
