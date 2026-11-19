@@ -1,5 +1,5 @@
 # ==================================================================================
-#  PEL220 - Projeto do grupo: estufa agrícola inteligente
+#  PEL220 - Projeto do grupo: estufa agrícola inteligente (cultura: alface)
 # ----------------------------------------------------------------------------------
 #  O Docker Compose lê este arquivo junto com o docker-compose.yml da Base, sozinho,
 #  em todo "docker compose …" rodado nesta pasta. Assim a Base do professor fica
@@ -9,15 +9,16 @@
 #    docker compose up -d --wait orion
 #    docker compose up -d --wait iot-agent
 #    docker compose up -d --wait cygnus
-#    python3 ../estufa/configurar.py          # estufa, provisionamento e subscrição
+#    python3 ../estufa/configurar.py          # estufa, provisionamento e subscrições
 #    docker compose up -d --build esp32-estufa
+#    docker compose up -d --build gravador-clima
 #    docker compose up -d grafana-estufa      # http://localhost:3002
 # ==================================================================================
 
 services:
   # --- O nó da estufa (tenant estufa) ---------------------------------------------
   esp32-estufa:
-    # DHT22, sensor de solo, LDR e dois relés, em software. Acompanhe: docker logs -f esp32-estufa
+    # DHT22, sensor de solo, BH1750 e dois relés, em software. Acompanhe: docker logs -f esp32-estufa
     build: ../estufa/esp32_estufa
     image: pel220/esp32-estufa
     container_name: esp32-estufa
@@ -29,10 +30,32 @@ services:
       - MQTT_HOST=mosquitto
       - MQTT_PORT=1883
       - INTERVALO=5
-      - LIGA_VENT=28        # os limites da AgriGreenhouse:001 (fanOnTemperature …)
-      - DESLIGA_VENT=24
+      - LIGA_VENT=24        # os limites da AgriGreenhouse:001 (fanOnTemperature …), para alface
+      - DESLIGA_VENT=22
       - LIGA_BOMBA=30
       - DESLIGA_BOMBA=45
+      - PERIODO_LUZ=600     # um "dia" simulado dura 10 min
+      - PICO_LUX=34000      # luz ao meio-dia dentro da estufa (premissa da simulação)
+
+  # --- O clima externo no histórico (tenant estufa) ---------------------------------
+  gravador-clima:
+    # A cada 15 min, lê o clima-externo da Base e grava a WeatherObserved:FEI no Orion.
+    # A subscrição "Clima externo para o Cygnus" leva cada leitura ao MySQL.
+    # Substitui o registro: no tenant estufa, o clima NÃO tem registro (seriam duas fontes).
+    build: ../estufa/gravador_clima
+    image: pel220/gravador-clima
+    container_name: gravador-clima
+    depends_on:
+      - orion
+      - clima-externo
+    environment:
+      - PROVEDOR=http://clima-externo:3010/v2
+      - ORION=http://orion:1026
+      - FIWARE_SERVICE=estufa
+      - FIWARE_SERVICEPATH=/
+      - INTERVALO=900       # a Open-Meteo atualiza o "current" a cada 15 min
+      - LATITUDE=-23.7245   # FEI, São Bernardo do Campo (as mesmas do clima-externo)
+      - LONGITUDE=-46.5793
 
   # --- O painel do grupo (marco da Aula 8) -----------------------------------------
   grafana-estufa:

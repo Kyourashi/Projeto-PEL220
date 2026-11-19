@@ -4,16 +4,22 @@ Testa o modelo de dados da estufa contra a pilha FIWARE (Orion + IoT Agent + Mos
 Critério do marco (Aula 7): cada JSON de exemplo é enviado ao Orion, num tenant do grupo,
 e lido de volta sem surpresa.
 
+Roda num tenant SÓ DE TESTE (estufa_teste), com chave e device_id próprios: assim não
+reprovisiona a ESP32 que está no ar nem põe valores de exemplo no histórico da estufa.
+Os JSON são os mesmos do projeto; só a chave, o device_id e o tenant mudam.
+
 O que faz, nesta ordem:
   1. cria a WeatherObserved:FEI e a AgriGreenhouse:001 no Orion (exemplos/*.json);
-  2. reprovisiona a ESP32 no IoT Agent (apaga o dispositivo antigo, se houver);
+  2. reprovisiona a ESP32 de teste no IoT Agent (apaga a antiga, se houver);
   3. publica uma medida MQTT de exemplo (docker exec no contêiner mosquitto);
   4. faz o ciclo completo de um comando: PATCH fanOn → cmd → cmdexe → fanOn_status = OK;
   5. lê as três entidades de volta (formato normalizado) e confere:
      - id em URN com o tipo;
      - value coerente com o type (regras da seção 6.7 do material complementar);
-     - unitCode presente em toda grandeza numérica;
+     - unitCode presente em toda grandeza numérica, igual ao do provisionamento;
      - relativeHumidity entre 0 e 1;
+     - vaporPressureDeficit coerente com temperature e relativeHumidity (Tetens);
+     - potências e vazão nominais iguais às do provisionamento;
      - o alvo de cada Relationship existe;
      - não surgiu uma entidade Thing (dispositivo não provisionado);
   6. grava o que o Orion devolveu em exemplos/*.lido.json.
@@ -24,6 +30,7 @@ Uso (com orion e iot-agent no ar):
 """
 
 import json
+import math
 import pathlib
 import re
 import subprocess
@@ -34,13 +41,14 @@ import urllib.request
 
 ORION = "http://localhost:1026"
 IOTA = "http://localhost:4041"
-TENANT = {"fiware-service": "estufa", "fiware-servicepath": "/"}
-APIKEY = "estufa"
-DEVICE_ID = "estufa001"
+TENANT = {"fiware-service": "estufa_teste", "fiware-servicepath": "/"}   # não é o tenant estufa
+APIKEY = "estufateste"                                                  # nem a chave da ESP32 no ar
+DEVICE_ID = "teste001"
 DEVICE = "urn:ngsi-ld:Device:ESP32-001"
 ESTUFA = "urn:ngsi-ld:AgriGreenhouse:001"
 CLIMA = "urn:ngsi-ld:WeatherObserved:FEI"
-MEDIDA = {"t": 26.4, "h": 0.62, "m": 38.5, "l": 71.0, "f": "OFF", "p": "OFF"}
+# v = e_s(26,4 °C) · (1 - 0,62) = 3,442 kPa · 0,38 = 1,31 kPa
+MEDIDA = {"t": 26.4, "h": 0.62, "v": 1.31, "m": 38.5, "l": 21500, "f": "OFF", "p": "OFF"}
 
 AQUI = pathlib.Path(__file__).parent
 falhas = 0
@@ -113,12 +121,17 @@ estufa = json.loads((AQUI / "exemplos" / "AgriGreenhouse.json").read_text())
 s, _ = req("POST", f"{ORION}/v2/op/update", {"actionType": "append", "entities": [clima, estufa]})
 teste("criadas/atualizadas (204)", s == 204, s)
 
-print("2. Provisionamento no IoT Agent")
-s, _ = req("POST", f"{IOTA}/iot/services", json.loads((AQUI / "provisionamento" / "grupo.json").read_text()))
+print("2. Provisionamento no IoT Agent (chave e device_id de teste)")
+grupo = json.loads((AQUI / "provisionamento" / "grupo.json").read_text())
+grupo["services"][0]["apikey"] = APIKEY
+provisionamento = json.loads((AQUI / "provisionamento" / "dispositivo.json").read_text())
+dispositivo = provisionamento["devices"][0]
+dispositivo.update(apikey=APIKEY, device_id=DEVICE_ID)
+s, _ = req("POST", f"{IOTA}/iot/services", grupo)
 teste("grupo de serviço (201, ou 409 se já existe)", s in (201, 409), s)
 req("DELETE", f"{IOTA}/iot/devices/{DEVICE_ID}")          # reprovisiona do zero
 req("DELETE", f"{ORION}/v2/entities/{DEVICE}?type=Device")  # e limpa a entidade antiga
-s, _ = req("POST", f"{IOTA}/iot/devices", json.loads((AQUI / "provisionamento" / "dispositivo.json").read_text()))
+s, _ = req("POST", f"{IOTA}/iot/devices", provisionamento)
 teste("dispositivo (201)", s == 201, s)
 
 print("3. Medida MQTT de exemplo")
@@ -153,17 +166,36 @@ for eid in (CLIMA, ESTUFA, DEVICE):
     if e:
         lidos[e["type"]] = e
 s, _ = req("GET", f"{ORION}/v2/entities/Thing:{DEVICE_ID}")
-teste("não surgiu Thing:estufa001 (404)", s == 404, s)
+teste(f"não surgiu Thing:{DEVICE_ID} (404)", s == 404, s)
 if "Device" in lidos:
     d = lidos["Device"]
-    for nome, chave in (("temperature", "t"), ("relativeHumidity", "h"), ("soilMoisture", "m"), ("lightLevel", "l")):
-        teste(f"{nome} = {MEDIDA[chave]} (veio da medida)", d.get(nome, {}).get("value") == MEDIDA[chave],
-              d.get(nome, {}).get("value"))
+    unidade = lambda a: a.get("metadata", {}).get("unitCode", {}).get("value")
+    for a in dispositivo["attributes"]:
+        if a["object_id"] in MEDIDA and a["type"] == "Number":
+            lido = d.get(a["name"], {})
+            teste(f"{a['name']} = {MEDIDA[a['object_id']]} (veio da medida '{a['object_id']}')",
+                  lido.get("value") == MEDIDA[a["object_id"]], lido.get("value"))
+            teste(f"{a['name']}: unitCode {unidade(a)} como no provisionamento", unidade(lido) == unidade(a),
+                  unidade(lido))
+    t, h = d["temperature"]["value"], d["relativeHumidity"]["value"]
+    vpd = 0.6108 * math.exp(17.27 * t / (t + 237.3)) * (1 - h)
+    teste(f"vaporPressureDeficit coerente com t e h (Tetens: {vpd:.3f} kPa)",
+          abs(d["vaporPressureDeficit"]["value"] - vpd) <= 0.01, d["vaporPressureDeficit"]["value"])
+    for a in dispositivo["static_attributes"]:
+        if a["type"] == "Number":
+            lido = d.get(a["name"], {})
+            teste(f"{a['name']} = {a['value']} {unidade(a)} (nominal, do provisionamento)",
+                  lido.get("value") == a["value"] and unidade(lido) == unidade(a), lido)
     for c in ("fanOn", "fanOff", "pumpOn", "pumpOff"):
         teste(f"comando {c} registrado", d.get(c, {}).get("type") == "command", d.get(c))
     teste("controlledProperty (exigido pelo SDM Device)",
           d.get("controlledProperty", {}).get("value") == ["temperature", "humidity", "soilMoisture", "light"],
           d.get("controlledProperty"))
+if "AgriGreenhouse" in lidos:
+    g = lidos["AgriGreenhouse"]
+    for nome in ("fanOnTemperature", "fanOffTemperature", "irrigationOnSoilMoisture", "irrigationOffSoilMoisture"):
+        teste(f"{nome} = {estufa[nome]['value']} (limite de controle)", g.get(nome, {}).get("value") == estufa[nome]["value"],
+              g.get(nome))
 
 for tipo, e in lidos.items():
     (AQUI / "exemplos" / f"{tipo}.lido.json").write_text(json.dumps(e, indent=2, ensure_ascii=False) + "\n")

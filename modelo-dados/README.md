@@ -7,26 +7,32 @@ Marco da Aula 7 (PEL220). Ele pede:
 - um JSON de exemplo por tipo, aceito pelo Orion e lido de volta;
 - quem cria, atualiza e apaga cada entidade.
 
-**Documento para apresentar:** [`Modelo de dados - Estufa PEL220.pdf`](Modelo%20de%20dados%20-%20Estufa%20PEL220.pdf), com 4 páginas:
+**Documento apresentado na Aula 7 (18/11):** [`Modelo de dados - Estufa PEL220.pdf`](Modelo%20de%20dados%20-%20Estufa%20PEL220.pdf), com 4 páginas:
 1. MER;
 2. quem cria, atualiza e apaga cada entidade, e o checklist da Aula 6;
 3. arquitetura e comunicação;
 4. JSON de exemplo e resultado do teste.
 
+O PDF e o MER abaixo são a versão de 18/11. O modelo mudou depois dela com a escolha da cultura: veja [Mudanças depois da Aula 7](#mudanças-depois-da-aula-7). Os JSON e este README já estão na versão nova.
+
 - **Tenant:** `fiware-service: estufa` · `fiware-servicepath: /`
 - **Chave do grupo no IoT Agent (apikey):** `estufa`
-- **Unidades** (metadado `unitCode`, UN/CEFACT): `CEL` = °C · `P1` = % · `C62` = adimensional (0–1) · `MTK` = m² · `MTS` = m/s
+- **Unidades** (metadado `unitCode`, UN/CEFACT):
+  - `CEL` = °C · `P1` = % · `C62` = adimensional (0–1);
+  - `MTK` = m² · `MTS` = m/s;
+  - `KPA` = kPa · `LUX` = lx · `WTT` = W · `E32` = L/h.
 - **Smart Data Models:** `Device` (dataModel.Device) · `AgriGreenhouse` (dataModel.Agrifood) · `WeatherObserved` (dataModel.Weather)
+- **Cultura:** alface.
 
-![MER](pagina-1.png)
+![MER (versão de 18/11)](pagina-1.png)
 
 ## Entidades
 
 | Entidade | id | Papel | Quem escreve |
 |---|---|---|---|
 | `Device` | `urn:ngsi-ld:Device:ESP32-001` | o nó ESP32 da estufa | IoT Agent (MQTT) |
-| `AgriGreenhouse` | `urn:ngsi-ld:AgriGreenhouse:001` | a estufa (ativo físico) | aplicação (API) |
-| `WeatherObserved` | `urn:ngsi-ld:WeatherObserved:FEI` | clima externo no campus | provedor de clima (registro, Aula 7) |
+| `AgriGreenhouse` | `urn:ngsi-ld:AgriGreenhouse:001` | a estufa de alface (ativo físico) | aplicação (API) |
+| `WeatherObserved` | `urn:ngsi-ld:WeatherObserved:FEI` | clima externo no campus | `gravador-clima`, a cada 15 min, com os dados do provedor de clima da Base |
 
 **Relacionamentos.** Ficam sempre na entidade filha e apontam para o pai:
 - `Device.controlledAsset` → `AgriGreenhouse`: cada nó controla 1 estufa; uma estufa tem de 0 a N nós.
@@ -35,26 +41,59 @@ Marco da Aula 7 (PEL220). Ele pede:
 
 **Origem dos atributos** (categorias da Aula 6):
 - **medida:** `t`, `h`, `m`, `l`, `f` e `p` via MQTT;
-- **estático:** provisionamento ou cadastro;
+- **estático:** no provisionamento (`controlledAsset`, `controlledProperty`, `fanRatedPower`, `pumpRatedPower`, `pumpFlowRate`) ou no cadastro da estufa (limites de controle);
 - **comando:** `fanOn`, `fanOff`, `pumpOn`, `pumpOff`, com os respectivos `_status` e `_info`;
-- **externo:** o provedor de clima;
-- **calculado:** `TimeInstant`, gerado pelo IoT Agent.
+- **externo:** o clima, da Open-Meteo, pelo provedor da Base;
+- **calculado:** `v` (`vaporPressureDeficit`), na ESP32, a partir de `t` e `h`; e o `TimeInstant`, gerado pelo IoT Agent.
 
 **Umidade relativa:** `relativeHumidity` vai de **0 a 1** (`C62`), como no SDM e no `clima-externo` da Base. O firmware divide a leitura do DHT22 por 100.
+
+**Atributos do nó** (`Device`):
+
+| Atributo | Sigla | Tipo | Unidade | Origem |
+|---|---|---|---|---|
+| `temperature` | `t` | Number | °C (`CEL`) | medida, DHT22 |
+| `relativeHumidity` | `h` | Number | 0–1 (`C62`) | medida, DHT22 |
+| `vaporPressureDeficit` | `v` | Number | kPa (`KPA`) | calculado na ESP32 (Tetens/FAO-56) |
+| `soilMoisture` | `m` | Number | % (`P1`) | medida, sensor capacitivo |
+| `illuminance` | `l` | Number | lx (`LUX`) | medida, BH1750 |
+| `fanState`, `pumpState` | `f`, `p` | Text | ON/OFF | medida, estado dos relés |
+| `fanRatedPower` | — | Number | W (`WTT`) | estático: 541 W, nominal do ventilador |
+| `pumpRatedPower` | — | Number | W (`WTT`) | estático: 180 W, nominal da bomba |
+| `pumpFlowRate` | — | Number | L/h (`E32`) | estático: 1.500 L/h, vazão máxima de catálogo |
+| `controlledAsset` | — | Relationship | — | estático: a estufa |
+| `controlledProperty` | — | StructuredValue | — | estático: o que o nó mede |
+
+A origem dos valores nominais está em [`../estufa/README.md`](../estufa/README.md#as-decisões-da-cultura-e-de-onde-vem-cada-número).
 
 **Tópicos MQTT:**
 
 | Mensagem | Tópico | Exemplo |
 |---|---|---|
-| Medidas | `/json/estufa/estufa001/attrs` | `{"t": 26.4, "h": 0.62, "m": 38.5, "l": 71.0, "f": "OFF", "p": "OFF"}` |
+| Medidas | `/json/estufa/estufa001/attrs` | `{"t": 23.4, "h": 0.72, "v": 0.81, "m": 38.5, "l": 21500, "f": "OFF", "p": "OFF"}` |
 | Comandos | `/estufa/estufa001/cmd` | `{"fanOn": ""}` |
 | Resultado | `/json/estufa/estufa001/cmdexe` | `{"fanOn": "OK - ventilador ligado"}` |
 
-Os números vão sem aspas. Com `"26.4"` entre aspas, o valor vira texto e os filtros `q=temperature>25` deixam de funcionar.
+Os números vão sem aspas. Com `"23.4"` entre aspas, o valor vira texto e os filtros `q=temperature>24` deixam de funcionar.
+
+## Mudanças depois da Aula 7
+
+A cultura escolhida foi a **alface**.
+
+| O que mudou | Antes (PDF de 18/11) | Agora |
+|---|---|---|
+| Limites do ventilador (`fanOnTemperature` / `fanOffTemperature`) | 28 / 24 °C | **24 / 22 °C** |
+| Sensor de luz | LDR, `lightLevel` em % (`P1`) | **BH1750**, `illuminance` em lx (`LUX`) |
+| Umidade do ar | sem faixa | julgada pelo **VPD**: novo `vaporPressureDeficit` (kPa, calculado) |
+| Energia e água | sem dados | **potências e vazão nominais**: `fanRatedPower`, `pumpRatedPower`, `pumpFlowRate` (estáticos) |
+| Clima externo | provedor, por **registro** (não vai ao histórico) | **gravador-clima** a cada 15 min + subscrição para o Cygnus; sem registro no tenant |
+| Descrição da estufa | — | `description` = "Estufa de alface" |
+
+As faixas, as fórmulas e a origem de cada número estão em [`../estufa/README.md`](../estufa/README.md).
 
 ## Arquivos
 
-- `exemplos/AgriGreenhouse.json` e `exemplos/WeatherObserved.json`: o que a aplicação envia ao Orion (`POST /v2/op/update`).
+- `exemplos/AgriGreenhouse.json` e `exemplos/WeatherObserved.json`: o que a aplicação envia ao Orion (`POST /v2/op/update`). No projeto rodando, a `WeatherObserved` é gravada pelo `gravador-clima`, no mesmo formato.
 - `provisionamento/grupo.json` e `provisionamento/dispositivo.json`: o grupo de serviço e a ESP32 no IoT Agent.
 - `exemplos/*.lido.json`: o que o Orion devolveu no teste, no formato normalizado.
 
@@ -66,20 +105,25 @@ docker compose up -d --wait iot-agent
 python3 ../modelo-dados/testar_modelo.py
 ```
 
+O teste roda num tenant só de teste (`estufa_teste`), com chave e `device_id` próprios. Assim, não mexe na ESP32 que está no ar nem põe valores de exemplo no histórico. Os JSON são os mesmos do projeto.
+
 O script segue estes passos:
 1. Cria o clima e a estufa no Orion.
-2. Reprovisiona a ESP32 no IoT Agent.
+2. Reprovisiona a ESP32 de teste no IoT Agent.
 3. Publica uma medida MQTT.
 4. Faz o ciclo completo de um comando: `PATCH fanOn` → `cmd` → `PENDING` → `cmdexe` → `fanOn_status = OK`.
 5. Lê as três entidades no formato normalizado e confere:
    - id em URN com o tipo;
    - `value` coerente com o `type`;
-   - `unitCode` em toda grandeza;
+   - `unitCode` em toda grandeza, igual ao do provisionamento;
    - `relativeHumidity` entre 0 e 1;
+   - `vaporPressureDeficit` coerente com a temperatura e a umidade;
+   - potências e vazão iguais às do provisionamento;
+   - limites de controle iguais aos da estufa;
    - existência do alvo de cada `Relationship`;
-   - ausência de uma entidade `Thing:estufa001`.
+   - ausência de uma entidade `Thing:teste001`.
 
-**Resultado em 18/11/2026** (Orion 4.1.0, IoT Agent JSON 3.7.0, Mosquitto 2.0.18): 63 verificações, 0 falhas.
+**Resultado em 19/11/2026** (Orion 4.1.0, IoT Agent JSON 3.7.0, Mosquitto 2.0.18): 86 verificações, 0 falhas.
 
 ## O modelo rodando
 
@@ -88,6 +132,6 @@ O nó da estufa publica neste modelo, e o histórico vai para o painel do grupo 
 ## Em aberto para a Aula 7
 
 - **Prefixo `ref`:** usamos os nomes do catálogo (`controlledAsset`, `hasWeatherObserved`), e não o prefixo `ref…`.
-- **Medidas no `Device`:** no SDM, o `Device` não tem `temperature` nem `soilMoisture`. Seguimos o exemplo da Aula 1.
+- **Medidas no `Device`:** no SDM, o `Device` não tem `temperature` nem `soilMoisture`. Seguimos o exemplo da Aula 1. O mesmo vale para `vaporPressureDeficit`, `illuminance` e as potências nominais.
 - **`hasAgriParcelParent`:** o SDM da `AgriGreenhouse` exige essa referência à parcela de terreno. `AgriParcel` é candidata a 4ª entidade.
 - **Limites de controle:** ficam na estufa. O controlador da Base ainda lê `LIGA`/`DESLIGA` de variáveis de ambiente.

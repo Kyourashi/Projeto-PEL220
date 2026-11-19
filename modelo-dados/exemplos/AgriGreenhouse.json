@@ -5,6 +5,10 @@
     "type": "Text",
     "value": "Estufa 001"
   },
+  "description": {
+    "type": "Text",
+    "value": "Estufa de alface"
+  },
   "location": {
     "type": "geo:json",
     "value": {
@@ -27,7 +31,7 @@
   },
   "fanOnTemperature": {
     "type": "Number",
-    "value": 28,
+    "value": 24,
     "metadata": {
       "unitCode": {
         "type": "Text",
@@ -37,7 +41,7 @@
   },
   "fanOffTemperature": {
     "type": "Number",
-    "value": 24,
+    "value": 22,
     "metadata": {
       "unitCode": {
         "type": "Text",

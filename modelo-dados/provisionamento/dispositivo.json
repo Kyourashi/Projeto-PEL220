@@ -30,6 +30,17 @@
           }
         },
         {
+          "object_id": "v",
+          "name": "vaporPressureDeficit",
+          "type": "Number",
+          "metadata": {
+            "unitCode": {
+              "type": "Text",
+              "value": "KPA"
+            }
+          }
+        },
+        {
           "object_id": "m",
           "name": "soilMoisture",
           "type": "Number",
@@ -42,12 +53,12 @@
         },
         {
           "object_id": "l",
-          "name": "lightLevel",
+          "name": "illuminance",
           "type": "Number",
           "metadata": {
             "unitCode": {
               "type": "Text",
-              "value": "P1"
+              "value": "LUX"
             }
           }
         },
@@ -95,6 +106,39 @@
             "soilMoisture",
             "light"
           ]
+        },
+        {
+          "name": "fanRatedPower",
+          "type": "Number",
+          "value": 541,
+          "metadata": {
+            "unitCode": {
+              "type": "Text",
+              "value": "WTT"
+            }
+          }
+        },
+        {
+          "name": "pumpRatedPower",
+          "type": "Number",
+          "value": 180,
+          "metadata": {
+            "unitCode": {
+              "type": "Text",
+              "value": "WTT"
+            }
+          }
+        },
+        {
+          "name": "pumpFlowRate",
+          "type": "Number",
+          "value": 1500,
+          "metadata": {
+            "unitCode": {
+              "type": "Text",
+              "value": "E32"
+            }
+          }
         }
       ]
     }

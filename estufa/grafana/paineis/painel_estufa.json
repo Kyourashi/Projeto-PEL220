@@ -1,7 +1,7 @@
 {
   "uid": "pel220-estufa",
   "title": "Estufa 001 — painel do grupo",
-  "description": "PEL220 · projeto estufa agrícola inteligente · marco da Aula 8. Histórico gravado pelo Cygnus no MySQL (banco estufa) a partir da subscrição 'Historico da estufa para o Cygnus'.",
+  "description": "PEL220 · projeto estufa agrícola inteligente (alface) · marco da Aula 8. Histórico gravado pelo Cygnus no MySQL (banco estufa) a partir das subscrições 'Historico da estufa para o Cygnus' e 'Clima externo para o Cygnus'.",
   "tags": [
     "pel220",
     "estufa",
@@ -9,7 +9,7 @@
   ],
   "editable": true,
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "5s",
   "time": {
     "from": "now-30m",
@@ -37,7 +37,7 @@
     },
     {
       "id": 2,
-      "title": "Temperatura do ar",
+      "title": "Temperatura",
       "type": "stat",
       "datasource": {
         "type": "mysql",
@@ -46,7 +46,7 @@
       "gridPos": {
         "x": 0,
         "y": 1,
-        "w": 4,
+        "w": 3,
         "h": 6
       },
       "fieldConfig": {
@@ -62,11 +62,11 @@
               },
               {
                 "color": "green",
-                "value": 24
+                "value": 18
               },
               {
                 "color": "red",
-                "value": 28
+                "value": 24
               }
             ]
           },
@@ -98,10 +98,10 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,2)) AS \"temperatura\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'temperature'\nORDER BY recvTimeTs DESC\nLIMIT 1"
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,2)) AS \"temperatura\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'temperature'\nORDER BY recvTimeTs DESC\nLIMIT 1"
         }
       ],
-      "description": "Última medida do DHT22. Azul abaixo de 24 °C, verde na faixa, vermelho a partir de 28 °C (os limites do ventilador na AgriGreenhouse)."
+      "description": "Última medida do DHT22. Alface: azul abaixo de 18 °C, verde na faixa, vermelho a partir de 24 °C, quando o ventilador deve estar ligado (fanOnTemperature)."
     },
     {
       "id": 3,
@@ -112,9 +112,9 @@
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 4,
+        "x": 3,
         "y": 1,
-        "w": 4,
+        "w": 3,
         "h": 6
       },
       "fieldConfig": {
@@ -166,7 +166,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,2)) AS \"solo\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'soilMoisture'\nORDER BY recvTimeTs DESC\nLIMIT 1"
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,2)) AS \"solo\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'soilMoisture'\nORDER BY recvTimeTs DESC\nLIMIT 1"
         }
       ],
       "description": "Última medida do sensor capacitivo. Vermelho abaixo de 30 % (a bomba deve ligar), verde na faixa, azul a partir de 45 % (a bomba deve desligar)."
@@ -180,9 +180,9 @@
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 8,
+        "x": 6,
         "y": 1,
-        "w": 4,
+        "w": 3,
         "h": 6
       },
       "fieldConfig": {
@@ -218,14 +218,86 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,2)) AS \"umidade do ar\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'relativeHumidity'\nORDER BY recvTimeTs DESC\nLIMIT 1"
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,2)) AS \"umidade do ar\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'relativeHumidity'\nORDER BY recvTimeTs DESC\nLIMIT 1"
         }
       ],
-      "description": "relativeHumidity de 0 a 1, mostrada em %. Sem limiar de cor: o grupo ainda não definiu uma faixa para a cultura."
+      "description": "relativeHumidity de 0 a 1, mostrada em %. Sem cor: quem diz se o ar está úmido ou seco demais é o VPD, ao lado, que junta umidade e temperatura."
     },
     {
       "id": 5,
-      "title": "Luz (LDR)",
+      "title": "VPD",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 9,
+        "y": 1,
+        "w": 3,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "pressurekpa",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0.45
+              },
+              {
+                "color": "orange",
+                "value": 1.25
+              },
+              {
+                "color": "red",
+                "value": 1.5
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,2)) AS \"VPD\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'vaporPressureDeficit'\nORDER BY recvTimeTs DESC\nLIMIT 1"
+        }
+      ],
+      "description": "Déficit de pressão de vapor, calculado na ESP32 com a temperatura e a umidade (Tetens/FAO-56). Azul abaixo de 0,45 kPa: ar úmido demais, risco de doença. Verde até 1,25. Laranja até 1,5. Vermelho acima: estresse hídrico."
+    },
+    {
+      "id": 6,
+      "title": "Luz agora",
       "type": "stat",
       "datasource": {
         "type": "mysql",
@@ -234,13 +306,13 @@
       "gridPos": {
         "x": 12,
         "y": 1,
-        "w": 4,
+        "w": 3,
         "h": 6
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
-          "decimals": 0,
+          "unit": "suffix: klx",
+          "decimals": 1,
           "color": {
             "mode": "fixed",
             "fixedColor": "text"
@@ -270,13 +342,83 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,2)) AS \"luz\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'lightLevel'\nORDER BY recvTimeTs DESC\nLIMIT 1"
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,1)) / 1000 AS \"luz\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'illuminance'\nORDER BY recvTimeTs DESC\nLIMIT 1"
         }
       ],
-      "description": "% da escala do ADC do LDR: nível relativo, não lux."
+      "description": "Iluminância do BH1750, em klx. Sem cor: o que conta para a planta é a luz do dia inteiro (o DLI, ao lado)."
     },
     {
-      "id": 6,
+      "id": 7,
+      "title": "DLI (24 h)",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 15,
+        "y": 1,
+        "w": 3,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: mol/m²/d",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 14
+              },
+              {
+                "color": "orange",
+                "value": 18
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^DLI$/",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  AVG(CAST(attrValue AS DECIMAL(10,1))) * 0.0185 * 86400 / 1000000 AS \"DLI\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'illuminance'\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
+        }
+      ],
+      "description": "Luz diária integrada das últimas 24 h: média da iluminância × 0,0185 (lx → µmol/m²/s, luz do sol) × 86 400 s ÷ 10⁶. Alface: 14 a 18 mol/m²/dia (verde).",
+      "timeFrom": "24h",
+      "hideTimeOverride": true
+    },
+    {
+      "id": 8,
       "title": "Ventilador",
       "type": "stat",
       "datasource": {
@@ -284,9 +426,9 @@
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 16,
+        "x": 18,
         "y": 1,
-        "w": 4,
+        "w": 3,
         "h": 6
       },
       "fieldConfig": {
@@ -344,7 +486,7 @@
       "description": "Estado que a ESP32 informa (fanState). É o estado observado, não o comando pedido."
     },
     {
-      "id": 7,
+      "id": 9,
       "title": "Bomba",
       "type": "stat",
       "datasource": {
@@ -352,9 +494,9 @@
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 20,
+        "x": 21,
         "y": 1,
-        "w": 4,
+        "w": 3,
         "h": 6
       },
       "fieldConfig": {
@@ -412,7 +554,7 @@
       "description": "Estado que a ESP32 informa (pumpState)."
     },
     {
-      "id": 8,
+      "id": 10,
       "type": "row",
       "title": "2 · O controle mantém a estufa nas faixas?  —  para o grupo, que avalia a regra de histerese",
       "collapsed": false,
@@ -425,14 +567,14 @@
       "panels": []
     },
     {
-      "id": 9,
-      "title": "Temperatura do ar e os limites do ventilador (24 °C e 28 °C)",
+      "id": 11,
+      "title": "Temperatura do ar dentro e lá fora, e os limites do ventilador (22 °C e 24 °C)",
       "type": "timeseries",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
-      "description": "A curva deve oscilar entre as linhas: o ventilador liga ao cruzar 28 °C e desliga ao cruzar 24 °C. Ficar acima da linha vermelha por muito tempo indica ventilação insuficiente.",
+      "description": "Dentro (DHT22): a curva deve oscilar entre as linhas; o ventilador liga ao cruzar 24 °C e desliga ao cruzar 22 °C. Lá fora (clima-externo, uma leitura a cada 15 min, em degraus): na estufa real, o ventilador só resfria até perto dela; com lá fora acima de 22 °C, ele não consegue desligar. A simulação não usa o clima de fora.",
       "gridPos": {
         "x": 0,
         "y": 8,
@@ -444,7 +586,7 @@
           "unit": "celsius",
           "color": {
             "mode": "fixed",
-            "fixedColor": "green"
+            "fixedColor": "orange"
           },
           "thresholds": {
             "mode": "absolute",
@@ -455,11 +597,15 @@
               },
               {
                 "color": "transparent",
-                "value": 24
+                "value": 18
+              },
+              {
+                "color": "green",
+                "value": 22
               },
               {
                 "color": "red",
-                "value": 28
+                "value": 24
               }
             ]
           },
@@ -468,19 +614,51 @@
             "showPoints": "never",
             "thresholdsStyle": {
               "mode": "dashed+area"
-            }
-          },
-          "min": 20,
-          "max": 32
+            },
+            "axisSoftMin": 15,
+            "axisSoftMax": 30
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lá fora"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              },
+              {
+                "id": "custom.lineInterpolation",
+                "value": "stepAfter"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
-          "showLegend": false
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "tooltip": {
-          "mode": "single"
+          "mode": "multi"
         }
       },
       "targets": [
@@ -493,12 +671,23 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"temperatura\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'temperature'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"dentro\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'temperature'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT t_s AS \"time\", externa AS \"lá fora\"\nFROM (\n  (SELECT recvTimeTs / 1000 AS t_s, CAST(attrValue AS DECIMAL(6,1)) AS externa\n   FROM `urn_ngsi-ld_WeatherObserved_FEI_WeatherObserved`\n   WHERE attrName = 'temperature' AND recvTimeTs < $__unixEpochFrom() * 1000\n   ORDER BY recvTimeTs DESC LIMIT 1)\n  UNION ALL\n  (SELECT recvTimeTs / 1000, CAST(attrValue AS DECIMAL(6,1))\n   FROM `urn_ngsi-ld_WeatherObserved_FEI_WeatherObserved`\n   WHERE attrName = 'temperature' AND $__unixEpochFilter(recvTimeTs / 1000))\n  UNION ALL\n  (SELECT $__unixEpochTo(), CAST(attrValue AS DECIMAL(6,1))\n   FROM `urn_ngsi-ld_WeatherObserved_FEI_WeatherObserved`\n   WHERE attrName = 'temperature' AND recvTimeTs <= $__unixEpochTo() * 1000\n   ORDER BY recvTimeTs DESC LIMIT 1)\n) AS leituras\nORDER BY t_s"
         }
       ]
     },
     {
-      "id": 10,
+      "id": 12,
       "title": "Umidade do solo e os limites da bomba (30 % e 45 %)",
       "type": "timeseries",
       "datasource": {
@@ -541,16 +730,18 @@
             "showPoints": "never",
             "thresholdsStyle": {
               "mode": "dashed+area"
-            }
-          },
-          "min": 20,
-          "max": 55
+            },
+            "axisSoftMin": 20,
+            "axisSoftMax": 55
+          }
         },
         "overrides": []
       },
       "options": {
         "legend": {
-          "showLegend": false
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "tooltip": {
           "mode": "single"
@@ -571,7 +762,7 @@
       ]
     },
     {
-      "id": 11,
+      "id": 13,
       "title": "Ventilador e bomba ao longo do tempo",
       "type": "state-timeline",
       "datasource": {
@@ -584,7 +775,7 @@
         "w": 24,
         "h": 5
       },
-      "description": "Quando cada relé esteve ligado. Compare com as curvas acima: cada faixa verde do ventilador deve começar em 28 °C e terminar em 24 °C.",
+      "description": "Quando cada relé esteve ligado. Compare com as curvas acima: cada faixa verde do ventilador deve começar em 24 °C e terminar em 22 °C. À noite (luz zero) o ventilador fica desligado.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -644,7 +835,7 @@
       ]
     },
     {
-      "id": 12,
+      "id": 14,
       "type": "row",
       "title": "3 · Quanto tempo os atuadores ficam ligados?  —  para quem paga a energia e a água",
       "collapsed": false,
@@ -657,7 +848,7 @@
       "panels": []
     },
     {
-      "id": 13,
+      "id": 15,
       "title": "Tempo ligado em cada janela de 5 minutos",
       "type": "barchart",
       "datasource": {
@@ -667,7 +858,7 @@
       "gridPos": {
         "x": 0,
         "y": 22,
-        "w": 14,
+        "w": 10,
         "h": 8
       },
       "description": "Fração do tempo com o relé ligado (ciclo de trabalho), por janela de 5 min. Ventilador: energia; bomba: energia e água.",
@@ -736,7 +927,7 @@
       ]
     },
     {
-      "id": 14,
+      "id": 16,
       "title": "Tempo ligado no período",
       "type": "stat",
       "datasource": {
@@ -744,9 +935,9 @@
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 14,
+        "x": 10,
         "y": 22,
-        "w": 5,
+        "w": 4,
         "h": 8
       },
       "fieldConfig": {
@@ -789,7 +980,7 @@
       "description": "Ciclo de trabalho no período do seletor: média das amostras ligadas (uma a cada 5 s)."
     },
     {
-      "id": 15,
+      "id": 17,
       "title": "Acionamentos no período",
       "type": "stat",
       "datasource": {
@@ -797,9 +988,9 @@
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 19,
+        "x": 14,
         "y": 22,
-        "w": 5,
+        "w": 4,
         "h": 8
       },
       "fieldConfig": {
@@ -839,6 +1030,100 @@
         }
       ],
       "description": "Quantas vezes cada relé passou de OFF para ON: desgaste do relé e picos de partida do motor."
+    },
+    {
+      "id": 18,
+      "title": "Energia e água no período",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 22,
+        "w": 6,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ventilador"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "watth"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bomba"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "watth"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "água"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "litre"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "orientation": "horizontal"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  541  * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS \"ventilador\",\n  180 * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS \"bomba\",\n  1500 * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS \"água\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState')\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
+        }
+      ],
+      "description": "Energia = potência nominal × tempo ligado; água = vazão nominal × tempo ligado; cada amostra ON vale 5 s. Valores nominais (atributos estáticos da ESP32): ventilador 541 W, bomba 180 W e 1500 L/h. A física da simulação é acelerada: o número mostra o cálculo, não o consumo de um dia real."
     }
   ]
 }

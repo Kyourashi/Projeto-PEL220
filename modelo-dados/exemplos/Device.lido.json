@@ -3,7 +3,7 @@
   "type": "Device",
   "TimeInstant": {
     "type": "DateTime",
-    "value": "2026-11-18T21:02:31.254Z",
+    "value": "2026-11-19T13:49:30.080Z",
     "metadata": {}
   },
   "controlledAsset": {
@@ -12,7 +12,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-18T21:02:31.254Z"
+        "value": "2026-11-19T13:49:30.080Z"
       }
     }
   },
@@ -27,7 +27,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-18T21:02:31.254Z"
+        "value": "2026-11-19T13:49:30.080Z"
       }
     }
   },
@@ -37,7 +37,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-18T21:02:31.173Z"
+        "value": "2026-11-19T13:49:29.991Z"
       }
     }
   },
@@ -47,7 +47,21 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-18T21:02:31.173Z"
+        "value": "2026-11-19T13:49:29.991Z"
+      }
+    }
+  },
+  "fanRatedPower": {
+    "type": "Number",
+    "value": 541,
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-19T13:49:30.080Z"
+      },
+      "unitCode": {
+        "type": "Text",
+        "value": "WTT"
       }
     }
   },
@@ -57,21 +71,49 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-18T21:02:31.254Z"
+        "value": "2026-11-19T13:49:30.080Z"
       }
     }
   },
-  "lightLevel": {
+  "illuminance": {
     "type": "Number",
-    "value": 71,
+    "value": 21500,
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-18T21:02:27.034Z"
+        "value": "2026-11-19T13:49:25.815Z"
       },
       "unitCode": {
         "type": "Text",
-        "value": "P1"
+        "value": "LUX"
+      }
+    }
+  },
+  "pumpFlowRate": {
+    "type": "Number",
+    "value": 1500,
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-19T13:49:30.080Z"
+      },
+      "unitCode": {
+        "type": "Text",
+        "value": "E32"
+      }
+    }
+  },
+  "pumpRatedPower": {
+    "type": "Number",
+    "value": 180,
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-19T13:49:30.080Z"
+      },
+      "unitCode": {
+        "type": "Text",
+        "value": "WTT"
       }
     }
   },
@@ -81,7 +123,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-18T21:02:27.034Z"
+        "value": "2026-11-19T13:49:25.815Z"
       }
     }
   },
@@ -91,7 +133,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-18T21:02:27.034Z"
+        "value": "2026-11-19T13:49:25.815Z"
       },
       "unitCode": {
         "type": "Text",
@@ -105,7 +147,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-18T21:02:27.034Z"
+        "value": "2026-11-19T13:49:25.815Z"
       },
       "unitCode": {
         "type": "Text",
@@ -119,11 +161,25 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-18T21:02:27.034Z"
+        "value": "2026-11-19T13:49:25.815Z"
       },
       "unitCode": {
         "type": "Text",
         "value": "CEL"
+      }
+    }
+  },
+  "vaporPressureDeficit": {
+    "type": "Number",
+    "value": 1.31,
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-19T13:49:25.815Z"
+      },
+      "unitCode": {
+        "type": "Text",
+        "value": "KPA"
       }
     }
   },

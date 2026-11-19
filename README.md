@@ -9,7 +9,7 @@ Plataforma FIWARE da disciplina (Orion, IoT Agent JSON, Mosquitto, Cygnus, MySQL
 ```
 fiware/          a plataforma: docker-compose.yml da Base + docker-compose.override.yml (serviços da estufa)
 modelo-dados/    modelo de dados NGSI-v2 da estufa (marco da Aula 7) + teste no Orion
-estufa/          o projeto rodando: ESP32 simulada da estufa, configuração do tenant e painel no Grafana (marco da Aula 8)
+estufa/          o projeto rodando (alface): ESP32 simulada, gravador do clima, configuração do tenant e painel no Grafana (marco da Aula 8)
 docs/aula06/     roteiro da Aula 6, material complementar e coleção Postman
 docs/aula07/     roteiro da Aula 7 (Orion avançado, Cygnus, Grafana), material complementar e coleção Postman
 ferramentas/     scripts auxiliares (latencia_comando.py, concorrencia.py, gerar_colecao.py)
@@ -25,8 +25,11 @@ docker compose up -d --wait iot-agent
 docker compose up -d --wait cygnus
 python3 ../estufa/configurar.py
 docker compose up -d --build esp32-estufa
+docker compose up -d --build gravador-clima
 docker compose up -d grafana-estufa      # painel em http://localhost:3002
 ```
+
+Quem já roda a versão anterior: `docker compose stop esp32-estufa` antes do `configurar.py`, que reprovisiona a placa.
 
 ## A Base do professor, etapa por etapa (GitHub Codespaces ou máquina local com Docker)
 

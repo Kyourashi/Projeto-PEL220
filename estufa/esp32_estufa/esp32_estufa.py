@@ -1,6 +1,6 @@
 """
 ============================================================================
- PEL220 - Projeto do grupo: estufa agrícola inteligente
+ PEL220 - Projeto do grupo: estufa agrícola inteligente (cultura: alface)
 ----------------------------------------------------------------------------
  ESP32 SIMULADA DA ESTUFA (nó urn:ngsi-ld:Device:ESP32-001).
 
@@ -8,19 +8,25 @@
  MQTT do provisionamento (modelo-dados/provisionamento/dispositivo.json):
 
    medidas    publica  /json/<chave>/<device_id>/attrs
-                       {"t": 26.4, "h": 0.62, "m": 38.5, "l": 71.0,
+                       {"t": 23.4, "h": 0.72, "v": 0.81, "m": 38.5, "l": 21500,
                         "f": "OFF", "p": "OFF"}
    comandos   assina   /<chave>/<device_id>/cmd
                        {"fanOn": ""} · {"fanOff": ""} · {"pumpOn": ""} · {"pumpOff": ""}
    resultado  publica  /json/<chave>/<device_id>/cmdexe
                        {"fanOn": "OK - ventilador ligado"}
 
-   t  temperatura do ar (°C, DHT22)       f  relé do ventilador (ON/OFF)
-   h  umidade relativa do ar (0 a 1)      p  relé da bomba (ON/OFF)
-   m  umidade do solo (%, capacitivo)     l  luminosidade (% da escala do LDR)
+   t  temperatura do ar (°C, DHT22)            m  umidade do solo (%, capacitivo)
+   h  umidade relativa do ar (0 a 1, DHT22)    l  iluminância (lx, BH1750)
+   v  déficit de pressão de vapor (kPa),       f  relé do ventilador (ON/OFF)
+      calculado na placa a partir de t e h     p  relé da bomba (ON/OFF)
 
  O DHT22 entrega a umidade em %; o firmware divide por 100, porque o modelo
  de dados usa relativeHumidity de 0 a 1 (como o Smart Data Model).
+
+ VPD pela equação de Tetens (a mesma da FAO-56), com t e h já arredondados,
+ para quem lê o histórico poder refazer a conta:
+   e_s = 0,6108 · exp(17,27 · t / (t + 237,3))     pressão de saturação, kPa
+   v   = e_s · (1 - h)
 
  Regra local (na borda), com histerese — os limites da AgriGreenhouse:
    ventilador liga com t >= LIGA_VENT e desliga com t <= DESLIGA_VENT
@@ -28,17 +34,20 @@
  A regra só age quando um limite é cruzado; um comando manual vale até o
  próximo cruzamento.
 
- Física simplificada e acelerada (um ciclo do ventilador leva poucos
- minutos), para o painel de 30 minutos mostrar vários ciclos:
-   - a luz segue um "dia" de PERIODO_LUZ segundos;
-   - sem ventilação, o ar tende a 29 °C + 4 °C × luz; com o ventilador, a 21 °C;
+ Física simplificada e acelerada, para o painel de 30 minutos mostrar vários
+ dias e vários ciclos:
+   - um "dia" dura PERIODO_LUZ segundos: metade com sol, metade de noite;
+     ao meio-dia a luz chega a PICO_LUX, menos as nuvens (ruído);
+     o BH1750 satura em 65 535 lx;
+   - sem ventilação, o ar tende a 19 °C à noite e a 32 °C ao meio-dia;
+     com o ventilador, a 21 °C;
    - o solo seca devagar e a bomba o molha depressa;
    - a umidade do ar cai com o calor e com a ventilação e sobe com a rega.
 
  Variáveis de ambiente (padrão entre parênteses):
    DEVICE_ID (estufa001)  APIKEY (estufa)  MQTT_HOST (mosquitto)  MQTT_PORT (1883)
-   INTERVALO (5) s · LIGA_VENT (28) · DESLIGA_VENT (24) · LIGA_BOMBA (30)
-   DESLIGA_BOMBA (45) · PERIODO_LUZ (1200) s
+   INTERVALO (5) s · LIGA_VENT (24) · DESLIGA_VENT (22) · LIGA_BOMBA (30)
+   DESLIGA_BOMBA (45) · PERIODO_LUZ (600) s · PICO_LUX (34000) lx
 ============================================================================
 """
 
@@ -58,11 +67,13 @@ CHAVE = os.getenv("APIKEY", "estufa")
 BROKER = os.getenv("MQTT_HOST", "mosquitto")
 PORTA = int(os.getenv("MQTT_PORT", "1883"))
 INTERVALO = float(os.getenv("INTERVALO", "5"))          # o DHT22 real exige no mínimo 2 s
-LIGA_VENT = float(os.getenv("LIGA_VENT", "28"))
-DESLIGA_VENT = float(os.getenv("DESLIGA_VENT", "24"))
+LIGA_VENT = float(os.getenv("LIGA_VENT", "24"))
+DESLIGA_VENT = float(os.getenv("DESLIGA_VENT", "22"))
 LIGA_BOMBA = float(os.getenv("LIGA_BOMBA", "30"))
 DESLIGA_BOMBA = float(os.getenv("DESLIGA_BOMBA", "45"))
-PERIODO_LUZ = float(os.getenv("PERIODO_LUZ", "1200"))
+PERIODO_LUZ = float(os.getenv("PERIODO_LUZ", "600"))
+PICO_LUX = float(os.getenv("PICO_LUX", "34000"))
+FIM_DE_ESCALA_BH1750 = 65535                            # 16 bits, 1 lx por contagem
 
 TOPICO_MEDIDAS = f"/json/{CHAVE}/{DEVICE_ID}/attrs"
 TOPICO_COMANDOS = f"/{CHAVE}/{DEVICE_ID}/cmd"
@@ -72,23 +83,25 @@ TOPICO_RESULTADO = f"/json/{CHAVE}/{DEVICE_ID}/cmdexe"
 # 2. "Hardware" simulado
 # ---------------------------------------------------------------------------
 inicio = time.time()
-temperatura = random.uniform(24.5, 26.5)
+temperatura = random.uniform(20.5, 22.5)
 solo = random.uniform(36.0, 42.0)
 ventilador = False                                      # estado seguro: começa desligado
 bomba = False
 
 
-def ler_ldr():
-    """Luz em % da escala do ADC: um 'dia' acelerado, com nuvens (ruído)."""
+def ler_bh1750():
+    """Iluminância em lux: sol na primeira metade do 'dia', noite na segunda."""
     fase = 2 * math.pi * (time.time() - inicio) / PERIODO_LUZ
-    luz = 55 + 40 * math.sin(fase) + random.uniform(-3, 3)
-    return min(max(luz, 0.0), 100.0)
+    sol = max(math.sin(fase), 0.0)                      # seno negativo = noite
+    lux = PICO_LUX * sol * random.uniform(0.85, 1.0)     # nuvens
+    return int(min(lux, FIM_DE_ESCALA_BH1750))
 
 
-def passo_fisico(luz):
+def passo_fisico(lux):
     """Avança a física da estufa em um intervalo de medida."""
     global temperatura, solo
-    alvo = 21.0 if ventilador else 29.0 + 4.0 * luz / 100
+    luz = lux / PICO_LUX                                # 0 à noite, ~1 ao meio-dia
+    alvo = 21.0 if ventilador else 19.0 + 13.0 * luz
     temperatura += 0.05 * (alvo - temperatura) + random.uniform(-0.12, 0.12)
     secagem = 0.18 + 0.004 * max(temperatura - 20, 0)    # mais calor, mais evaporação
     solo += 1.6 if bomba else -secagem
@@ -100,6 +113,12 @@ def ler_umidade_ar():
     ur = 75 - 1.8 * (temperatura - 25) + 0.5 * (solo - 37.5) - (6 if ventilador else 0)
     ur += random.uniform(-1.0, 1.0)
     return min(max(ur, 30.0), 95.0) / 100
+
+
+def calcular_vpd(t, ur):
+    """Déficit de pressão de vapor em kPa (Tetens/FAO-56). t em °C, ur de 0 a 1."""
+    e_s = 0.6108 * math.exp(17.27 * t / (t + 237.3))
+    return e_s * (1 - ur)
 
 
 def regra_local():
@@ -190,11 +209,12 @@ while True:                                             # o broker pode subir de
 cliente.loop_start()                                    # a rede roda à parte; o laço só mede
 try:
     while True:
-        luz = ler_ldr()
-        passo_fisico(luz)
+        lux = ler_bh1750()
+        passo_fisico(lux)
         regra_local()
-        medida = {"t": round(temperatura, 1), "h": round(ler_umidade_ar(), 2),
-                  "m": round(solo, 1), "l": round(luz, 1)}
+        t = round(temperatura, 1)
+        h = round(ler_umidade_ar(), 2)
+        medida = {"t": t, "h": h, "v": round(calcular_vpd(t, h), 2), "m": round(solo, 1), "l": lux}
         medida.update(estados())
         publicar(cliente, medida)
         time.sleep(INTERVALO)
