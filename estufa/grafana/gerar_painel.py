@@ -277,7 +277,7 @@ painel.append({
                 f"#### Estufa 001 · alface &nbsp;·&nbsp; FEI, São Bernardo do Campo\n"
                 f"Faixas da alface: **ar {FRIO_ALFACE} a {LIGA_VENT} °C** · **solo {LIGA_BOMBA} a {DESLIGA_BOMBA} %** · "
                 f"**VPD {br(VPD[0])} a {br(VPD[1])} kPa** · **luz {DLI_MIN} a {DLI_MAX} mol/m²/dia** &nbsp;—&nbsp; "
-                f"histórico do Cygnus no MySQL, atualizado a cada 5 s"}})
+                f"histórico do Cygnus no MySQL, painel atualizado a cada 10 s"}})
 
 # --- Pergunta 1 -------------------------------------------------------------------
 painel.append(linha("1 · A estufa está bem agora?  —  para o operador da estufa", 2))
@@ -393,7 +393,7 @@ dashboard = {
     "graphTooltip": 1,                                 # cursor compartilhado entre os gráficos
     "schemaVersion": 39,
     "version": 3,
-    "refresh": "5s",
+    "refresh": "10s",                                  # 5 s pesa no túnel de portas do Codespace
     "time": {"from": "now-30m", "to": "now"},
     "templating": {"list": []},
     "annotations": {"list": []},

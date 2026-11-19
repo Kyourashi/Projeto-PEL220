@@ -11,7 +11,7 @@
   "graphTooltip": 1,
   "schemaVersion": 39,
   "version": 3,
-  "refresh": "5s",
+  "refresh": "10s",
   "time": {
     "from": "now-30m",
     "to": "now"
@@ -36,7 +36,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "#### Estufa 001 · alface &nbsp;·&nbsp; FEI, São Bernardo do Campo\nFaixas da alface: **ar 18 a 24 °C** · **solo 30 a 45 %** · **VPD 0,45 a 1,25 kPa** · **luz 14 a 18 mol/m²/dia** &nbsp;—&nbsp; histórico do Cygnus no MySQL, atualizado a cada 5 s"
+        "content": "#### Estufa 001 · alface &nbsp;·&nbsp; FEI, São Bernardo do Campo\nFaixas da alface: **ar 18 a 24 °C** · **solo 30 a 45 %** · **VPD 0,45 a 1,25 kPa** · **luz 14 a 18 mol/m²/dia** &nbsp;—&nbsp; histórico do Cygnus no MySQL, painel atualizado a cada 10 s"
       }
     },
     {
