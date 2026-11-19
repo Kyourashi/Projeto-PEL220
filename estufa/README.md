@@ -52,6 +52,7 @@ docker compose restart grafana-estufa         # carrega o painel novo
 
 - **No Codespace:** aba **Portas** → porta **3002** → ícone do globo. O painel abre direto, sem login. Para editar, entre com `admin`/`admin`.
 - **O Codespace para sozinho após 30 min sem uso**, e a pilha para junto. Para a apresentação, aumente o tempo em GitHub → *Settings* → *Codespaces* → *Default idle timeout* (até 240 min). A mudança vale na próxima vez que o Codespace iniciar.
+- **Depois que o Codespace para, rode de novo o bloco "Como subir".** O desligamento é brusco. Sem correção, o Orion não voltaria (`container fiware-orion exited (1)`, com `PID-file ... found` no log), porque sobra um arquivo de PID de antes. O `docker-compose.override.yml` põe o `/tmp` do Orion em memória, e o arquivo some a cada partida.
 - **Para apresentar, suba a pilha uns 30 min antes:** o painel mostra os últimos 30 min, e o DLI só se estabiliza depois do primeiro "dia" simulado completo (10 min). Antes disso, ele projeta o que já passou e pode aparecer laranja.
 - **Espere alguns minutos:** as curvas começam vazias e o histórico cresce uma medida a cada 5 s. A física da simulação é acelerada:
   - um "dia" dura 10 min, com 5 min de sol e 5 de noite;

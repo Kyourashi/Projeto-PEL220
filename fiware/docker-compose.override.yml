@@ -16,6 +16,14 @@
 # ==================================================================================
 
 services:
+  # --- Correção para o Codespace ----------------------------------------------------
+  orion:
+    # O Orion grava /tmp/contextBroker.pid e se recusa a subir se o arquivo sobrar de um
+    # desligamento brusco (o Codespace que para sozinho): "PID-file ... found. A broker seems
+    # to be running already" e exit 1. Com o /tmp em memória, o arquivo some a cada partida.
+    tmpfs:
+      - /tmp
+
   # --- O nó da estufa (tenant estufa) ---------------------------------------------
   esp32-estufa:
     # DHT22, sensor de solo, BH1750 e dois relés, em software. Acompanhe: docker logs -f esp32-estufa
