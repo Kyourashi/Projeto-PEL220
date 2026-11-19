@@ -196,7 +196,7 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,2)) AS \"solo\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'soilMoisture'\nORDER BY recvTimeTs DESC\nLIMIT 1"
         }
       ],
-      "description": "Última medida do sensor capacitivo. Vermelho abaixo de 30 % (o gotejamento deve ligar), verde na faixa, azul a partir de 45 % (o gotejamento deve desligar)."
+      "description": "Última medida do sensor capacitivo. Vermelho abaixo de 30 % (a aspersão deve ligar), verde na faixa, azul a partir de 45 % (a aspersão deve desligar)."
     },
     {
       "id": 5,
@@ -421,7 +421,7 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,1)) AS \"caixa\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'tankWaterVolume'\nORDER BY recvTimeTs DESC\nLIMIT 1"
         }
       ],
-      "description": "Água na caixa de 500 L: ultrassom na tampa, convertido em litros na ESP32. Vermelho abaixo de 20% da caixa, laranja abaixo de 40%. O gotejamento e a névoa tiram água; a boia repõe."
+      "description": "Água na caixa de 500 L: ultrassom na tampa, convertido em litros na ESP32. Vermelho abaixo de 20% da caixa, laranja abaixo de 40%. A aspersão e a névoa tiram água; a boia repõe."
     },
     {
       "id": 8,
@@ -782,7 +782,7 @@
     {
       "id": 12,
       "type": "stat",
-      "title": "Vazão do gotejamento",
+      "title": "Vazão da aspersão",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
@@ -831,7 +831,7 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"vazão\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'waterFlow'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
         }
       ],
-      "description": "Medidor de vazão de pulsos (efeito Hall) no cano depois da bomba do gotejamento. Zero com a bomba desligada. Bomba ligada com vazão perto de zero = caixa vazia ou cano entupido."
+      "description": "Medidor de vazão de pulsos (efeito Hall) no cano depois da bomba da aspersão. Zero com a bomba desligada. Bomba ligada com vazão perto de zero = caixa vazia ou cano entupido."
     },
     {
       "id": 13,
@@ -973,7 +973,7 @@
     {
       "id": 15,
       "type": "timeseries",
-      "title": "Umidade do solo e os limites do gotejamento (30 e 45 %)",
+      "title": "Umidade do solo e os limites da aspersão (30 e 45 %)",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
@@ -1047,7 +1047,7 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"solo\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'soilMoisture'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
         }
       ],
-      "description": "Dente de serra: o solo seca devagar e o gotejamento o molha depressa. A bomba liga ao cruzar 30 % (linha vermelha) e desliga ao cruzar 45 % (linha azul)."
+      "description": "Dente de serra: o solo seca devagar e a aspersão o molha depressa. A bomba liga ao cruzar 30 % (linha vermelha) e desliga ao cruzar 45 % (linha azul)."
     },
     {
       "id": 16,
@@ -1461,7 +1461,7 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  attrValue AS \"nebulização\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'mistState'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
         }
       ],
-      "description": "Faixa colorida = relé ligado. Ventilador (verde): de 24 a 22 °C. Gotejamento (azul): de 30 a 45 % no solo. Lâmpadas (amarelo): no começo e no fim do dia, com pouco sol. Névoa (verde-água): perto do meio-dia, com o ar seco."
+      "description": "Faixa colorida = relé ligado. Ventilador (verde): de 24 a 22 °C. Aspersão (azul): de 30 a 45 % no solo. Lâmpadas (amarelo): no começo e no fim do dia, com pouco sol. Névoa (verde-água): perto do meio-dia, com o ar seco."
     },
     {
       "id": 19,
@@ -1597,7 +1597,7 @@
           "rawSql": "SELECT\n  $__unixEpochGroupAlias(recvTimeTs / 1000, '5m'),\n  100 * AVG(CASE WHEN attrName = 'fanState'  THEN attrValue = 'ON' END) AS \"ventilador\",\n  100 * AVG(CASE WHEN attrName = 'pumpState' THEN attrValue = 'ON' END) AS \"bomba\",\n  100 * AVG(CASE WHEN attrName = 'lampState' THEN attrValue = 'ON' END) AS \"lâmpadas\",\n  100 * AVG(CASE WHEN attrName = 'mistState' THEN attrValue = 'ON' END) AS \"nebulização\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState', 'lampState', 'mistState')\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nGROUP BY 1\nORDER BY 1"
         }
       ],
-      "description": "Fração do tempo com o relé ligado (ciclo de trabalho), por janela de 5 min. Todos gastam energia; o gotejamento e a névoa também gastam água."
+      "description": "Fração do tempo com o relé ligado (ciclo de trabalho), por janela de 5 min. Todos gastam energia; o aspersão e a névoa também gastam água."
     },
     {
       "id": 21,
@@ -1951,7 +1951,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "água do gotejamento"
+              "options": "água da aspersão"
             },
             "properties": [
               {
@@ -2020,15 +2020,15 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  541  * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS \"ventilador\",\n  180  * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS \"bomba\",\n  2000 * 5 * SUM(attrName = 'lampState' AND attrValue = 'ON') / 3600 AS \"lâmpadas\",\n  48   * 5 * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS \"nebulização\",\n  5 * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS \"água do gotejamento\",\n  60 * 5 * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS \"água da névoa\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState', 'lampState', 'mistState', 'waterFlow')\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
+          "rawSql": "SELECT\n  541  * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS \"ventilador\",\n  180  * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS \"bomba\",\n  2000 * 5 * SUM(attrName = 'lampState' AND attrValue = 'ON') / 3600 AS \"lâmpadas\",\n  48   * 5 * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS \"nebulização\",\n  5 * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS \"água da aspersão\",\n  60 * 5 * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS \"água da névoa\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState', 'lampState', 'mistState', 'waterFlow')\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
         }
       ],
-      "description": "Energia = potência nominal × tempo ligado (cada amostra ON vale 5 s): ventilador 541 W, bomba 180 W, lâmpadas 2000 W, nebulização 48 W (atributos estáticos da ESP32). Água do gotejamento = soma da vazão MEDIDA × 5 s ÷ 60. Água da névoa = vazão nominal (60 L/h) × tempo ligado. A física da simulação é acelerada: o número mostra o cálculo, não o consumo de um dia real."
+      "description": "Energia = potência nominal × tempo ligado (cada amostra ON vale 5 s): ventilador 541 W, bomba 180 W, lâmpadas 2000 W, nebulização 48 W (atributos estáticos da ESP32). Água da aspersão = soma da vazão MEDIDA × 5 s ÷ 60. Água da névoa = vazão nominal (60 L/h) × tempo ligado. A física da simulação é acelerada: o número mostra o cálculo, não o consumo de um dia real."
     },
     {
       "id": 24,
       "type": "timeseries",
-      "title": "Caixa d'água (500 L) e vazão: o nível cai quando o gotejamento liga, e a boia repõe",
+      "title": "Caixa d'água (500 L) e vazão: o nível cai quando a aspersão liga, e a boia repõe",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
@@ -2173,7 +2173,7 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"vazão\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'waterFlow'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
         }
       ],
-      "description": "Litros na caixa (eixo da esquerda) e vazão medida do gotejamento (eixo da direita, em degraus). A névoa também tira água da caixa (60 L/h), mas não passa pelo medidor. A água do gotejamento no período é a área sob a vazão."
+      "description": "Litros na caixa (eixo da esquerda) e vazão medida da aspersão (eixo da direita, em degraus). A névoa também tira água da caixa (60 L/h), mas não passa pelo medidor. A água da aspersão no período é a área sob a vazão."
     }
   ]
 }

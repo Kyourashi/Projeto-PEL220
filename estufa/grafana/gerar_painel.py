@@ -208,13 +208,13 @@ FROM (
 WHERE attrValue = 'ON' AND anterior = 'OFF'"""
 
 # Energia: E = P · Δt · Σ s_i / 3600 (Wh), com a potência nominal de cada relé.
-# Água do gotejamento: V = Δt · Σ q_i / 60 (L), com a vazão MEDIDA.
-# Água da névoa: V = Q · Δt · Σ s_i / 3600 (L), com a vazão NOMINAL (o medidor fica no cano do gotejamento).
+# Água da aspersão: V = Δt · Σ q_i / 60 (L), com a vazão MEDIDA.
+# Água da névoa: V = Q · Δt · Σ s_i / 3600 (L), com a vazão NOMINAL (o medidor fica no cano da aspersão).
 _energia = "".join(f"  {p:<4} * {DT} * SUM(attrName = {_coluna(a)}AND attrValue = 'ON') / 3600 AS \"{n}\",\n"
                    for a, n, _, p in RELES)
 CONSUMO = f"""
 SELECT
-{_energia}  {DT} * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS "água do gotejamento",
+{_energia}  {DT} * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS "água da aspersão",
   {Q_NEBLINA} * {DT} * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS "água da névoa"
 FROM {TABELA}
 WHERE attrName IN ({LISTA_RELES}, 'waterFlow')
@@ -311,8 +311,8 @@ painel += [
             f"de {LIGA_VENT} °C, quando o ventilador deve estar ligado (fanOnTemperature)."),
     medidor("Umidade do solo", 4, 3, 4, 6, [alvo(agora("soilMoisture", "solo"))], "percent", 1, 10, 70,
             [cor("vermelho", None), cor("verde", LIGA_BOMBA), cor("azul", DESLIGA_BOMBA)],
-            f"Última medida do sensor capacitivo. Vermelho abaixo de {LIGA_BOMBA} % (o gotejamento deve ligar), verde "
-            f"na faixa, azul a partir de {DESLIGA_BOMBA} % (o gotejamento deve desligar)."),
+            f"Última medida do sensor capacitivo. Vermelho abaixo de {LIGA_BOMBA} % (a aspersão deve ligar), verde "
+            f"na faixa, azul a partir de {DESLIGA_BOMBA} % (a aspersão deve desligar)."),
     medidor("VPD (umidade do ar)", 8, 3, 4, 6, [alvo(agora("vaporPressureDeficit", "VPD"))], "pressurekpa", 2, 0, 2.5,
             [cor("azul", None), cor("verde", VPD[0]), cor("laranja", VPD[1]), cor("vermelho", VPD[2])],
             f"Déficit de pressão de vapor, calculado na ESP32 com a temperatura e a umidade (Tetens/FAO-56). "
@@ -328,7 +328,7 @@ painel += [
             "litre", 0, 0, CAIXA,
             [cor("vermelho", None), cor("laranja", RESERVA[0] * CAIXA), cor("verde", RESERVA[1] * CAIXA)],
             f"Água na caixa de {CAIXA} L: ultrassom na tampa, convertido em litros na ESP32. Vermelho abaixo de "
-            f"{RESERVA[0]:.0%} da caixa, laranja abaixo de {RESERVA[1]:.0%}. O gotejamento e a névoa tiram água; "
+            f"{RESERVA[0]:.0%} da caixa, laranja abaixo de {RESERVA[1]:.0%}. A aspersão e a névoa tiram água; "
             f"a boia repõe."),
     reles_agora("Relés agora", 20, 3, 4, 6,
                 "Estado que a ESP32 informa (fanState, pumpState, lampState, mistState). É o estado observado, não o "
@@ -349,9 +349,9 @@ painel += [
               f"BH1750 no teto, olhando para o céu: só o sol. É ele que decide as lâmpadas (ligam abaixo de "
               f"{LIGA_LUZ / 1000:g} klx, desligam acima de {DESLIGA_LUZ / 1000:g} klx, desligadas à noite), porque o "
               f"sensor de dentro também vê as lâmpadas."),
-    tendencia("Vazão do gotejamento", 18, 9, 6, 3,
+    tendencia("Vazão da aspersão", 18, 9, 6, 3,
               [alvo(historico("waterFlow", "vazão"))], "suffix: L/min", 1, "bomba",
-              "Medidor de vazão de pulsos (efeito Hall) no cano depois da bomba do gotejamento. Zero com a bomba "
+              "Medidor de vazão de pulsos (efeito Hall) no cano depois da bomba da aspersão. Zero com a bomba "
               "desligada. Bomba ligada com vazão perto de zero = caixa vazia ou cano entupido."),
 ]
 
@@ -368,10 +368,10 @@ painel += [
           16, 28, legenda=True,
           sobreposicoes=[campo("lá fora", color=fixa("fora"), custom__lineInterpolation="stepAfter",
                                custom__fillOpacity=0, custom__lineStyle={"fill": "dash", "dash": [10, 6]})]),
-    serie(f"Umidade do solo e os limites do gotejamento ({LIGA_BOMBA} e {DESLIGA_BOMBA} %)", 12, 13, 12, 8,
+    serie(f"Umidade do solo e os limites da aspersão ({LIGA_BOMBA} e {DESLIGA_BOMBA} %)", 12, 13, 12, 8,
           [alvo(historico("soilMoisture", "solo"))], "percent", "agua",
           [cor("transparent", None), cor("vermelho", LIGA_BOMBA), cor("azul_escuro", DESLIGA_BOMBA)],
-          f"Dente de serra: o solo seca devagar e o gotejamento o molha depressa. A bomba liga ao cruzar "
+          f"Dente de serra: o solo seca devagar e a aspersão o molha depressa. A bomba liga ao cruzar "
           f"{LIGA_BOMBA} % (linha vermelha) e desliga ao cruzar {DESLIGA_BOMBA} % (linha azul).",
           20, 55),
     serie(f"Luz: no teto, dentro e os limites das lâmpadas ({LIGA_LUZ / 1000:g} e {DESLIGA_LUZ / 1000:g} klx)",
@@ -396,7 +396,7 @@ painel += [
           0, 1.6),
     base("state-timeline", "Quando cada relé esteve ligado", 0, 29, 24, 5,
          [alvo(historico(atributo, nome, "attrValue"), ref) for (atributo, nome, *_), ref in zip(RELES, "ABCD")],
-         f"Faixa colorida = relé ligado. Ventilador (verde): de {LIGA_VENT} a {DESLIGA_VENT} °C. Gotejamento (azul): "
+         f"Faixa colorida = relé ligado. Ventilador (verde): de {LIGA_VENT} a {DESLIGA_VENT} °C. Aspersão (azul): "
          f"de {LIGA_BOMBA} a {DESLIGA_BOMBA} % no solo. Lâmpadas (amarelo): no começo e no fim do dia, com pouco "
          f"sol. Névoa (verde-água): perto do meio-dia, com o ar seco.",
          defaults={"color": {"mode": "thresholds"}, "mappings": ligado("ventilador", "desligado_faixa"),
@@ -412,7 +412,7 @@ painel.append(linha("3 · Quanto tempo os atuadores ficam ligados?  —  para qu
 painel += [
     base("barchart", "Tempo ligado em cada janela de 5 minutos", 0, 35, 12, 8, [alvo(JANELAS)],
          "Fração do tempo com o relé ligado (ciclo de trabalho), por janela de 5 min. Todos gastam energia; o "
-         "gotejamento e a névoa também gastam água.",
+         "aspersão e a névoa também gastam água.",
          defaults={"unit": "percent", "decimals": 0, "min": 0, "max": 100,
                    "custom": {"fillOpacity": 85, "lineWidth": 0, "gradientMode": "none"}},
          overrides=cores_reles,
@@ -433,20 +433,20 @@ painel += [
             cores_reles, decimais=0),
     numeros("Energia e água no período", 18, 35, 6, 8, [alvo(CONSUMO, formato="table")],
             f"Energia = potência nominal × tempo ligado (cada amostra ON vale {DT} s): ventilador {P_VENT} W, bomba "
-            f"{P_BOMBA} W, lâmpadas {P_LAMPADAS} W, nebulização {P_NEBLINA} W (atributos estáticos da ESP32). Água do "
-            f"gotejamento = soma da vazão MEDIDA × {DT} s ÷ 60. Água da névoa = vazão nominal ({Q_NEBLINA} L/h) × "
+            f"{P_BOMBA} W, lâmpadas {P_LAMPADAS} W, nebulização {P_NEBLINA} W (atributos estáticos da ESP32). Água da "
+            f"aspersão = soma da vazão MEDIDA × {DT} s ÷ 60. Água da névoa = vazão nominal ({Q_NEBLINA} L/h) × "
             f"tempo ligado. A física da simulação é acelerada: o número mostra o cálculo, não o consumo de um dia "
             f"real.",
             [campo(nome, color=fixa(cor_rele), unit="watth", decimals=1) for _, nome, cor_rele, _ in RELES]
-            + [campo("água do gotejamento", color=fixa("agua"), unit="litre", decimals=0),
+            + [campo("água da aspersão", color=fixa("agua"), unit="litre", decimals=0),
                campo("água da névoa", color=fixa("nevoa"), unit="litre", decimals=1)],
             orientacao="horizontal"),
-    serie(f"Caixa d'água ({CAIXA} L) e vazão: o nível cai quando o gotejamento liga, e a boia repõe", 0, 43, 24, 7,
+    serie(f"Caixa d'água ({CAIXA} L) e vazão: o nível cai quando a aspersão liga, e a boia repõe", 0, 43, 24, 7,
           [alvo(historico("tankWaterVolume", "caixa", "CAST(attrValue AS DECIMAL(10,1))"), "A"),
            alvo(historico("waterFlow", "vazão"), "B")], "litre", "agua",
           [cor("transparent", None), cor("vermelho", RESERVA[0] * CAIXA), cor("laranja", RESERVA[1] * CAIXA)],
-          f"Litros na caixa (eixo da esquerda) e vazão medida do gotejamento (eixo da direita, em degraus). A névoa "
-          f"também tira água da caixa ({Q_NEBLINA} L/h), mas não passa pelo medidor. A água do gotejamento no "
+          f"Litros na caixa (eixo da esquerda) e vazão medida da aspersão (eixo da direita, em degraus). A névoa "
+          f"também tira água da caixa ({Q_NEBLINA} L/h), mas não passa pelo medidor. A água da aspersão no "
           f"período é a área sob a vazão.",
           None, None, legenda=True,
           sobreposicoes=[campo("caixa", custom__fillOpacity=0, custom__lineWidth=2),

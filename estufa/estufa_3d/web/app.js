@@ -4,7 +4,7 @@
 //  a WeatherObserved) e atualiza a cena:
 //    - DHT22, sensor de solo e os dois BH1750: ponto colorido pelas faixas da alface;
 //    - o exaustor gira (fanState); as lâmpadas LED acendem (lampState);
-//    - o gotejamento pinga e as manchas molhadas crescem com a umidade do solo (pumpState, soilMoisture);
+//    - os aspersores no alto jogam água nos canteiros (pumpState); a terra escurece com a umidade (soilMoisture);
 //    - a névoa sai dos bicos no alto e evapora (mistState);
 //    - a água sobe e desce na caixa (tankWaterVolume) e a vazão medida aparece na bomba;
 //    - a luz da cena segue o BH1750 do teto (dia e noite da simulação);
@@ -92,9 +92,6 @@ const mat = {
   agua: new THREE.MeshStandardMaterial({ color: 0x1f7fe0, roughness: 0.15, transparent: true, opacity: 0.88,
                                          emissive: 0x0f4fa0, emissiveIntensity: 0.3 }),
   pa: new THREE.MeshStandardMaterial({ color: 0x3a4048, roughness: 0.4, metalness: 0.5 }),
-  molhado: new THREE.MeshStandardMaterial({ color: 0x24180f, roughness: 0.6, transparent: true, opacity: 0.6,
-                                            depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }),
-  gota: new THREE.MeshStandardMaterial({ color: 0x6ec3ff, roughness: 0.1, emissive: 0x3f9fff, emissiveIntensity: 0.7 }),
   led: new THREE.MeshStandardMaterial({ color: 0xfff3dd, emissive: 0xfff1dc, emissiveIntensity: 0 }),
   ledCorpo: new THREE.MeshStandardMaterial({ color: 0x2d3238, roughness: 0.5, metalness: 0.4 }),
   tuboNevoa: new THREE.MeshStandardMaterial({ color: 0x3a4048, roughness: 0.5, emissive: COR.nevoa, emissiveIntensity: 0 }),
@@ -199,37 +196,51 @@ alfaces.castShadow = true;
 alfaces.receiveShadow = true;
 cena.add(alfaces);
 
-// --- irrigação: caixa d'água e bomba do lado de fora, cabeçal e gotejadores -----------
+// --- irrigação: caixa d'água e bomba do lado de fora; aspersores no alto, sobre os canteiros ---
 const XC = CX - COMP / 2 + 0.15;                     // cabeçal, logo depois da porta
-for (const z of CAMAS) for (const dz of [-0.12, 0.12]) {
-  cano(v(XC, ALT + 0.03, z + dz), v(CX + COMP / 2 - 0.1, ALT + 0.03, z + dz), 0.012);
-  cano(v(XC, 0.12, z + dz), v(XC, ALT + 0.03, z + dz), 0.012);
-}
-cano(v(XC, 0.12, CAMAS[0] - 0.12), v(XC, 0.12, CAMAS[2] + 0.12), 0.02);
+const Y_ASPERSAO = 1.95, Y_BICO = 1.68;              // cano no alto; o aspersor fica pendurado num microtubo
+const DZ_ASPERSAO = 0.3;                             // ao lado da barra de LED
+const X_ASPERSORES = [-3.15, -1.05, 1.05, 3.15].map((dx) => CX + dx);   // 4 por canteiro: 12 × 90 L/h = 18 L/min
 cano(v(-C / 2 - 1.0, 0.12, CAMAS[0] - 0.12), v(XC, 0.12, CAMAS[0] - 0.12), 0.02);
-// gotejadores a cada 0,6 m: mancha molhada que cresce com a umidade do solo e gota que pinga com a bomba
-const GOTEJADORES = [];
-for (const z of CAMAS) for (const dz of [-0.12, 0.12]) {
-  for (let x = XC + 0.45; x < CX + COMP / 2 - 0.2; x += 0.6) GOTEJADORES.push(v(x, ALT + 0.03, z + dz));
+cano(v(XC, 0.12, CAMAS[0] - 0.12), v(XC, 0.12, CAMAS[2] + DZ_ASPERSAO), 0.02);          // cabeçal no chão
+const ASPERSORES = [];
+for (const z of CAMAS) {
+  const zl = z + DZ_ASPERSAO;
+  cano(v(XC, 0.12, zl), v(XC, Y_ASPERSAO, zl), 0.014);                                  // sobe até o alto
+  cano(v(XC, Y_ASPERSAO, zl), v(CX + COMP / 2 - 0.2, Y_ASPERSAO, zl), 0.014);
+  for (const x of X_ASPERSORES) {
+    cano(v(x, Y_ASPERSAO, zl), v(x, Y_BICO + 0.05, zl), 0.004, mat.metal);               // microtubo
+    malha(new THREE.CylinderGeometry(0.03, 0.022, 0.05, 12), mat.placaPreta, x, Y_BICO + 0.025, zl, { sombra: false });
+    ASPERSORES.push(v(x, Y_BICO, zl));
+  }
 }
-const geoMancha = new THREE.CircleGeometry(1, 20);
-geoMancha.rotateX(-Math.PI / 2);
-const manchas = new THREE.InstancedMesh(geoMancha, mat.molhado, GOTEJADORES.length);
-const gotas = new THREE.InstancedMesh(new THREE.SphereGeometry(0.022, 10, 8), mat.gota, GOTEJADORES.length);
-manchas.renderOrder = 1;
-cena.add(manchas, gotas);
-const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _p = new THREE.Vector3(), _e = new THREE.Vector3();
-function desenharGotejadores(molhado, bomba, t) {
-  const m4 = _m4, q = _q, p = _p, e = _e;
-  GOTEJADORES.forEach((g, i) => {
-    const r = 0.05 + 0.17 * molhado + (bomba ? 0.02 * Math.sin(t * 3 + i) : 0);
-    manchas.setMatrixAt(i, m4.compose(p.set(g.x, ALT + 0.018, g.z), q, e.set(r, 1, r)));
-    const fase = (t * 1.6 + i * 0.37) % 1;              // cada gota cai do tubo até o solo e recomeça
-    const s = bomba ? 1 - 0.4 * fase : 0.001;
-    gotas.setMatrixAt(i, m4.compose(p.set(g.x, ALT + 0.03 - 0.025 * fase, g.z), q, e.set(s, s * 1.3, s)));
-  });
-  manchas.instanceMatrix.needsUpdate = true;
-  gotas.instanceMatrix.needsUpdate = true;
+
+// água: gotas que o aspersor gira e joga para os lados; a gravidade as leva até os canteiros
+const POR_ASPERSOR = 120, N_GOTAS = ASPERSORES.length * POR_ASPERSOR;
+const posGotas = new Float32Array(N_GOTAS * 3).fill(-10), velGotas = new Float32Array(N_GOTAS * 3);
+const gotaViva = new Uint8Array(N_GOTAS);
+const geoGotas = new THREE.BufferGeometry();
+geoGotas.setAttribute('position', new THREE.BufferAttribute(posGotas, 3));
+const gotas = new THREE.Points(geoGotas, new THREE.PointsMaterial({ color: 0x8fd0ff, size: 0.05, transparent: true,
+                                                                     opacity: 0.85, depthWrite: false }));
+gotas.frustumCulled = false;
+cena.add(gotas);
+function animarAspersao(ligada, dt) {
+  for (let i = 0; i < N_GOTAS; i++) {
+    const k = i * 3;
+    if (!gotaViva[i]) {
+      if (!ligada || Math.random() > dt * 6) { posGotas[k + 1] = -10; continue; }   // escondida embaixo do chão
+      const a = ASPERSORES[Math.floor(i / POR_ASPERSOR)], ang = Math.random() * Math.PI * 2;
+      const vh = 0.5 + Math.random() * 1.5;
+      posGotas[k] = a.x; posGotas[k + 1] = a.y; posGotas[k + 2] = a.z;
+      velGotas[k] = Math.cos(ang) * vh; velGotas[k + 1] = -0.2 - Math.random() * 0.5; velGotas[k + 2] = Math.sin(ang) * vh;
+      gotaViva[i] = 1;
+    }
+    velGotas[k + 1] -= 9.8 * dt;
+    posGotas[k] += velGotas[k] * dt; posGotas[k + 1] += velGotas[k + 1] * dt; posGotas[k + 2] += velGotas[k + 2] * dt;
+    if (posGotas[k + 1] < ALT + 0.02) gotaViva[i] = 0;    // chegou à terra ou às folhas
+  }
+  geoGotas.attributes.position.needsUpdate = true;
 }
 
 const CAIXA = { x: -C / 2 - 1.85, z: -1.7, r: 0.46, h: 0.95, hAgua: 0.75 };  // D 0,92 m: 500 L até 0,75 m de altura
@@ -427,7 +438,7 @@ const rot = {
   bh: rotulo(BH.x, 1.48, BH.z),
   bhTeto: rotulo(BH_TETO.x, H_CUMEEIRA + 0.42, 0),
   lampadas: rotulo(-4.7, Y_LED - 0.1, CAMAS[0]),
-  nevoa: rotulo(-C / 2 - 1.15, 0.3, -0.75),         // na bomba da névoa, como a do gotejamento
+  nevoa: rotulo(-C / 2 - 1.15, 0.3, -0.75),         // na bomba da névoa, como a da aspersão
   vent: rotulo(XE, EXAUSTOR.y + 0.62, 0),
   bomba: rotulo(-C / 2 - 0.65, 0.3, CAMAS[0] - 0.12),
   caixa: rotulo(CAIXA.x, CAIXA.h + 0.8, CAIXA.z),
@@ -506,8 +517,8 @@ function aplicar(estado) {
             `UR ${h == null ? '—' : num(h * 100, 0)} % · ${bola(cv)}VPD ${num(vpd, 2)} kPa`);
   pintar(mSolo, cs);
   preencher(rot.solo, cs, 'Sensor de solo', `${num(solo)} %`,
-            `gotejamento liga < ${e.irrigationOnSoilMoisture} % · desliga ≥ ${e.irrigationOffSoilMoisture} %`);
-  alvoMolhado = solo == null ? 0.5 : Math.min(1, Math.max(0, (solo - 25) / 25));   // terra e manchas mais escuras
+            `aspersão liga < ${e.irrigationOnSoilMoisture} % · desliga ≥ ${e.irrigationOffSoilMoisture} %`);
+  alvoMolhado = solo == null ? 0.5 : Math.min(1, Math.max(0, (solo - 25) / 25));   // terra mais escura
 
   const ceuLux = luxFora != null ? luxFora : (lux == null ? null : lux / 0.68);     // sem o sensor do teto, estima
   const dia = ceuLux != null && ceuLux > NOITE_LUX;
@@ -535,7 +546,7 @@ function aplicar(estado) {
 
   bombaLigada = no.pumpState === 'ON';
   mat.tubo.color.setHex(bombaLigada ? 0x3ea8ff : 0x2b3036);
-  preencher(rot.bomba, bombaLigada ? 'azul' : 'cinza', `Gotejamento · bomba ${num(no.pumpRatedPower, 0)} W`,
+  preencher(rot.bomba, bombaLigada ? 'azul' : 'cinza', `Aspersão · bomba ${num(no.pumpRatedPower, 0)} W`,
             `${bombaLigada ? 'Ligada' : 'Desligada'} · ${num(no.waterFlow)} L/min`,
             bombaLigada && no.waterFlow != null && no.waterFlow < 0.5 * (no.pumpFlowRate || 1500) / 60
               ? 'vazão baixa: caixa vazia ou cano entupido?' : '');
@@ -625,7 +636,7 @@ renderer.setAnimationLoop(() => {
   luzBomba.material.emissiveIntensity = bombaLigada ? 1.8 : 0.05;
   molhado += (alvoMolhado - molhado) * Math.min(1, dt * 1.5);
   mat.terra.color.copy(TERRA_SECA).lerp(TERRA_MOLHADA, molhado);
-  desenharGotejadores(molhado, bombaLigada, t);
+  animarAspersao(bombaLigada, dt);
   brilhoLed += ((lampadasLigadas ? 1 : 0) - brilhoLed) * Math.min(1, dt * 4);
   mat.led.emissiveIntensity = 2.4 * brilhoLed;
   for (const p of luzesLed) p.intensity = 4.5 * brilhoLed;

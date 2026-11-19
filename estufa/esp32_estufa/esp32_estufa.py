@@ -20,7 +20,7 @@
    v  déficit de pressão de vapor (kPa),       e  luz lá fora, no teto (lx, BH1750 em 0x5C)
       calculado na placa a partir de t e h     a  água na caixa (L): ultrassom na tampa,
    f  relé do ventilador (ON/OFF)                 convertido em litros na placa
-   p  relé da bomba do gotejamento (ON/OFF)    q  vazão depois da bomba (L/min):
+   p  relé da bomba da aspersão (ON/OFF)       q  vazão depois da bomba (L/min):
    i  relé das lâmpadas LED (ON/OFF)              medidor de vazão de pulsos (efeito Hall)
    n  relé da bomba da nebulização (ON/OFF)
 
@@ -62,8 +62,8 @@
    - sem ventilação, o ar tende a 19 °C à noite e a 32 °C ao meio-dia;
      com o ventilador, a 21 °C; a névoa evapora e tira 2,5 °C;
    - a umidade do ar muda devagar: cai com o calor, o sol e a ventilação,
-     e sobe com o solo úmido e com a névoa;
-   - o solo seca devagar e o gotejamento o molha depressa, se houver água;
+     e sobe com o solo úmido, com a água da aspersão e com a névoa;
+   - o solo seca devagar e a aspersão, no alto, o molha depressa, se houver água;
    - a bomba tira VAZAO_LPM da caixa e a névoa, NEBLINA_LPM; a boia repõe
      BOIA_LPM até encher; com a caixa vazia, a vazão cai ao que a boia repõe.
 
@@ -108,7 +108,7 @@ TRANSMISSAO = float(os.getenv("TRANSMISSAO", "0.68"))    # fração da luz de fo
 LAMPADA_LUX = float(os.getenv("LAMPADA_LUX", "5400"))    # luz das lâmpadas no sensor de dentro (premissa)
 FIM_DE_ESCALA_BH1750 = 65535                            # 16 bits, 1 lx por contagem
 CAIXA_LITROS = float(os.getenv("CAIXA_LITROS", "500"))   # capacidade da caixa d'água
-VAZAO_LPM = float(os.getenv("VAZAO_LPM", "18"))          # vazão da bomba no gotejamento (premissa)
+VAZAO_LPM = float(os.getenv("VAZAO_LPM", "18"))          # aspersão: 12 aspersores × 90 L/h (premissa)
 BOIA_LPM = float(os.getenv("BOIA_LPM", "3"))             # reposição pela boia, da rede (premissa)
 NEBLINA_LPM = float(os.getenv("NEBLINA_LPM", "1"))       # 10 nebulizadores × 6 L/h (premissa)
 
@@ -150,7 +150,7 @@ def passo_fisico(fora):
     alvo = (21.0 if ventilador else 19.0 + 13.0 * luz) - (2.5 if neblina else 0.0)
     temperatura += 0.05 * (alvo - temperatura) + random.uniform(-0.12, 0.12)
     alvo_ur = (74 - 1.8 * (temperatura - 25) + 0.5 * (solo - 37.5) - 20 * luz
-               - (8 if ventilador else 0) + (18 if neblina else 0)) / 100
+               - (8 if ventilador else 0) + 8 * vazao / VAZAO_LPM + (18 if neblina else 0)) / 100
     umidade += 0.15 * (alvo_ur - umidade)               # o ar muda devagar
     secagem = 0.18 + 0.004 * max(temperatura - 20, 0)    # mais calor, mais evaporação
     minutos = INTERVALO / 60

@@ -60,9 +60,9 @@ A versão apresentada na Aula 7 (18/11) está no histórico do git, no commit `e
 | `outdoorIlluminance` | `e` | Number | lx (`LUX`) | medida, BH1750 no teto, lá fora (só o sol; decide as lâmpadas) |
 | `tankWaterVolume` | `a` | Number | L (`LTR`) | medida, ultrassom na tampa da caixa (a ESP32 converte a distância em litros) |
 | `waterFlow` | `q` | Number | L/min (`L2`) | medida, medidor de vazão de pulsos no cano depois da bomba |
-| `fanState`, `pumpState`, `lampState`, `mistState` | `f`, `p`, `i`, `n` | Text | ON/OFF | medida, estado dos relés (ventilador, gotejamento, lâmpadas, nebulização) |
+| `fanState`, `pumpState`, `lampState`, `mistState` | `f`, `p`, `i`, `n` | Text | ON/OFF | medida, estado dos relés (ventilador, aspersão, lâmpadas, nebulização) |
 | `fanRatedPower` | — | Number | W (`WTT`) | estático: 541 W, nominal do ventilador |
-| `pumpRatedPower` | — | Number | W (`WTT`) | estático: 180 W, nominal da bomba do gotejamento |
+| `pumpRatedPower` | — | Number | W (`WTT`) | estático: 180 W, nominal da bomba da aspersão |
 | `lampRatedPower` | — | Number | W (`WTT`) | estático: 2.000 W, das lâmpadas LED (premissa de projeto) |
 | `mistRatedPower` | — | Number | W (`WTT`) | estático: 48 W, da bomba de diafragma da nebulização |
 | `pumpFlowRate` | — | Number | L/h (`E32`) | estático: 1.500 L/h, vazão máxima de catálogo (a real é a `waterFlow`) |
@@ -95,7 +95,7 @@ A cultura escolhida foi a **alface**.
 | Energia | sem dados | **potências nominais**: `fanRatedPower`, `pumpRatedPower`, `lampRatedPower`, `mistRatedPower` (estáticos) |
 | Luz | um BH1750 | **dois BH1750**: `illuminance` dentro (o DLI) e `outdoorIlluminance` no teto (decide as lâmpadas) |
 | Lâmpadas LED | — | relé `lampState`, comandos `lampOn`/`lampOff`; limites `lampOnOutdoorIlluminance` = 15.000 lx e `lampOffOutdoorIlluminance` = 20.000 lx na estufa |
-| Nebulização | — | relé `mistState`, comandos `mistOn`/`mistOff`, `mistFlowRate` = 60 L/h; limites `mistOnVaporPressureDeficit` = 1,25 kPa e `mistOffVaporPressureDeficit` = 0,95 kPa na estufa. A irrigação continua por gotejamento |
+| Nebulização | — | relé `mistState`, comandos `mistOn`/`mistOff`, `mistFlowRate` = 60 L/h; limites `mistOnVaporPressureDeficit` = 1,25 kPa e `mistOffVaporPressureDeficit` = 0,95 kPa na estufa. A irrigação é por aspersão, no alto |
 | Água | sem dados | **medida**: `tankWaterVolume` (L, ultrassom na caixa) e `waterFlow` (L/min, medidor de vazão); `tankCapacity` = 500 L (estático); `controlledProperty` ganha `waterLevel` e `waterFlow` (valores do SDM); `pumpFlowRate` fica como referência de catálogo |
 | Clima externo | provedor, por **registro** (não vai ao histórico) | **gravador-clima** a cada 15 min + subscrição para o Cygnus; sem registro no tenant |
 | Descrição da estufa | — | `description` = "Estufa de alface" |
