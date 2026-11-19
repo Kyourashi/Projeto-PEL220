@@ -67,32 +67,34 @@ docker compose restart grafana-estufa
 
 | # | Pergunta | Para quem | Que decisão apoia | Visualização |
 |---|---|---|---|---|
-| 1 | **A estufa está bem agora?** | o operador da estufa | intervir já (ex.: 25 °C com o ventilador desligado, solo abaixo de 30 % sem a bomba, VPD acima de 1,5 kPa) | **Stat**, com cores nas faixas da alface, e o estado de cada relé |
+| 1 | **A estufa está bem agora?** | o operador da estufa | intervir já (ex.: 25 °C com o ventilador desligado, solo abaixo de 30 % sem a bomba, VPD acima de 1,5 kPa) | **Gauge** nas faixas da alface (temperatura, solo, VPD e DLI) + **Stat** com a curva do período (umidade do ar e luz) e o estado de cada relé |
 | 2 | **O controle mantém a estufa nas faixas?** | o grupo, que projeta e ajusta a regra (e, na Aula 9, o gêmeo digital) | manter ou mudar os limites 22/24 °C e 30/45 %; ver se a histerese oscila rápido demais; separar "regra ruim" de "dia quente" com a temperatura de fora | **Time series** com as linhas dos limites e a temperatura externa + **State timeline** dos relés |
-| 3 | **Quanto tempo os atuadores ficam ligados?** | quem paga a energia (ventilador) e a energia e a água (bomba) | prever o consumo; avaliar se mudar um limite compensa | **Bar chart** do tempo ligado por janela de 5 min + **Stat** do período (%, acionamentos, Wh e litros) |
+| 3 | **Quanto tempo os atuadores ficam ligados?** | quem paga a energia (ventilador) e a energia e a água (bomba) | prever o consumo; avaliar se mudar um limite compensa | **Bar chart** do tempo ligado por janela de 5 min + **Bar gauge** do período (%) + **Stat** (acionamentos, Wh e litros) |
 
 Seguimos a regra da Aula 7: a pergunta escolhe a visualização.
-- O valor de **agora** vai num Stat.
+- O valor de **agora** vai num Gauge, quando há uma faixa a respeitar, ou num Stat.
 - A **evolução**, num Time series.
 - O **estado** de cada relé, num State timeline.
 - O **resumo por período**, num Bar chart.
 
 As cores da Pergunta 1:
 
-| Stat | Azul | Verde | Laranja | Vermelho |
+| Painel | Azul | Verde | Laranja | Vermelho |
 |---|---|---|---|---|
 | Temperatura | abaixo de 18 °C | 18 a 24 °C | — | a partir de 24 °C (o ventilador deve estar ligado) |
 | Umidade do solo | a partir de 45 % (a bomba deve desligar) | 30 a 45 % | — | abaixo de 30 % (a bomba deve ligar) |
 | VPD | abaixo de 0,45 kPa (ar úmido demais) | 0,45 a 1,25 kPa | 1,25 a 1,5 kPa | acima de 1,5 kPa (estresse) |
 | DLI (24 h) | — | 14 a 18 mol/m²/dia | fora da faixa | — |
 
-Umidade do ar e luz agora ficam sem cor. Quem julga o ar é o VPD, e quem julga a luz é o DLI.
+Umidade do ar e luz agora ficam sem faixa, só com a curva do período. Quem julga o ar é o VPD, e quem julga a luz é o DLI.
+
+As cores das curvas são fixas em todo o painel: laranja para a temperatura, roxo para o clima de fora, azul-claro para a umidade e a água, amarelo para a luz, verde para o ventilador e azul para a bomba.
 
 ### A consulta de cada painel
 
 Todas leem as tabelas do Cygnus. Nelas, `attrValue` é **texto** e `recvTimeTs` está em **milissegundos**, por isso as consultas usam `CAST` e `/ 1000`. As consultas ficam em `grafana/gerar_painel.py`, que gera o JSON do painel. Os limites, as potências e a vazão saem do `modelo-dados/`; se eles mudarem, rode o gerador de novo.
 
-**Pergunta 1 — Stat** (temperatura; o mesmo para `soilMoisture`, `relativeHumidity` e `vaporPressureDeficit`)
+**Pergunta 1 — Gauge** (temperatura; o mesmo para `soilMoisture` e `vaporPressureDeficit`)
 
 ```sql
 SELECT
@@ -104,9 +106,9 @@ ORDER BY recvTimeTs DESC
 LIMIT 1
 ```
 
-A luz agora usa a mesma consulta com `illuminance` e `CAST(attrValue AS DECIMAL(10,1)) / 1000`, para mostrar em klx.
+**Pergunta 1 — Stat com curva** (umidade do ar e luz): a mesma consulta da Pergunta 2, com `relativeHumidity` ou `illuminance`; o Stat mostra o último valor e a curva ao fundo. A luz usa `CAST(attrValue AS DECIMAL(10,1)) / 1000`, para mostrar em klx.
 
-**Pergunta 1 — Stat do DLI** (formato *Table*; o painel tem janela própria de 24 h, independente do seletor)
+**Pergunta 1 — Gauge do DLI** (formato *Table*; o painel tem janela própria de 24 h, independente do seletor)
 
 ```sql
 SELECT
@@ -188,7 +190,7 @@ GROUP BY 1
 ORDER BY 1
 ```
 
-**Pergunta 3 — Stat do período** (formato *Table*): a mesma média, sem o `GROUP BY`.
+**Pergunta 3 — Bar gauge do período** (formato *Table*): a mesma média, sem o `GROUP BY`.
 
 **Pergunta 3 — Acionamentos** (formato *Table*: quantas vezes cada relé passou de OFF para ON)
 

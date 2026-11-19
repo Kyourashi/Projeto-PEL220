@@ -8,8 +8,9 @@
     "aula08"
   ],
   "editable": true,
+  "graphTooltip": 1,
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "refresh": "5s",
   "time": {
     "from": "now-30m",
@@ -24,54 +25,72 @@
   "panels": [
     {
       "id": 1,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 2
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "#### Estufa 001 · alface &nbsp;·&nbsp; FEI, São Bernardo do Campo\nFaixas da alface: **ar 18 a 24 °C** · **solo 30 a 45 %** · **VPD 0,45 a 1,25 kPa** · **luz 14 a 18 mol/m²/dia** &nbsp;—&nbsp; histórico do Cygnus no MySQL, atualizado a cada 5 s"
+      }
+    },
+    {
+      "id": 2,
       "type": "row",
       "title": "1 · A estufa está bem agora?  —  para o operador da estufa",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 0,
+        "y": 2,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 2,
-      "title": "Temperatura",
-      "type": "stat",
+      "id": 3,
+      "type": "gauge",
+      "title": "Temperatura do ar",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
         "x": 0,
-        "y": 1,
-        "w": 3,
+        "y": 3,
+        "w": 4,
         "h": 6
       },
       "fieldConfig": {
         "defaults": {
           "unit": "celsius",
           "decimals": 1,
+          "min": 10,
+          "max": 35,
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
+                "color": "#5794F2",
                 "value": null
               },
               {
-                "color": "green",
+                "color": "#73BF69",
                 "value": 18
               },
               {
-                "color": "red",
+                "color": "#F2495C",
                 "value": 24
               }
             ]
-          },
-          "color": {
-            "mode": "thresholds"
           }
         },
         "overrides": []
@@ -84,9 +103,12 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center"
+        "orientation": "auto",
+        "showThresholdMarkers": true,
+        "showThresholdLabels": false,
+        "sizing": "auto",
+        "minVizWidth": 75,
+        "minVizHeight": 75
       },
       "targets": [
         {
@@ -104,42 +126,44 @@
       "description": "Última medida do DHT22. Alface: azul abaixo de 18 °C, verde na faixa, vermelho a partir de 24 °C, quando o ventilador deve estar ligado (fanOnTemperature)."
     },
     {
-      "id": 3,
+      "id": 4,
+      "type": "gauge",
       "title": "Umidade do solo",
-      "type": "stat",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 3,
-        "y": 1,
-        "w": 3,
+        "x": 4,
+        "y": 3,
+        "w": 4,
         "h": 6
       },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
           "decimals": 1,
+          "min": 10,
+          "max": 70,
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#F2495C",
                 "value": null
               },
               {
-                "color": "green",
+                "color": "#73BF69",
                 "value": 30
               },
               {
-                "color": "blue",
+                "color": "#5794F2",
                 "value": 45
               }
             ]
-          },
-          "color": {
-            "mode": "thresholds"
           }
         },
         "overrides": []
@@ -152,9 +176,12 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center"
+        "orientation": "auto",
+        "showThresholdMarkers": true,
+        "showThresholdLabels": false,
+        "sizing": "auto",
+        "minVizWidth": 75,
+        "minVizHeight": 75
       },
       "targets": [
         {
@@ -172,98 +199,48 @@
       "description": "Última medida do sensor capacitivo. Vermelho abaixo de 30 % (a bomba deve ligar), verde na faixa, azul a partir de 45 % (a bomba deve desligar)."
     },
     {
-      "id": 4,
-      "title": "Umidade do ar",
-      "type": "stat",
-      "datasource": {
-        "type": "mysql",
-        "uid": "mysql-estufa"
-      },
-      "gridPos": {
-        "x": 6,
-        "y": 1,
-        "w": 3,
-        "h": 6
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percentunit",
-          "decimals": 0,
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "text"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "center"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "mysql",
-            "uid": "mysql-estufa"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,2)) AS \"umidade do ar\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'relativeHumidity'\nORDER BY recvTimeTs DESC\nLIMIT 1"
-        }
-      ],
-      "description": "relativeHumidity de 0 a 1, mostrada em %. Sem cor: quem diz se o ar está úmido ou seco demais é o VPD, ao lado, que junta umidade e temperatura."
-    },
-    {
       "id": 5,
-      "title": "VPD",
-      "type": "stat",
+      "type": "gauge",
+      "title": "VPD (umidade do ar)",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 9,
-        "y": 1,
-        "w": 3,
+        "x": 8,
+        "y": 3,
+        "w": 4,
         "h": 6
       },
       "fieldConfig": {
         "defaults": {
           "unit": "pressurekpa",
           "decimals": 2,
+          "min": 0,
+          "max": 2.5,
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
+                "color": "#5794F2",
                 "value": null
               },
               {
-                "color": "green",
+                "color": "#73BF69",
                 "value": 0.45
               },
               {
-                "color": "orange",
+                "color": "#FF9830",
                 "value": 1.25
               },
               {
-                "color": "red",
+                "color": "#F2495C",
                 "value": 1.5
               }
             ]
-          },
-          "color": {
-            "mode": "thresholds"
           }
         },
         "overrides": []
@@ -276,9 +253,12 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center"
+        "orientation": "auto",
+        "showThresholdMarkers": true,
+        "showThresholdLabels": false,
+        "sizing": "auto",
+        "minVizWidth": 75,
+        "minVizHeight": 75
       },
       "targets": [
         {
@@ -297,25 +277,43 @@
     },
     {
       "id": 6,
-      "title": "Luz agora",
-      "type": "stat",
+      "type": "gauge",
+      "title": "Luz do dia (DLI, 24 h)",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
         "x": 12,
-        "y": 1,
-        "w": 3,
+        "y": 3,
+        "w": 4,
         "h": 6
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: klx",
+          "unit": "suffix: mol/m²/d",
           "decimals": 1,
+          "min": 0,
+          "max": 30,
           "color": {
-            "mode": "fixed",
-            "fixedColor": "text"
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF9830",
+                "value": null
+              },
+              {
+                "color": "#73BF69",
+                "value": 14
+              },
+              {
+                "color": "#FF9830",
+                "value": 18
+              }
+            ]
           }
         },
         "overrides": []
@@ -328,77 +326,12 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "center"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "mysql",
-            "uid": "mysql-estufa"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,1)) / 1000 AS \"luz\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'illuminance'\nORDER BY recvTimeTs DESC\nLIMIT 1"
-        }
-      ],
-      "description": "Iluminância do BH1750, em klx. Sem cor: o que conta para a planta é a luz do dia inteiro (o DLI, ao lado)."
-    },
-    {
-      "id": 7,
-      "title": "DLI (24 h)",
-      "type": "stat",
-      "datasource": {
-        "type": "mysql",
-        "uid": "mysql-estufa"
-      },
-      "gridPos": {
-        "x": 15,
-        "y": 1,
-        "w": 3,
-        "h": 6
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "suffix: mol/m²/d",
-          "decimals": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "orange",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 14
-              },
-              {
-                "color": "orange",
-                "value": 18
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^DLI$/",
-          "values": false
-        },
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center"
+        "orientation": "auto",
+        "showThresholdMarkers": true,
+        "showThresholdLabels": false,
+        "sizing": "auto",
+        "minVizWidth": 75,
+        "minVizHeight": 75
       },
       "targets": [
         {
@@ -418,42 +351,158 @@
       "hideTimeOverride": true
     },
     {
-      "id": 8,
-      "title": "Ventilador",
+      "id": 7,
       "type": "stat",
+      "title": "Umidade do ar",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 18,
-        "y": 1,
-        "w": 3,
-        "h": 6
+        "x": 16,
+        "y": 3,
+        "w": 4,
+        "h": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#8AB8FF"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "value",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,2)) AS \"umidade do ar\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'relativeHumidity'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        }
+      ],
+      "description": "relativeHumidity de 0 a 1, mostrada em %, com a curva do período. Quem diz se o ar está úmido ou seco demais é o VPD, que junta umidade e temperatura."
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Luz agora",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 6,
+        "w": 4,
+        "h": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: klx",
+          "decimals": 1,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FADE2A"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "value",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,1)) / 1000 AS \"luz\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'illuminance'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        }
+      ],
+      "description": "Iluminância do BH1750, em klx, com a curva do período (o dia e a noite). O que conta para a planta é a luz do dia inteiro: o DLI."
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "Ventilador",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 3,
+        "w": 4,
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "fixed",
-            "fixedColor": "text"
+            "mode": "thresholds"
           },
           "mappings": [
             {
               "type": "value",
               "options": {
                 "ON": {
-                  "color": "green",
+                  "color": "#73BF69",
                   "index": 0,
                   "text": "Ligado"
                 },
                 "OFF": {
-                  "color": "gray",
+                  "color": "#8E8E8E",
                   "index": 1,
                   "text": "Desligado"
                 }
               }
             }
-          ]
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#8E8E8E",
+                "value": null
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -465,10 +514,11 @@
           "fields": "/^ventilador$/",
           "values": false
         },
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "center",
-        "textMode": "value"
+        "textMode": "value",
+        "orientation": "auto"
       },
       "targets": [
         {
@@ -486,42 +536,50 @@
       "description": "Estado que a ESP32 informa (fanState). É o estado observado, não o comando pedido."
     },
     {
-      "id": 9,
-      "title": "Bomba",
+      "id": 10,
       "type": "stat",
+      "title": "Bomba",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 21,
-        "y": 1,
-        "w": 3,
-        "h": 6
+        "x": 20,
+        "y": 6,
+        "w": 4,
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "fixed",
-            "fixedColor": "text"
+            "mode": "thresholds"
           },
           "mappings": [
             {
               "type": "value",
               "options": {
                 "ON": {
-                  "color": "green",
+                  "color": "#5794F2",
                   "index": 0,
                   "text": "Ligado"
                 },
                 "OFF": {
-                  "color": "gray",
+                  "color": "#8E8E8E",
                   "index": 1,
                   "text": "Desligado"
                 }
               }
             }
-          ]
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#8E8E8E",
+                "value": null
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -533,10 +591,11 @@
           "fields": "/^bomba$/",
           "values": false
         },
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "center",
-        "textMode": "value"
+        "textMode": "value",
+        "orientation": "auto"
       },
       "targets": [
         {
@@ -554,30 +613,29 @@
       "description": "Estado que a ESP32 informa (pumpState)."
     },
     {
-      "id": 10,
+      "id": 11,
       "type": "row",
       "title": "2 · O controle mantém a estufa nas faixas?  —  para o grupo, que avalia a regra de histerese",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 7,
+        "y": 9,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 11,
-      "title": "Temperatura do ar dentro e lá fora, e os limites do ventilador (22 °C e 24 °C)",
+      "id": 12,
       "type": "timeseries",
+      "title": "Temperatura do ar: dentro, lá fora e os limites do ventilador (22 e 24 °C)",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
-      "description": "Dentro (DHT22): a curva deve oscilar entre as linhas; o ventilador liga ao cruzar 24 °C e desliga ao cruzar 22 °C. Lá fora (clima-externo, uma leitura a cada 15 min, em degraus): na estufa real, o ventilador só resfria até perto dela; com lá fora acima de 22 °C, ele não consegue desligar. A simulação não usa o clima de fora.",
       "gridPos": {
         "x": 0,
-        "y": 8,
+        "y": 10,
         "w": 12,
         "h": 8
       },
@@ -586,37 +644,36 @@
           "unit": "celsius",
           "color": {
             "mode": "fixed",
-            "fixedColor": "orange"
+            "fixedColor": "#FF9830"
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
+                "color": "transparent",
                 "value": null
               },
               {
-                "color": "transparent",
-                "value": 18
-              },
-              {
-                "color": "green",
+                "color": "#73BF69",
                 "value": 22
               },
               {
-                "color": "red",
+                "color": "#F2495C",
                 "value": 24
               }
             ]
           },
           "custom": {
             "lineWidth": 2,
+            "lineInterpolation": "smooth",
             "showPoints": "never",
+            "fillOpacity": 18,
+            "gradientMode": "opacity",
+            "axisSoftMin": 16,
+            "axisSoftMax": 28,
             "thresholdsStyle": {
-              "mode": "dashed+area"
-            },
-            "axisSoftMin": 15,
-            "axisSoftMax": 30
+              "mode": "dashed"
+            }
           }
         },
         "overrides": [
@@ -630,7 +687,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "purple"
+                  "fixedColor": "#B877D9"
                 }
               },
               {
@@ -638,12 +695,16 @@
                 "value": "stepAfter"
               },
               {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
                 "id": "custom.lineStyle",
                 "value": {
                   "fill": "dash",
                   "dash": [
                     10,
-                    10
+                    6
                   ]
                 }
               }
@@ -658,7 +719,8 @@
           "placement": "bottom"
         },
         "tooltip": {
-          "mode": "multi"
+          "mode": "multi",
+          "sort": "none"
         }
       },
       "targets": [
@@ -684,20 +746,20 @@
           "rawQuery": true,
           "rawSql": "SELECT t_s AS \"time\", externa AS \"lá fora\"\nFROM (\n  (SELECT recvTimeTs / 1000 AS t_s, CAST(attrValue AS DECIMAL(6,1)) AS externa\n   FROM `urn_ngsi-ld_WeatherObserved_FEI_WeatherObserved`\n   WHERE attrName = 'temperature' AND recvTimeTs < $__unixEpochFrom() * 1000\n   ORDER BY recvTimeTs DESC LIMIT 1)\n  UNION ALL\n  (SELECT recvTimeTs / 1000, CAST(attrValue AS DECIMAL(6,1))\n   FROM `urn_ngsi-ld_WeatherObserved_FEI_WeatherObserved`\n   WHERE attrName = 'temperature' AND $__unixEpochFilter(recvTimeTs / 1000))\n  UNION ALL\n  (SELECT $__unixEpochTo(), CAST(attrValue AS DECIMAL(6,1))\n   FROM `urn_ngsi-ld_WeatherObserved_FEI_WeatherObserved`\n   WHERE attrName = 'temperature' AND recvTimeTs <= $__unixEpochTo() * 1000\n   ORDER BY recvTimeTs DESC LIMIT 1)\n) AS leituras\nORDER BY t_s"
         }
-      ]
+      ],
+      "description": "Dentro (DHT22): a curva deve oscilar entre as linhas; o ventilador liga ao cruzar 24 °C (linha vermelha) e desliga ao cruzar 22 °C (linha verde). Lá fora (clima-externo, uma leitura a cada 15 min, em degraus): na estufa real, o ventilador só resfria até perto dela; com lá fora acima de 22 °C, ele não consegue desligar. A simulação não usa o clima de fora."
     },
     {
-      "id": 12,
-      "title": "Umidade do solo e os limites da bomba (30 % e 45 %)",
+      "id": 13,
       "type": "timeseries",
+      "title": "Umidade do solo e os limites da bomba (30 e 45 %)",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
-      "description": "Dente de serra: o solo seca devagar e a bomba o molha depressa entre 30 % e 45 %.",
       "gridPos": {
         "x": 12,
-        "y": 8,
+        "y": 10,
         "w": 12,
         "h": 8
       },
@@ -706,33 +768,36 @@
           "unit": "percent",
           "color": {
             "mode": "fixed",
-            "fixedColor": "orange"
+            "fixedColor": "#8AB8FF"
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "transparent",
                 "value": null
               },
               {
-                "color": "transparent",
+                "color": "#F2495C",
                 "value": 30
               },
               {
-                "color": "blue",
+                "color": "#1F60C4",
                 "value": 45
               }
             ]
           },
           "custom": {
             "lineWidth": 2,
+            "lineInterpolation": "smooth",
             "showPoints": "never",
-            "thresholdsStyle": {
-              "mode": "dashed+area"
-            },
+            "fillOpacity": 18,
+            "gradientMode": "opacity",
             "axisSoftMin": 20,
-            "axisSoftMax": 55
+            "axisSoftMax": 55,
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
           }
         },
         "overrides": []
@@ -744,7 +809,8 @@
           "placement": "bottom"
         },
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         }
       },
       "targets": [
@@ -759,23 +825,23 @@
           "rawQuery": true,
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"solo\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'soilMoisture'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
         }
-      ]
+      ],
+      "description": "Dente de serra: o solo seca devagar e a bomba o molha depressa. A bomba liga ao cruzar 30 % (linha vermelha) e desliga ao cruzar 45 % (linha azul)."
     },
     {
-      "id": 13,
-      "title": "Ventilador e bomba ao longo do tempo",
+      "id": 14,
       "type": "state-timeline",
+      "title": "Quando cada relé esteve ligado",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 18,
         "w": 24,
-        "h": 5
+        "h": 4
       },
-      "description": "Quando cada relé esteve ligado. Compare com as curvas acima: cada faixa verde do ventilador deve começar em 24 °C e terminar em 22 °C. À noite (luz zero) o ventilador fica desligado.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -786,27 +852,64 @@
               "type": "value",
               "options": {
                 "ON": {
-                  "color": "green",
+                  "color": "#73BF69",
                   "index": 0,
                   "text": "Ligado"
                 },
                 "OFF": {
-                  "color": "gray",
+                  "color": "#3A3E45",
                   "index": 1,
                   "text": "Desligado"
                 }
               }
             }
-          ]
+          ],
+          "custom": {
+            "fillOpacity": 85,
+            "lineWidth": 0
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bomba"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ON": {
+                        "color": "#5794F2",
+                        "index": 0,
+                        "text": "Ligado"
+                      },
+                      "OFF": {
+                        "color": "#3A3E45",
+                        "index": 1,
+                        "text": "Desligado"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "options": {
-        "showValue": "auto",
+        "showValue": "never",
         "mergeValues": true,
-        "rowHeight": 0.8,
+        "rowHeight": 0.7,
+        "alignValue": "center",
         "legend": {
           "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single"
         }
       },
       "targets": [
@@ -832,42 +935,47 @@
           "rawQuery": true,
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  attrValue AS \"bomba\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'pumpState'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
         }
-      ]
+      ],
+      "description": "Faixa colorida = relé ligado (ventilador em verde, bomba em azul). Cada faixa verde deve começar em 24 °C e terminar em 22 °C. À noite (luz zero) o ventilador fica desligado."
     },
     {
-      "id": 14,
+      "id": 15,
       "type": "row",
       "title": "3 · Quanto tempo os atuadores ficam ligados?  —  para quem paga a energia e a água",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 22,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 15,
-      "title": "Tempo ligado em cada janela de 5 minutos",
+      "id": 16,
       "type": "barchart",
+      "title": "Tempo ligado em cada janela de 5 minutos",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
         "x": 0,
-        "y": 22,
-        "w": 10,
+        "y": 23,
+        "w": 12,
         "h": 8
       },
-      "description": "Fração do tempo com o relé ligado (ciclo de trabalho), por janela de 5 min. Ventilador: energia; bomba: energia e água.",
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
           "decimals": 0,
           "min": 0,
-          "max": 100
+          "max": 100,
+          "custom": {
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "gradientMode": "none"
+          }
         },
         "overrides": [
           {
@@ -880,7 +988,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "green"
+                  "fixedColor": "#73BF69"
                 }
               }
             ]
@@ -895,7 +1003,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "blue"
+                  "fixedColor": "#5794F2"
                 }
               }
             ]
@@ -904,12 +1012,21 @@
       },
       "options": {
         "xTickLabelRotation": 0,
-        "showValue": "auto",
-        "groupWidth": 0.7,
+        "xTickLabelSpacing": 100,
+        "showValue": "always",
+        "groupWidth": 0.75,
+        "barWidth": 0.9,
+        "barRadius": 0.15,
+        "text": {
+          "valueSize": 12
+        },
         "legend": {
           "showLegend": true,
           "displayMode": "list",
           "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
         }
       },
       "targets": [
@@ -924,32 +1041,51 @@
           "rawQuery": true,
           "rawSql": "SELECT\n  $__unixEpochGroupAlias(recvTimeTs / 1000, '5m'),\n  100 * AVG(CASE WHEN attrName = 'fanState'  THEN attrValue = 'ON' END) AS \"ventilador\",\n  100 * AVG(CASE WHEN attrName = 'pumpState' THEN attrValue = 'ON' END) AS \"bomba\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState')\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nGROUP BY 1\nORDER BY 1"
         }
-      ]
+      ],
+      "description": "Fração do tempo com o relé ligado (ciclo de trabalho), por janela de 5 min. Ventilador: energia; bomba: energia e água."
     },
     {
-      "id": 16,
+      "id": 17,
+      "type": "bargauge",
       "title": "Tempo ligado no período",
-      "type": "stat",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 10,
-        "y": 22,
-        "w": 4,
-        "h": 8
+        "x": 12,
+        "y": 23,
+        "w": 6,
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
           "decimals": 0,
+          "min": 0,
+          "max": 100,
           "color": {
             "mode": "fixed",
-            "fixedColor": "text"
+            "fixedColor": "#73BF69"
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bomba"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -959,10 +1095,15 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "textMode": "value_and_name"
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "auto",
+        "sizing": "auto",
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "maxVizHeight": 300
       },
       "targets": [
         {
@@ -980,28 +1121,59 @@
       "description": "Ciclo de trabalho no período do seletor: média das amostras ligadas (uma a cada 5 s)."
     },
     {
-      "id": 17,
-      "title": "Acionamentos no período",
+      "id": 18,
       "type": "stat",
+      "title": "Acionamentos no período",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 14,
-        "y": 22,
-        "w": 4,
-        "h": 8
+        "x": 12,
+        "y": 27,
+        "w": 6,
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
-          "decimals": 0,
           "color": {
             "mode": "fixed",
             "fixedColor": "text"
-          }
+          },
+          "decimals": 0
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ventilador"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bomba"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -1014,7 +1186,8 @@
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "center",
-        "textMode": "value_and_name"
+        "textMode": "value_and_name",
+        "orientation": "auto"
       },
       "targets": [
         {
@@ -1032,22 +1205,21 @@
       "description": "Quantas vezes cada relé passou de OFF para ON: desgaste do relé e picos de partida do motor."
     },
     {
-      "id": 18,
-      "title": "Energia e água no período",
+      "id": 19,
       "type": "stat",
+      "title": "Energia e água no período",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
         "x": 18,
-        "y": 22,
+        "y": 23,
         "w": 6,
         "h": 8
       },
       "fieldConfig": {
         "defaults": {
-          "decimals": 1,
           "color": {
             "mode": "fixed",
             "fixedColor": "text"
@@ -1061,8 +1233,19 @@
             },
             "properties": [
               {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              },
+              {
                 "id": "unit",
                 "value": "watth"
+              },
+              {
+                "id": "decimals",
+                "value": 1
               }
             ]
           },
@@ -1073,8 +1256,19 @@
             },
             "properties": [
               {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              },
+              {
                 "id": "unit",
                 "value": "watth"
+              },
+              {
+                "id": "decimals",
+                "value": 1
               }
             ]
           },
@@ -1084,6 +1278,13 @@
               "options": "água"
             },
             "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8AB8FF"
+                }
+              },
               {
                 "id": "unit",
                 "value": "litre"

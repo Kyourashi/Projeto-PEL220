@@ -34,9 +34,19 @@ DLI_MIN, DLI_MAX = 14, 18    # mol/m²/dia para alface
 VPD = (0.45, 1.25, 1.5)      # kPa: úmido demais | faixa | atenção | estresse
 LUX_PARA_PPFD = 0.0185       # µmol/m²/s por lx, luz do sol
 
-LIGADO = [{"type": "value", "options": {
-    "ON": {"color": "green", "index": 0, "text": "Ligado"},
-    "OFF": {"color": "gray", "index": 1, "text": "Desligado"}}}]
+# Uma cor por grandeza, a mesma em todo o painel.
+COR = {
+    "temperatura": "#FF9830",   # laranja
+    "fora": "#B877D9",          # roxo: o clima externo
+    "agua": "#8AB8FF",          # azul-claro: umidade do ar, do solo e água
+    "luz": "#FADE2A",           # amarelo
+    "ventilador": "#73BF69",    # verde
+    "bomba": "#5794F2",         # azul
+    "desligado": "#8E8E8E",     # texto "Desligado"
+    "desligado_faixa": "#3A3E45",   # faixa desligada na linha do tempo
+    "verde": "#73BF69", "azul": "#5794F2", "azul_escuro": "#1F60C4",
+    "laranja": "#FF9830", "vermelho": "#F2495C",
+}
 
 _id = 0
 
@@ -52,9 +62,40 @@ def br(x):
     return f"{x:g}".replace(".", ",")
 
 
+def cor(nome, valor):
+    return {"color": COR.get(nome, nome), "value": valor}
+
+
+def fixa(nome):
+    return {"mode": "fixed", "fixedColor": COR.get(nome, nome)}
+
+
+def campo(nome, **propriedades):
+    """Override do Grafana: propriedades de uma coluna, pelo nome (custom__x vira custom.x)."""
+    return {"matcher": {"id": "byName", "options": nome},
+            "properties": [{"id": k.replace("__", "."), "value": v} for k, v in propriedades.items()]}
+
+
+def ligado(cor_ligado, cor_desligado="desligado"):
+    return [{"type": "value", "options": {
+        "ON": {"color": COR[cor_ligado], "index": 0, "text": "Ligado"},
+        "OFF": {"color": COR[cor_desligado], "index": 1, "text": "Desligado"}}}]
+
+
 def alvo(sql, ref="A", formato="time_series"):
     return {"refId": ref, "datasource": DS, "editorMode": "code", "format": formato,
             "rawQuery": True, "rawSql": sql.strip()}
+
+
+def base(tipo, titulo, x, y, w, h, alvos, descricao=None, defaults=None, overrides=None, opcoes=None, **extra):
+    p = {"id": proximo_id(), "type": tipo, "title": titulo, "datasource": DS,
+         "gridPos": {"x": x, "y": y, "w": w, "h": h},
+         "fieldConfig": {"defaults": defaults or {}, "overrides": overrides or []},
+         "options": opcoes or {}, "targets": alvos}
+    if descricao:
+        p["description"] = descricao
+    p.update(extra)
+    return p
 
 
 def linha(titulo, y):
@@ -62,6 +103,7 @@ def linha(titulo, y):
             "gridPos": {"x": 0, "y": y, "w": 24, "h": 1}, "panels": []}
 
 
+# --- consultas ------------------------------------------------------------------
 def agora(atributo, apelido, valor="CAST(attrValue AS DECIMAL(10,2))"):
     return f"""
 SELECT
@@ -82,8 +124,7 @@ ORDER BY recvTimeTs DESC
 LIMIT 1"""
 
 
-def historico(atributo, apelido, cast=True):
-    valor = f"CAST(attrValue AS DECIMAL(6,1))" if cast else "attrValue"
+def historico(atributo, apelido, valor="CAST(attrValue AS DECIMAL(6,1))"):
     return f"""
 SELECT
   recvTimeTs / 1000 AS "time",
@@ -94,70 +135,6 @@ WHERE attrName = '{atributo}'
 ORDER BY recvTimeTs ASC"""
 
 
-def cor(nome, valor):
-    return {"color": nome, "value": valor}
-
-
-def campo(nome, **propriedades):
-    """Override do Grafana: propriedades de uma coluna, pelo nome."""
-    return {"matcher": {"id": "byName", "options": nome},
-            "properties": [{"id": k.replace("__", "."), "value": v} for k, v in propriedades.items()]}
-
-
-def stat(titulo, x, y, w, h, alvos, unidade=None, decimais=None, limiares=None, mapas=None,
-         campos="", modo_cor="background", texto=None, descricao=None, tempo=None, sobreposicoes=None,
-         orientacao=None):
-    defaults = {}
-    if unidade:
-        defaults["unit"] = unidade
-    if decimais is not None:
-        defaults["decimals"] = decimais
-    if limiares:
-        defaults["thresholds"] = {"mode": "absolute", "steps": limiares}
-        defaults["color"] = {"mode": "thresholds"}
-    else:
-        defaults["color"] = {"mode": "fixed", "fixedColor": "text"}
-    if mapas:
-        defaults["mappings"] = mapas
-    opcoes = {"reduceOptions": {"calcs": ["lastNotNull"], "fields": campos, "values": False},
-              "colorMode": modo_cor if (limiares or mapas) else "value", "graphMode": "none",
-              "justifyMode": "center"}
-    if texto:
-        opcoes["textMode"] = texto
-    p = {"id": proximo_id(), "title": titulo, "type": "stat", "datasource": DS,
-         "gridPos": {"x": x, "y": y, "w": w, "h": h},
-         "fieldConfig": {"defaults": defaults, "overrides": sobreposicoes or []}, "options": opcoes,
-         "targets": alvos}
-    if descricao:
-        p["description"] = descricao
-    if tempo:
-        p["timeFrom"] = tempo                          # janela própria, independente do seletor
-        p["hideTimeOverride"] = True                   # o título já diz a janela
-    if orientacao:
-        opcoes["orientation"] = orientacao
-    return p
-
-
-def serie(titulo, x, y, w, h, alvos, unidade, limiares, cor_linha, descricao, minimo=None, maximo=None,
-          sobreposicoes=None, legenda=False):
-    custom = {"lineWidth": 2, "showPoints": "never", "thresholdsStyle": {"mode": "dashed+area"}}
-    if minimo is not None:
-        custom["axisSoftMin"] = minimo                 # limites "macios": o eixo cresce se o dado passar
-    if maximo is not None:
-        custom["axisSoftMax"] = maximo
-    defaults = {"unit": unidade, "color": {"mode": "fixed", "fixedColor": cor_linha},
-                "thresholds": {"mode": "absolute", "steps": limiares}, "custom": custom}
-    return {"id": proximo_id(), "title": titulo, "type": "timeseries", "datasource": DS,
-            "description": descricao, "gridPos": {"x": x, "y": y, "w": w, "h": h},
-            "fieldConfig": {"defaults": defaults, "overrides": sobreposicoes or []},
-            "options": {"legend": {"showLegend": legenda, "displayMode": "list", "placement": "bottom"},
-                        "tooltip": {"mode": "multi" if legenda else "single"}},
-            "targets": alvos}
-
-
-painel = []
-
-# --- Pergunta 1 -------------------------------------------------------------------
 DLI_SQL = f"""
 SELECT
   AVG(CAST(attrValue AS DECIMAL(10,1))) * {LUX_PARA_PPFD} * 86400 / 1000000 AS "DLI"
@@ -165,41 +142,6 @@ FROM {TABELA}
 WHERE attrName = 'illuminance'
   AND $__unixEpochFilter(recvTimeTs / 1000)"""
 
-painel.append(linha("1 · A estufa está bem agora?  —  para o operador da estufa", 0))
-painel += [
-    stat("Temperatura", 0, 1, 3, 6, [alvo(agora("temperature", "temperatura"))], "celsius", 1,
-         [cor("blue", None), cor("green", FRIO_ALFACE), cor("red", LIGA_VENT)],
-         descricao=f"Última medida do DHT22. Alface: azul abaixo de {FRIO_ALFACE} °C, verde na faixa, vermelho a "
-                   f"partir de {LIGA_VENT} °C, quando o ventilador deve estar ligado (fanOnTemperature)."),
-    stat("Umidade do solo", 3, 1, 3, 6, [alvo(agora("soilMoisture", "solo"))], "percent", 1,
-         [cor("red", None), cor("green", LIGA_BOMBA), cor("blue", DESLIGA_BOMBA)],
-         descricao=f"Última medida do sensor capacitivo. Vermelho abaixo de {LIGA_BOMBA} % (a bomba deve ligar), "
-                   f"verde na faixa, azul a partir de {DESLIGA_BOMBA} % (a bomba deve desligar)."),
-    stat("Umidade do ar", 6, 1, 3, 6, [alvo(agora("relativeHumidity", "umidade do ar"))], "percentunit", 0,
-         descricao="relativeHumidity de 0 a 1, mostrada em %. Sem cor: quem diz se o ar está úmido ou seco "
-                   "demais é o VPD, ao lado, que junta umidade e temperatura."),
-    stat("VPD", 9, 1, 3, 6, [alvo(agora("vaporPressureDeficit", "VPD"))], "pressurekpa", 2,
-         [cor("blue", None), cor("green", VPD[0]), cor("orange", VPD[1]), cor("red", VPD[2])],
-         descricao=f"Déficit de pressão de vapor, calculado na ESP32 com a temperatura e a umidade (Tetens/FAO-56). "
-                   f"Azul abaixo de {br(VPD[0])} kPa: ar úmido demais, risco de doença. Verde até {br(VPD[1])}. "
-                   f"Laranja até {br(VPD[2])}. Vermelho acima: estresse hídrico."),
-    stat("Luz agora", 12, 1, 3, 6,
-         [alvo(agora("illuminance", "luz", "CAST(attrValue AS DECIMAL(10,1)) / 1000"))], "suffix: klx", 1,
-         descricao="Iluminância do BH1750, em klx. Sem cor: o que conta para a planta é a luz do dia inteiro "
-                   "(o DLI, ao lado)."),
-    stat("DLI (24 h)", 15, 1, 3, 6, [alvo(DLI_SQL, formato="table")], "suffix: mol/m²/d", 1,
-         [cor("orange", None), cor("green", DLI_MIN), cor("orange", DLI_MAX)], campos="/^DLI$/", tempo="24h",
-         descricao=f"Luz diária integrada das últimas 24 h: média da iluminância × {br(LUX_PARA_PPFD)} (lx → "
-                   f"µmol/m²/s, luz do sol) × 86 400 s ÷ 10⁶. Alface: {DLI_MIN} a {DLI_MAX} mol/m²/dia (verde)."),
-    stat("Ventilador", 18, 1, 3, 6, [alvo(estado_agora("fanState", "ventilador"), formato="table")],
-         mapas=LIGADO, campos="/^ventilador$/", texto="value",
-         descricao="Estado que a ESP32 informa (fanState). É o estado observado, não o comando pedido."),
-    stat("Bomba", 21, 1, 3, 6, [alvo(estado_agora("pumpState", "bomba"), formato="table")],
-         mapas=LIGADO, campos="/^bomba$/", texto="value",
-         descricao="Estado que a ESP32 informa (pumpState)."),
-]
-
-# --- Pergunta 2 -------------------------------------------------------------------
 # Lá fora: uma leitura a cada 15 min. A consulta junta a última leitura antes da janela,
 # as leituras da janela e a última leitura repetida no fim da janela, para a linha em
 # degraus cobrir o gráfico inteiro (cada leitura vale até a próxima).
@@ -222,38 +164,6 @@ FROM (
 ) AS leituras
 ORDER BY t_s"""
 
-painel.append(linha("2 · O controle mantém a estufa nas faixas?  —  para o grupo, que avalia a regra de histerese", 7))
-painel += [
-    serie(f"Temperatura do ar dentro e lá fora, e os limites do ventilador ({DESLIGA_VENT} °C e {LIGA_VENT} °C)",
-          0, 8, 12, 8, [alvo(historico("temperature", "dentro"), "A"), alvo(LA_FORA, "B")], "celsius",
-          [cor("blue", None), cor("transparent", FRIO_ALFACE), cor("green", DESLIGA_VENT), cor("red", LIGA_VENT)],
-          "orange",
-          f"Dentro (DHT22): a curva deve oscilar entre as linhas; o ventilador liga ao cruzar {LIGA_VENT} °C e "
-          f"desliga ao cruzar {DESLIGA_VENT} °C. Lá fora (clima-externo, uma leitura a cada 15 min, em degraus): "
-          f"na estufa real, o ventilador só resfria até perto dela; com lá fora acima de {DESLIGA_VENT} °C, ele não "
-          f"consegue desligar. A simulação não usa o clima de fora.",
-          15, 30, legenda=True,
-          sobreposicoes=[campo("lá fora", color={"mode": "fixed", "fixedColor": "purple"},
-                               custom__lineInterpolation="stepAfter",
-                               custom__lineStyle={"fill": "dash", "dash": [10, 10]})]),
-    serie(f"Umidade do solo e os limites da bomba ({LIGA_BOMBA} % e {DESLIGA_BOMBA} %)", 12, 8, 12, 8,
-          [alvo(historico("soilMoisture", "solo"))], "percent",
-          [cor("red", None), cor("transparent", LIGA_BOMBA), cor("blue", DESLIGA_BOMBA)],
-          "orange", f"Dente de serra: o solo seca devagar e a bomba o molha depressa entre {LIGA_BOMBA} % e "
-                    f"{DESLIGA_BOMBA} %.",
-          20, 55),
-    {"id": proximo_id(), "title": "Ventilador e bomba ao longo do tempo", "type": "state-timeline",
-     "datasource": DS, "gridPos": {"x": 0, "y": 16, "w": 24, "h": 5},
-     "description": f"Quando cada relé esteve ligado. Compare com as curvas acima: cada faixa verde do ventilador "
-                    f"deve começar em {LIGA_VENT} °C e terminar em {DESLIGA_VENT} °C. À noite (luz zero) o "
-                    f"ventilador fica desligado.",
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": LIGADO}, "overrides": []},
-     "options": {"showValue": "auto", "mergeValues": True, "rowHeight": 0.8, "legend": {"showLegend": False}},
-     "targets": [alvo(historico("fanState", "ventilador", cast=False), "A"),
-                 alvo(historico("pumpState", "bomba", cast=False), "B")]},
-]
-
-# --- Pergunta 3 -------------------------------------------------------------------
 JANELAS = f"""
 SELECT
   $__unixEpochGroupAlias(recvTimeTs / 1000, '5m'),
@@ -296,33 +206,180 @@ FROM {TABELA}
 WHERE attrName IN ('fanState', 'pumpState')
   AND $__unixEpochFilter(recvTimeTs / 1000)"""
 
-painel.append(linha("3 · Quanto tempo os atuadores ficam ligados?  —  para quem paga a energia e a água", 21))
+
+# --- tipos de painel ----------------------------------------------------------------
+def medidor(titulo, x, y, w, h, alvos, unidade, decimais, minimo, maximo, limiares, descricao, **extra):
+    """Gauge: o valor de agora sobre o arco das faixas."""
+    return base("gauge", titulo, x, y, w, h, alvos, descricao,
+                defaults={"unit": unidade, "decimals": decimais, "min": minimo, "max": maximo,
+                          "color": {"mode": "thresholds"},
+                          "thresholds": {"mode": "absolute", "steps": limiares}},
+                opcoes={"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
+                        "orientation": "auto", "showThresholdMarkers": True, "showThresholdLabels": False,
+                        "sizing": "auto", "minVizWidth": 75, "minVizHeight": 75},
+                **extra)
+
+
+def tendencia(titulo, x, y, w, h, alvos, unidade, decimais, nome_cor, descricao):
+    """Stat com o valor de agora e a curva do período ao fundo."""
+    return base("stat", titulo, x, y, w, h, alvos, descricao,
+                defaults={"unit": unidade, "decimals": decimais, "color": fixa(nome_cor)},
+                opcoes={"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
+                        "colorMode": "none", "graphMode": "area", "justifyMode": "center",
+                        "textMode": "value", "orientation": "auto"})
+
+
+def estado(titulo, x, y, w, h, atributo, apelido, nome_cor, descricao):
+    """Stat do relé: Ligado na cor do atuador, Desligado em cinza."""
+    return base("stat", titulo, x, y, w, h, [alvo(estado_agora(atributo, apelido), formato="table")], descricao,
+                defaults={"color": {"mode": "thresholds"}, "mappings": ligado(nome_cor),
+                          "thresholds": {"mode": "absolute", "steps": [cor("desligado", None)]}},
+                opcoes={"reduceOptions": {"calcs": ["lastNotNull"], "fields": f"/^{apelido}$/", "values": False},
+                        "colorMode": "value", "graphMode": "none", "justifyMode": "center",
+                        "textMode": "value", "orientation": "auto"})
+
+
+def numeros(titulo, x, y, w, h, alvos, descricao, sobreposicoes, orientacao="auto", decimais=None, unidade=None):
+    """Stat de vários valores com nome (cada coluna da consulta vira um número)."""
+    defaults = {"color": fixa("text")}
+    if decimais is not None:
+        defaults["decimals"] = decimais
+    if unidade:
+        defaults["unit"] = unidade
+    return base("stat", titulo, x, y, w, h, alvos, descricao, defaults=defaults, overrides=sobreposicoes,
+                opcoes={"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
+                        "colorMode": "value", "graphMode": "none", "justifyMode": "center",
+                        "textMode": "value_and_name", "orientation": orientacao})
+
+
+def serie(titulo, x, y, w, h, alvos, unidade, nome_cor, limiares, descricao, minimo, maximo,
+          sobreposicoes=None, legenda=False):
+    """Time series: linha suave com preenchimento leve; os limites como linhas tracejadas."""
+    return base("timeseries", titulo, x, y, w, h, alvos, descricao,
+                defaults={"unit": unidade, "color": fixa(nome_cor),
+                          "thresholds": {"mode": "absolute", "steps": limiares},
+                          "custom": {"lineWidth": 2, "lineInterpolation": "smooth", "showPoints": "never",
+                                     "fillOpacity": 18, "gradientMode": "opacity",
+                                     "axisSoftMin": minimo, "axisSoftMax": maximo,
+                                     "thresholdsStyle": {"mode": "dashed"}}},
+                overrides=sobreposicoes,
+                opcoes={"legend": {"showLegend": legenda, "displayMode": "list", "placement": "bottom"},
+                        "tooltip": {"mode": "multi" if legenda else "single", "sort": "none"}})
+
+
+painel = []
+
+# --- cabeçalho ------------------------------------------------------------------------
+painel.append({
+    "id": proximo_id(), "type": "text", "title": "", "transparent": True,
+    "gridPos": {"x": 0, "y": 0, "w": 24, "h": 2},
+    "options": {"mode": "markdown", "content":
+                f"#### Estufa 001 · alface &nbsp;·&nbsp; FEI, São Bernardo do Campo\n"
+                f"Faixas da alface: **ar {FRIO_ALFACE} a {LIGA_VENT} °C** · **solo {LIGA_BOMBA} a {DESLIGA_BOMBA} %** · "
+                f"**VPD {br(VPD[0])} a {br(VPD[1])} kPa** · **luz {DLI_MIN} a {DLI_MAX} mol/m²/dia** &nbsp;—&nbsp; "
+                f"histórico do Cygnus no MySQL, atualizado a cada 5 s"}})
+
+# --- Pergunta 1 -------------------------------------------------------------------
+painel.append(linha("1 · A estufa está bem agora?  —  para o operador da estufa", 2))
 painel += [
-    {"id": proximo_id(), "title": "Tempo ligado em cada janela de 5 minutos", "type": "barchart",
-     "datasource": DS, "gridPos": {"x": 0, "y": 22, "w": 10, "h": 8},
-     "description": "Fração do tempo com o relé ligado (ciclo de trabalho), por janela de 5 min. "
-                    "Ventilador: energia; bomba: energia e água.",
-     "fieldConfig": {"defaults": {"unit": "percent", "decimals": 0, "min": 0, "max": 100},
-                     "overrides": [
-                         campo("ventilador", color={"mode": "fixed", "fixedColor": "green"}),
-                         campo("bomba", color={"mode": "fixed", "fixedColor": "blue"})]},
-     "options": {"xTickLabelRotation": 0, "showValue": "auto", "groupWidth": 0.7,
-                 "legend": {"showLegend": True, "displayMode": "list", "placement": "bottom"}},
-     "targets": [alvo(JANELAS)]},
-    stat("Tempo ligado no período", 10, 22, 4, 8, [alvo(PERIODO, formato="table")], "percent", 0,
-         campos="", texto="value_and_name",
-         descricao="Ciclo de trabalho no período do seletor: média das amostras ligadas (uma a cada 5 s)."),
-    stat("Acionamentos no período", 14, 22, 4, 8, [alvo(ACIONAMENTOS, formato="table")], None, 0,
-         campos="", texto="value_and_name",
-         descricao="Quantas vezes cada relé passou de OFF para ON: desgaste do relé e picos de partida do motor."),
-    stat("Energia e água no período", 18, 22, 6, 8, [alvo(CONSUMO, formato="table")], None, 1,
-         campos="", texto="value_and_name", orientacao="horizontal",
-         sobreposicoes=[campo("ventilador", unit="watth"), campo("bomba", unit="watth"),
-                        campo("água", unit="litre", decimals=0)],
-         descricao=f"Energia = potência nominal × tempo ligado; água = vazão nominal × tempo ligado; cada amostra "
-                   f"ON vale {DT} s. Valores nominais (atributos estáticos da ESP32): ventilador {P_VENT} W, bomba "
-                   f"{P_BOMBA} W e {br(Q_BOMBA)} L/h. A física da simulação é acelerada: o número mostra o cálculo, "
-                   f"não o consumo de um dia real."),
+    medidor("Temperatura do ar", 0, 3, 4, 6, [alvo(agora("temperature", "temperatura"))], "celsius", 1, 10, 35,
+            [cor("azul", None), cor("verde", FRIO_ALFACE), cor("vermelho", LIGA_VENT)],
+            f"Última medida do DHT22. Alface: azul abaixo de {FRIO_ALFACE} °C, verde na faixa, vermelho a partir "
+            f"de {LIGA_VENT} °C, quando o ventilador deve estar ligado (fanOnTemperature)."),
+    medidor("Umidade do solo", 4, 3, 4, 6, [alvo(agora("soilMoisture", "solo"))], "percent", 1, 10, 70,
+            [cor("vermelho", None), cor("verde", LIGA_BOMBA), cor("azul", DESLIGA_BOMBA)],
+            f"Última medida do sensor capacitivo. Vermelho abaixo de {LIGA_BOMBA} % (a bomba deve ligar), verde na "
+            f"faixa, azul a partir de {DESLIGA_BOMBA} % (a bomba deve desligar)."),
+    medidor("VPD (umidade do ar)", 8, 3, 4, 6, [alvo(agora("vaporPressureDeficit", "VPD"))], "pressurekpa", 2, 0, 2.5,
+            [cor("azul", None), cor("verde", VPD[0]), cor("laranja", VPD[1]), cor("vermelho", VPD[2])],
+            f"Déficit de pressão de vapor, calculado na ESP32 com a temperatura e a umidade (Tetens/FAO-56). "
+            f"Azul abaixo de {br(VPD[0])} kPa: ar úmido demais, risco de doença. Verde até {br(VPD[1])}. Laranja até "
+            f"{br(VPD[2])}. Vermelho acima: estresse hídrico."),
+    medidor("Luz do dia (DLI, 24 h)", 12, 3, 4, 6, [alvo(DLI_SQL, formato="table")], "suffix: mol/m²/d", 1, 0, 30,
+            [cor("laranja", None), cor("verde", DLI_MIN), cor("laranja", DLI_MAX)],
+            f"Luz diária integrada das últimas 24 h: média da iluminância × {br(LUX_PARA_PPFD)} (lx → µmol/m²/s, "
+            f"luz do sol) × 86 400 s ÷ 10⁶. Alface: {DLI_MIN} a {DLI_MAX} mol/m²/dia (verde).",
+            timeFrom="24h", hideTimeOverride=True),
+    tendencia("Umidade do ar", 16, 3, 4, 3,
+              [alvo(historico("relativeHumidity", "umidade do ar", "CAST(attrValue AS DECIMAL(6,2))"))],
+              "percentunit", 0, "agua",
+              "relativeHumidity de 0 a 1, mostrada em %, com a curva do período. Quem diz se o ar está úmido ou "
+              "seco demais é o VPD, que junta umidade e temperatura."),
+    tendencia("Luz agora", 16, 6, 4, 3,
+              [alvo(historico("illuminance", "luz", "CAST(attrValue AS DECIMAL(10,1)) / 1000"))],
+              "suffix: klx", 1, "luz",
+              "Iluminância do BH1750, em klx, com a curva do período (o dia e a noite). O que conta para a planta "
+              "é a luz do dia inteiro: o DLI."),
+    estado("Ventilador", 20, 3, 4, 3, "fanState", "ventilador", "ventilador",
+           "Estado que a ESP32 informa (fanState). É o estado observado, não o comando pedido."),
+    estado("Bomba", 20, 6, 4, 3, "pumpState", "bomba", "bomba",
+           "Estado que a ESP32 informa (pumpState)."),
+]
+
+# --- Pergunta 2 -------------------------------------------------------------------
+painel.append(linha("2 · O controle mantém a estufa nas faixas?  —  para o grupo, que avalia a regra de histerese", 9))
+painel += [
+    serie(f"Temperatura do ar: dentro, lá fora e os limites do ventilador ({DESLIGA_VENT} e {LIGA_VENT} °C)",
+          0, 10, 12, 8, [alvo(historico("temperature", "dentro"), "A"), alvo(LA_FORA, "B")], "celsius",
+          "temperatura", [cor("transparent", None), cor("verde", DESLIGA_VENT), cor("vermelho", LIGA_VENT)],
+          f"Dentro (DHT22): a curva deve oscilar entre as linhas; o ventilador liga ao cruzar {LIGA_VENT} °C (linha "
+          f"vermelha) e desliga ao cruzar {DESLIGA_VENT} °C (linha verde). Lá fora (clima-externo, uma leitura a "
+          f"cada 15 min, em degraus): na estufa real, o ventilador só resfria até perto dela; com lá fora acima de "
+          f"{DESLIGA_VENT} °C, ele não consegue desligar. A simulação não usa o clima de fora.",
+          16, 28, legenda=True,
+          sobreposicoes=[campo("lá fora", color=fixa("fora"), custom__lineInterpolation="stepAfter",
+                               custom__fillOpacity=0, custom__lineStyle={"fill": "dash", "dash": [10, 6]})]),
+    serie(f"Umidade do solo e os limites da bomba ({LIGA_BOMBA} e {DESLIGA_BOMBA} %)", 12, 10, 12, 8,
+          [alvo(historico("soilMoisture", "solo"))], "percent", "agua",
+          [cor("transparent", None), cor("vermelho", LIGA_BOMBA), cor("azul_escuro", DESLIGA_BOMBA)],
+          f"Dente de serra: o solo seca devagar e a bomba o molha depressa. A bomba liga ao cruzar {LIGA_BOMBA} % "
+          f"(linha vermelha) e desliga ao cruzar {DESLIGA_BOMBA} % (linha azul).",
+          20, 55),
+    base("state-timeline", "Quando cada relé esteve ligado", 0, 18, 24, 4,
+         [alvo(historico("fanState", "ventilador", "attrValue"), "A"),
+          alvo(historico("pumpState", "bomba", "attrValue"), "B")],
+         f"Faixa colorida = relé ligado (ventilador em verde, bomba em azul). Cada faixa verde deve começar em "
+         f"{LIGA_VENT} °C e terminar em {DESLIGA_VENT} °C. À noite (luz zero) o ventilador fica desligado.",
+         defaults={"color": {"mode": "thresholds"}, "mappings": ligado("ventilador", "desligado_faixa"),
+                   "custom": {"fillOpacity": 85, "lineWidth": 0}},
+         overrides=[campo("bomba", mappings=ligado("bomba", "desligado_faixa"))],
+         opcoes={"showValue": "never", "mergeValues": True, "rowHeight": 0.7, "alignValue": "center",
+                 "legend": {"showLegend": False}, "tooltip": {"mode": "single"}}),
+]
+
+# --- Pergunta 3 -------------------------------------------------------------------
+painel.append(linha("3 · Quanto tempo os atuadores ficam ligados?  —  para quem paga a energia e a água", 22))
+painel += [
+    base("barchart", "Tempo ligado em cada janela de 5 minutos", 0, 23, 12, 8, [alvo(JANELAS)],
+         "Fração do tempo com o relé ligado (ciclo de trabalho), por janela de 5 min. Ventilador: energia; "
+         "bomba: energia e água.",
+         defaults={"unit": "percent", "decimals": 0, "min": 0, "max": 100,
+                   "custom": {"fillOpacity": 85, "lineWidth": 0, "gradientMode": "none"}},
+         overrides=[campo("ventilador", color=fixa("ventilador")), campo("bomba", color=fixa("bomba"))],
+         opcoes={"xTickLabelRotation": 0, "xTickLabelSpacing": 100, "showValue": "always", "groupWidth": 0.75,
+                 "barWidth": 0.9, "barRadius": 0.15, "text": {"valueSize": 12},
+                 "legend": {"showLegend": True, "displayMode": "list", "placement": "bottom"},
+                 "tooltip": {"mode": "multi"}}),
+    base("bargauge", "Tempo ligado no período", 12, 23, 6, 4, [alvo(PERIODO, formato="table")],
+         "Ciclo de trabalho no período do seletor: média das amostras ligadas (uma a cada 5 s).",
+         defaults={"unit": "percent", "decimals": 0, "min": 0, "max": 100, "color": fixa("ventilador")},
+         overrides=[campo("bomba", color=fixa("bomba"))],
+         opcoes={"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
+                 "displayMode": "gradient", "orientation": "horizontal", "showUnfilled": True, "valueMode": "color",
+                 "namePlacement": "auto", "sizing": "auto", "minVizHeight": 16, "minVizWidth": 8,
+                 "maxVizHeight": 300}),
+    numeros("Acionamentos no período", 12, 27, 6, 4, [alvo(ACIONAMENTOS, formato="table")],
+            "Quantas vezes cada relé passou de OFF para ON: desgaste do relé e picos de partida do motor.",
+            [campo("ventilador", color=fixa("ventilador")), campo("bomba", color=fixa("bomba"))], decimais=0),
+    numeros("Energia e água no período", 18, 23, 6, 8, [alvo(CONSUMO, formato="table")],
+            f"Energia = potência nominal × tempo ligado; água = vazão nominal × tempo ligado; cada amostra ON vale "
+            f"{DT} s. Valores nominais (atributos estáticos da ESP32): ventilador {P_VENT} W, bomba {P_BOMBA} W e "
+            f"{br(Q_BOMBA)} L/h. A física da simulação é acelerada: o número mostra o cálculo, não o consumo de um "
+            f"dia real.",
+            [campo("ventilador", color=fixa("ventilador"), unit="watth", decimals=1),
+             campo("bomba", color=fixa("bomba"), unit="watth", decimals=1),
+             campo("água", color=fixa("agua"), unit="litre", decimals=0)],
+            orientacao="horizontal"),
 ]
 
 dashboard = {
@@ -333,8 +390,9 @@ dashboard = {
                    "'Clima externo para o Cygnus'.",
     "tags": ["pel220", "estufa", "aula08"],
     "editable": True,
+    "graphTooltip": 1,                                 # cursor compartilhado entre os gráficos
     "schemaVersion": 39,
-    "version": 2,
+    "version": 3,
     "refresh": "5s",
     "time": {"from": "now-30m", "to": "now"},
     "templating": {"list": []},

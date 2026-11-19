@@ -7,13 +7,13 @@ Marco da Aula 7 (PEL220). Ele pede:
 - um JSON de exemplo por tipo, aceito pelo Orion e lido de volta;
 - quem cria, atualiza e apaga cada entidade.
 
-**Documento apresentado na Aula 7 (18/11):** [`Modelo de dados - Estufa PEL220.pdf`](Modelo%20de%20dados%20-%20Estufa%20PEL220.pdf), com 4 páginas:
+**Documento para apresentar:** [`Modelo de dados - Estufa PEL220.pdf`](Modelo%20de%20dados%20-%20Estufa%20PEL220.pdf), revisão de 19/11 (cultura: alface), com 4 páginas:
 1. MER;
 2. quem cria, atualiza e apaga cada entidade, e o checklist da Aula 6;
 3. arquitetura e comunicação;
 4. JSON de exemplo e resultado do teste.
 
-O PDF e o MER abaixo são a versão de 18/11. O modelo mudou depois dela com a escolha da cultura: veja [Mudanças depois da Aula 7](#mudanças-depois-da-aula-7). Os JSON e este README já estão na versão nova.
+A versão apresentada na Aula 7 (18/11) está no histórico do git, no commit `eece9b0`. O que mudou desde então está em [Mudanças depois da Aula 7](#mudanças-depois-da-aula-7).
 
 - **Tenant:** `fiware-service: estufa` · `fiware-servicepath: /`
 - **Chave do grupo no IoT Agent (apikey):** `estufa`
@@ -24,7 +24,7 @@ O PDF e o MER abaixo são a versão de 18/11. O modelo mudou depois dela com a e
 - **Smart Data Models:** `Device` (dataModel.Device) · `AgriGreenhouse` (dataModel.Agrifood) · `WeatherObserved` (dataModel.Weather)
 - **Cultura:** alface.
 
-![MER (versão de 18/11)](pagina-1.png)
+![MER](pagina-1.png)
 
 ## Entidades
 
@@ -80,7 +80,7 @@ Os números vão sem aspas. Com `"23.4"` entre aspas, o valor vira texto e os fi
 
 A cultura escolhida foi a **alface**.
 
-| O que mudou | Antes (PDF de 18/11) | Agora |
+| O que mudou | Antes (18/11) | Agora |
 |---|---|---|
 | Limites do ventilador (`fanOnTemperature` / `fanOffTemperature`) | 28 / 24 °C | **24 / 22 °C** |
 | Sensor de luz | LDR, `lightLevel` em % (`P1`) | **BH1750**, `illuminance` em lx (`LUX`) |
