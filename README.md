@@ -29,7 +29,7 @@ docker compose up -d --build gravador-clima
 docker compose up -d grafana-estufa      # painel em http://localhost:3002
 ```
 
-Quem já roda a versão anterior: `docker compose stop esp32-estufa` antes do `configurar.py`, que reprovisiona a placa.
+Quem já tinha a versão anterior: veja "Para atualizar" em [`estufa/README.md`](estufa/README.md).
 
 ## A Base do professor, etapa por etapa (GitHub Codespaces ou máquina local com Docker)
 

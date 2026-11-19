@@ -34,16 +34,20 @@ docker compose up -d --build gravador-clima   # sobe junto o clima-externo da Ba
 docker compose up -d grafana-estufa           # o painel, na porta 3002
 ```
 
-**Para atualizar uma pilha que já roda a versão anterior** (LDR, limites 24/28 °C), pare a ESP32 antes. O `configurar.py` percebe que o `dispositivo.json` mudou e reprovisiona a placa, o que recria a entidade do nó. O histórico fica.
+**Para atualizar quem já tinha a versão anterior** (LDR, limites 24/28 °C), com a pilha no ar ou não. A ESP32 para antes, porque o `configurar.py` percebe que o `dispositivo.json` mudou e reprovisiona a placa, o que recria a entidade do nó. O histórico fica.
 
 ```bash
 git pull
 cd fiware
-docker compose stop esp32-estufa
+docker compose stop esp32-estufa              # se ela não estiver rodando, não faz nada
+docker compose up -d --wait orion             # se já estiver no ar, também não faz nada
+docker compose up -d --wait iot-agent
+docker compose up -d --wait cygnus
 python3 ../estufa/configurar.py
 docker compose up -d --build esp32-estufa
 docker compose up -d --build gravador-clima
-docker compose restart grafana-estufa
+docker compose up -d grafana-estufa
+docker compose restart grafana-estufa         # carrega o painel novo
 ```
 
 - **No Codespace:** aba **Portas** → porta **3002** → ícone do globo. O painel abre direto, sem login. Para editar, entre com `admin`/`admin`.
