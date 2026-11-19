@@ -47,12 +47,15 @@ docker compose restart grafana-estufa
 ```
 
 - **No Codespace:** aba **Portas** → porta **3002** → ícone do globo. O painel abre direto, sem login. Para editar, entre com `admin`/`admin`.
+- **O Codespace para sozinho após 30 min sem uso**, e a pilha para junto. Para a apresentação, aumente o tempo em GitHub → *Settings* → *Codespaces* → *Default idle timeout* (até 240 min). A mudança vale na próxima vez que o Codespace iniciar.
+- **Para apresentar, suba a pilha uns 30 min antes:** o painel mostra os últimos 30 min, e o DLI só se estabiliza depois do primeiro "dia" simulado completo (10 min). Antes disso, ele projeta o que já passou e pode aparecer laranja.
 - **Espere alguns minutos:** as curvas começam vazias e o histórico cresce uma medida a cada 5 s. A física da simulação é acelerada:
   - um "dia" dura 10 min, com 5 min de sol e 5 de noite;
   - o ventilador cicla de dia e fica desligado à noite;
   - um ciclo da bomba leva cerca de 7 min.
 - **O clima entra a cada 15 min.** Sem internet, o `clima-externo` responde valores simulados, com `source = simulado`.
 - **Para conferir as subscrições:** `curl -s -H 'fiware-service: estufa' -H 'fiware-servicepath: /' localhost:1026/v2/subscriptions`. O esperado é `status: active`, `timesSent` subindo e `lastSuccessCode: 200`.
+- **A tabela `estufa_error_log`** pode ter uma linha "doesn't exist" de cada tabela nova. É normal: o Cygnus tenta gravar, cria a tabela e grava de novo, sem perder a leitura.
 - **Para mandar um comando à mão:**
 
   ```bash
@@ -106,7 +109,7 @@ ORDER BY recvTimeTs DESC
 LIMIT 1
 ```
 
-**Pergunta 1 — Stat com curva** (umidade do ar e luz): a mesma consulta da Pergunta 2, com `relativeHumidity` ou `illuminance`; o Stat mostra o último valor e a curva ao fundo. A luz usa `CAST(attrValue AS DECIMAL(10,1)) / 1000`, para mostrar em klx.
+**Pergunta 1 — Stat com curva** (umidade do ar e luz): a mesma consulta da Pergunta 2, com `relativeHumidity` ou `illuminance`; o Stat mostra o último valor e a curva ao fundo. A umidade usa `CAST(attrValue AS DECIMAL(6,2))`, porque vai de 0 a 1. A luz usa `CAST(attrValue AS DECIMAL(10,1)) / 1000`, para mostrar em klx.
 
 **Pergunta 1 — Gauge do DLI** (formato *Table*; o painel tem janela própria de 24 h, independente do seletor)
 
