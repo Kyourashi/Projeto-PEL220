@@ -1,0 +1,4612 @@
+{
+ "info": {
+  "_postman_id": "4a801477-ef52-55d9-bb33-9eaa64a14dc0",
+  "name": "PEL220 - Aula 07 - Orion avançado",
+  "description": "PEL 220 — Internet das Coisas e Gêmeos Digitais · Aula 7 — FIWARE II: Orion avançado e visualização no Grafana. Prof. Rafael Gomes Alves (FEI).\n\nPastas C1 a C6, no tenant pel220 (não interferem no tenant ccm130 da Base). Execute na ordem. As Etapas 5 a 7 da plataforma ficam na coleção da Base.",
+  "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+ },
+ "variable": [
+  {
+   "key": "orion",
+   "value": "localhost:1026"
+  },
+  {
+   "key": "service",
+   "value": "pel220"
+  },
+  {
+   "key": "subQuente",
+   "value": ""
+  },
+  {
+   "key": "subLocal",
+   "value": ""
+  },
+  {
+   "key": "expira",
+   "value": ""
+  }
+ ],
+ "item": [
+  {
+   "name": "C1 - Tenants e caminhos",
+   "description": "Seção 1. Cria as quatro entidades do laboratório no tenant pel220 e mostra o que cada fiware-servicepath enxerga.",
+   "item": [
+    {
+     "name": "Cria Room:K501 no andar 5",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"id\": \"urn:ngsi-ld:Room:K501\",\n  \"type\": \"Room\",\n  \"name\": {\n    \"type\": \"Text\",\n    \"value\": \"Laboratório K5-01\"\n  },\n  \"floor\": {\n    \"type\": \"Number\",\n    \"value\": 5\n  },\n  \"capacity\": {\n    \"type\": \"Number\",\n    \"value\": 40\n  },\n  \"color\": {\n    \"type\": \"Text\",\n    \"value\": \"blue\"\n  },\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 27.5,\n    \"metadata\": {\n      \"unitCode\": {\n        \"type\": \"Text\",\n        \"value\": \"CEL\"\n      },\n      \"accuracy\": {\n        \"type\": \"Number\",\n        \"value\": 0.5\n      }\n    }\n  },\n  \"tags\": {\n    \"type\": \"StructuredValue\",\n    \"value\": [\n      \"lab\",\n      \"iot\"\n    ]\n  },\n  \"location\": {\n    \"type\": \"geo:json\",\n    \"value\": {\n      \"type\": \"Point\",\n      \"coordinates\": [\n        -46.5793,\n        -23.7245\n      ]\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Cria Room:K502 no andar 5",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"id\": \"urn:ngsi-ld:Room:K502\",\n  \"type\": \"Room\",\n  \"name\": {\n    \"type\": \"Text\",\n    \"value\": \"Sala K5-02\"\n  },\n  \"floor\": {\n    \"type\": \"Number\",\n    \"value\": 5\n  },\n  \"capacity\": {\n    \"type\": \"Number\",\n    \"value\": 30\n  },\n  \"color\": {\n    \"type\": \"Text\",\n    \"value\": \"yellow\"\n  },\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 22,\n    \"metadata\": {\n      \"unitCode\": {\n        \"type\": \"Text\",\n        \"value\": \"CEL\"\n      },\n      \"accuracy\": {\n        \"type\": \"Number\",\n        \"value\": 2\n      }\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Cria Lab:K503 no andar 5",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"id\": \"urn:ngsi-ld:Lab:K503\",\n  \"type\": \"Lab\",\n  \"name\": {\n    \"type\": \"Text\",\n    \"value\": \"Laboratório K5-03\"\n  },\n  \"floor\": {\n    \"type\": \"Number\",\n    \"value\": 5\n  },\n  \"capacity\": {\n    \"type\": \"Number\",\n    \"value\": 25\n  },\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 31,\n    \"metadata\": {\n      \"unitCode\": {\n        \"type\": \"Text\",\n        \"value\": \"CEL\"\n      },\n      \"accuracy\": {\n        \"type\": \"Number\",\n        \"value\": 0.5\n      }\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Cria Room:K401 no andar 4",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar4"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"id\": \"urn:ngsi-ld:Room:K401\",\n  \"type\": \"Room\",\n  \"name\": {\n    \"type\": \"Text\",\n    \"value\": \"Sala K4-01\"\n  },\n  \"floor\": {\n    \"type\": \"Number\",\n    \"value\": 4\n  },\n  \"capacity\": {\n    \"type\": \"Number\",\n    \"value\": 60\n  },\n  \"color\": {\n    \"type\": \"Text\",\n    \"value\": \"black\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Caminho exato - predioK não inclui os andares",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: nenhuma\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Com curinga - predioK e subcaminhos",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K502, K503, K401\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K401\", \"K501\", \"K502\", \"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Lista de caminhos",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar4,/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K502, K503, K401\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K401\", \"K501\", \"K502\", \"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Sem fiware-servicepath - equivale a barra cerquilha",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K502, K503, K401\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K401\", \"K501\", \"K502\", \"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Raiz - só o que está exatamente em barra",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: nenhuma\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Tenant em maiúsculas - é o mesmo tenant",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "PEL220"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K502, K503, K401\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K401\", \"K501\", \"K502\", \"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Tenant que não existe - lista vazia, sem erro",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "naoexiste"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: nenhuma\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "PATCH sem fiware-servicepath - 404",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502/attrs",
+      "description": "Gravação sem o cabeçalho vale para a raiz; a sala está em /predioK/andar5.",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"capacity\": {\n    \"type\": \"Number\",\n    \"value\": 31\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Criação com curinga - 400",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"id\": \"urn:ngsi-ld:Room:X1\",\n  \"type\": \"Room\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Caminho sem a barra inicial - 400",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "predioK"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"id\": \"urn:ngsi-ld:Room:X2\",\n  \"type\": \"Room\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Mesmo id em outro caminho - 201",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar4"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"id\": \"urn:ngsi-ld:Room:K501\",\n  \"type\": \"Room\",\n  \"name\": {\n    \"type\": \"Text\",\n    \"value\": \"homonima no andar 4\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "GET por id com dois candidatos - 409",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501?options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 409\", () => pm.response.to.have.status(409));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Remove a homônima do andar 4",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar4"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "C2 - Embutidos, expiração e caracteres proibidos",
+   "description": "Seção 1. dateCreated, dateModified, dateExpires e os oito caracteres proibidos.",
+   "item": [
+    {
+     "name": "Embutidos não vêm sem pedir",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502?options=keyValues"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Sem dateCreated\", () => pm.expect(pm.response.json()).to.not.have.property(\"dateCreated\"));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Embutidos pedidos pelo nome",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502?options=keyValues&attrs=dateCreated,dateModified,*"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Vieram dateCreated e dateModified\", () => pm.expect(pm.response.json()).to.include.keys(\"dateCreated\", \"dateModified\", \"temperature\"));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Datas de um atributo - são metadados",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502?attrs=temperature&metadata=dateCreated,dateModified,*"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Metadados embutidos e de usuário\", () => pm.expect(pm.response.json().temperature.metadata).to.include.keys(\"dateCreated\", \"dateModified\", \"unitCode\", \"accuracy\"));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Alerta com prazo de 20 s",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"id\": \"urn:ngsi-ld:Alert:001\",\n  \"type\": \"Alert\",\n  \"dateExpires\": {\n    \"type\": \"DateTime\",\n    \"value\": \"{{expira}}\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+        ]
+       }
+      },
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.collectionVariables.set(\"expira\", new Date(Date.now() + 20000).toISOString());"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "O alerta existe",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Alert:001?options=keyValues&attrs=dateExpires"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Tem dateExpires\", () => pm.expect(pm.response.json()).to.have.property(\"dateExpires\"));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "O alerta sumiu - espera 85 s",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Alert:001",
+      "description": "O MongoDB remove pelo índice TTL, que roda a cada 60 s. Esta requisição espera 85 s antes de enviar."
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+        ]
+       }
+      },
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "// espera 85 s antes de enviar",
+         "return new Promise(r => setTimeout(r, 85000));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Valor com parênteses - 400",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"obs\": {\n    \"type\": \"Text\",\n    \"value\": \"Sala quente (HTTP)\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Valor com outros símbolos - aceito",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"obs\": {\n    \"type\": \"Text\",\n    \"value\": \"ok: 100% - sala/5 + [x] {y} @ # & ?\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "TextUnrestricted aceita os proibidos",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"obs\": {\n    \"type\": \"TextUnrestricted\",\n    \"value\": \"Sala quente (HTTP); a=b\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Remove o atributo obs",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502/attrs/obs"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Id com espaço - 400",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"id\": \"urn:ngsi-ld:Room:K 9\",\n  \"type\": \"Room\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "C3 - Consultas",
+   "description": "Seção 2. A linguagem de consulta simples sobre as quatro entidades. Cabeçalho fiware-servicepath: /predioK/#.",
+   "item": [
+    {
+     "name": "Igualdade",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=floor==5&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K502, K503\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K501\", \"K502\", \"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "E lógico",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=floor==5;capacity%3E=30&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K502\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K501\", \"K502\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Intervalo inclusivo",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=capacity==25..40&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K502, K503\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K501\", \"K502\", \"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Lista - OU entre valores",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=color==blue,black&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K401\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K401\", \"K501\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Diferente de todos",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=color!=blue,black&options=keyValues&attrs=name",
+      "description": "K503 não tem color e não aparece."
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K502\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K502\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Comparação",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=temperature%3E25&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K503\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K501\", \"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Expressão regular",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=name~=%5ELab&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K503\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K501\", \"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Expressão regular diferencia maiúsculas",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=name~=lab&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: nenhuma\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Unária - não tem o atributo",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=!temperature&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K401\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K401\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Unária - tem o atributo",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=temperature&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K502, K503\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K501\", \"K502\", \"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Valor dentro de uma lista",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=tags==iot&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K501\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Filtro sobre metadado",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?mq=temperature.accuracy%3C1&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K503\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K501\", \"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Aspas forçam texto",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=floor==%275%27&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: nenhuma\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Não há OU entre condições - 400",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=capacity%3E30%7Cfloor==4&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Com type - só as salas",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?type=Room&q=temperature%3E25&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K501\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Lista de tipos",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?type=Room,Lab&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K502, K503, K401\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K401\", \"K501\", \"K502\", \"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "typePattern",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?typePattern=%5EL&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K503\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "idPattern",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?idPattern=K50[12]%24&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K502\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K501\", \"K502\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Ordenação por dois critérios",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?orderBy=floor,!capacity&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Nesta ordem: K401, K501, K502, K503\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop())).to.eql([\"K401\", \"K501\", \"K502\", \"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Paginação com total",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?limit=2&offset=1&options=count,keyValues&attrs=name&orderBy=capacity"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Nesta ordem: K502, K501\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop())).to.eql([\"K502\", \"K501\"]));",
+         "pm.test(\"Total no cabeçalho\", () => pm.expect(pm.response.headers.get(\"Fiware-Total-Count\")).to.eql(\"4\"));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Só os valores",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?type=Room&attrs=name,capacity&options=values&orderBy=!capacity"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql([[\"Sala K4-01\", 60], [\"Laboratório K5-01\", 40], [\"Sala K5-02\", 30]]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Geográfica - coords em latitude,longitude",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?georel=near;maxDistance:1000&geometry=point&coords=-23.7245,-46.5793&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K501\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Geográfica com a ordem trocada - vazio, sem erro",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?georel=near;maxDistance:1000&geometry=point&coords=-46.5793,-23.7245&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: nenhuma\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Filtro sobre atributo embutido",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?q=dateModified%3E2026-01-01T00:00:00Z&options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K502, K503, K401\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K401\", \"K501\", \"K502\", \"K503\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Consulta no corpo - op/query",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/op/query?options=keyValues",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"entities\": [\n    {\n      \"idPattern\": \".*\",\n      \"type\": \"Room\"\n    }\n  ],\n  \"attrs\": [\n    \"name\",\n    \"capacity\"\n  ],\n  \"expression\": {\n    \"q\": \"capacity>=40\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: K501, K401\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([\"K401\", \"K501\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Limite máximo é 1000 - 400",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?limit=1001"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "C4 - Atualizações",
+   "description": "Seção 3. Verbos, metadados e operadores atômicos, sobre a porta Door:K5 e a sala K502.",
+   "item": [
+    {
+     "name": "Cria a porta Door:K5",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"id\": \"urn:ngsi-ld:Door:K5\",\n  \"type\": \"Door\",\n  \"count\": {\n    \"type\": \"Number\",\n    \"value\": 10\n  },\n  \"peak\": {\n    \"type\": \"Number\",\n    \"value\": 10\n  },\n  \"low\": {\n    \"type\": \"Number\",\n    \"value\": 10\n  },\n  \"tags\": {\n    \"type\": \"StructuredValue\",\n    \"value\": [\n      \"a\"\n    ]\n  },\n  \"cfg\": {\n    \"type\": \"StructuredValue\",\n    \"value\": {\n      \"x\": 1,\n      \"y\": 2\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "inc 1",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"count\": {\n    \"type\": \"Number\",\n    \"value\": {\n      \"$inc\": 1\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "count vale 11",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs/count/value"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql(11));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "inc -3",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"count\": {\n    \"type\": \"Number\",\n    \"value\": {\n      \"$inc\": -3\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "mul 2",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"count\": {\n    \"type\": \"Number\",\n    \"value\": {\n      \"$mul\": 2\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "count vale 16",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs/count/value"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql(16));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "max 7 - não muda",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"peak\": {\n    \"type\": \"Number\",\n    \"value\": {\n      \"$max\": 7\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "peak continua 10",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs/peak/value"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql(10));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "max 15",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"peak\": {\n    \"type\": \"Number\",\n    \"value\": {\n      \"$max\": 15\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "peak vale 15",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs/peak/value"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql(15));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "min 4",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"low\": {\n    \"type\": \"Number\",\n    \"value\": {\n      \"$min\": 4\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "low vale 4",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs/low/value"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql(4));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "push b",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"tags\": {\n    \"type\": \"StructuredValue\",\n    \"value\": {\n      \"$push\": \"b\"\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "push b de novo - repete",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"tags\": {\n    \"type\": \"StructuredValue\",\n    \"value\": {\n      \"$push\": \"b\"\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "addToSet b - já existe",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"tags\": {\n    \"type\": \"StructuredValue\",\n    \"value\": {\n      \"$addToSet\": \"b\"\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "addToSet c",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"tags\": {\n    \"type\": \"StructuredValue\",\n    \"value\": {\n      \"$addToSet\": \"c\"\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "tags vale a, b, b, c",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs/tags/value"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql([\"a\", \"b\", \"b\", \"c\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "pull b - remove todas",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"tags\": {\n    \"type\": \"StructuredValue\",\n    \"value\": {\n      \"$pull\": \"b\"\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "tags vale a, c",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs/tags/value"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql([\"a\", \"c\"]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "pullAll a, c",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"tags\": {\n    \"type\": \"StructuredValue\",\n    \"value\": {\n      \"$pullAll\": [\n        \"a\",\n        \"c\"\n      ]\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "tags vazia",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs/tags/value"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql([]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "set z e x",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"cfg\": {\n    \"type\": \"StructuredValue\",\n    \"value\": {\n      \"$set\": {\n        \"z\": 3,\n        \"x\": 9\n      }\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "unset y",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"cfg\": {\n    \"type\": \"StructuredValue\",\n    \"value\": {\n      \"$unset\": {\n        \"y\": 1\n      }\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "cfg vale x 9, z 3",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs/cfg/value"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql({\"x\": 9, \"z\": 3}));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "inc em atributo que não existe - 422",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"novo\": {\n    \"type\": \"Number\",\n    \"value\": {\n      \"$inc\": 5\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "POST attrs cria com o valor do incremento",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"novo\": {\n    \"type\": \"Number\",\n    \"value\": {\n      \"$inc\": 5\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "novo vale 5",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs/novo/value"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql(5));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Dois operadores - só o primeiro vale",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"count\": {\n    \"type\": \"Number\",\n    \"value\": {\n      \"$inc\": 1,\n      \"$mul\": 2\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "count vale 17, e não 34",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs/count/value"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql(17));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "inc com texto - 500",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"count\": {\n    \"type\": \"Number\",\n    \"value\": {\n      \"$inc\": \"1\"\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 500\", () => pm.response.to.have.status(500));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "PUT só do valor - text/plain",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "text/plain"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs/count/value",
+      "body": {
+       "mode": "raw",
+       "raw": "0"
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "count vale 0",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5/attrs/count/value"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql(0));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "PATCH só com o valor",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 23\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Os metadados foram preservados",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502/attrs/temperature"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"unitCode e accuracy continuam\", () => pm.expect(pm.response.json().metadata).to.have.keys(\"unitCode\", \"accuracy\"));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "PATCH com overrideMetadata",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502/attrs?options=overrideMetadata",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 23.5\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Os metadados sumiram",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502/attrs/temperature"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"metadata vazio\", () => pm.expect(pm.response.json().metadata).to.eql({}));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Restaura a temperatura da K502",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 22,\n    \"metadata\": {\n      \"unitCode\": {\n        \"type\": \"Text\",\n        \"value\": \"CEL\"\n      },\n      \"accuracy\": {\n        \"type\": \"Number\",\n        \"value\": 2\n      }\n    }\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "PATCH em atributo novo - 422",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"hasProjector\": {\n    \"type\": \"Boolean\",\n    \"value\": false\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "POST com options=append em atributo existente - 422",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502/attrs?options=append",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"capacity\": {\n    \"type\": \"Number\",\n    \"value\": 99\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Cria a entidade de teste com a e b",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"id\": \"urn:ngsi-ld:Teste:P1\",\n  \"type\": \"Teste\",\n  \"a\": {\n    \"type\": \"Number\",\n    \"value\": 1\n  },\n  \"b\": {\n    \"type\": \"Number\",\n    \"value\": 2\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "PUT attrs substitui todos",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Teste:P1/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"c\": {\n    \"type\": \"Number\",\n    \"value\": 3\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Só restou c",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Teste:P1?options=keyValues"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql({\"id\": \"urn:ngsi-ld:Teste:P1\", \"type\": \"Teste\", \"c\": 3}));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Remove a entidade de teste",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Teste:P1"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Lote com uma entidade inexistente - 422 PartialUpdate",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/op/update",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"actionType\": \"update\",\n  \"entities\": [\n    {\n      \"id\": \"urn:ngsi-ld:Room:K501\",\n      \"type\": \"Room\",\n      \"capacity\": {\n        \"type\": \"Number\",\n        \"value\": 44\n      }\n    },\n    {\n      \"id\": \"urn:ngsi-ld:Room:NAOEXISTE\",\n      \"type\": \"Room\",\n      \"capacity\": {\n        \"type\": \"Number\",\n        \"value\": 1\n      }\n    }\n  ]\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Mas a parte válida foi gravada - 44",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501/attrs/capacity/value"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql(44));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Restaura a capacidade da K501",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "text/plain"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501/attrs/capacity/value",
+      "body": {
+       "mode": "raw",
+       "raw": "40"
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "C5 - Subscrições",
+   "description": "Seção 4. Subscrição por MQTT: assine pel220/# no MQTTX antes de começar (localhost:1883). Precisa do Mosquitto no ar (Etapa 2).",
+   "item": [
+    {
+     "name": "Descrição com parênteses - 400",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/subscriptions",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"description\": \"Sala quente (MQTT)\",\n  \"subject\": {\n    \"entities\": [\n      {\n        \"idPattern\": \".*\",\n        \"type\": \"Room\"\n      }\n    ],\n    \"condition\": {\n      \"attrs\": [\n        \"temperature\"\n      ],\n      \"expression\": {\n        \"q\": \"temperature>28\"\n      }\n    }\n  },\n  \"notification\": {\n    \"mqtt\": {\n      \"url\": \"mqtt://mosquitto:1883\",\n      \"topic\": \"pel220/quente\"\n    },\n    \"attrs\": [\n      \"temperature\",\n      \"name\"\n    ],\n    \"attrsFormat\": \"keyValues\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Formato legacy - 400",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/subscriptions",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"description\": \"Formato legado\",\n  \"subject\": {\n    \"entities\": [\n      {\n        \"id\": \"urn:ngsi-ld:Room:K501\",\n        \"type\": \"Room\"\n      }\n    ]\n  },\n  \"notification\": {\n    \"http\": {\n      \"url\": \"http://cygnus:5050/notify\"\n    },\n    \"attrsFormat\": \"legacy\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Sala K501 a 25 graus",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 25\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Cria a subscrição sala quente",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/subscriptions",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"description\": \"Sala quente via MQTT\",\n  \"subject\": {\n    \"entities\": [\n      {\n        \"idPattern\": \".*\",\n        \"type\": \"Room\"\n      }\n    ],\n    \"condition\": {\n      \"attrs\": [\n        \"temperature\"\n      ],\n      \"expression\": {\n        \"q\": \"temperature>28\"\n      }\n    }\n  },\n  \"notification\": {\n    \"mqtt\": {\n      \"url\": \"mqtt://mosquitto:1883\",\n      \"topic\": \"pel220/quente\"\n    },\n    \"attrs\": [\n      \"temperature\",\n      \"name\"\n    ],\n    \"attrsFormat\": \"keyValues\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+         "pm.collectionVariables.set(\"subQuente\", pm.response.headers.get(\"Location\").split(\"/\").pop());"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Sem notificação inicial",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       }
+      ],
+      "url": "http://{{orion}}/v2/subscriptions/{{subQuente}}"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"timesSent ausente\", () => pm.expect(pm.response.json().notification).to.not.have.property(\"timesSent\"));"
+        ]
+       }
+      },
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "// espera 2 s antes de enviar",
+         "return new Promise(r => setTimeout(r, 2000));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "26 graus - mudou, mas não passa de 28",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 26\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "29 graus - notifica",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 29\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "29 graus de novo - não notifica",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 29\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Muda capacity com a sala quente - não notifica",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"capacity\": {\n    \"type\": \"Number\",\n    \"value\": 41\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Lab K503 a 32 graus - não notifica",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Lab:K503/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 32\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "30 graus - notifica",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 30\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Duas notificações até aqui",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       }
+      ],
+      "url": "http://{{orion}}/v2/subscriptions/{{subQuente}}"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"timesSent 2\", () => pm.expect(pm.response.json().notification.timesSent).to.eql(2));"
+        ]
+       }
+      },
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "// espera 2 s antes de enviar",
+         "return new Promise(r => setTimeout(r, 2000));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "30 graus com forcedUpdate - notifica",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501/attrs?options=forcedUpdate",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"temperature\": {\n    \"type\": \"Number\",\n    \"value\": 30\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Três notificações",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       }
+      ],
+      "url": "http://{{orion}}/v2/subscriptions/{{subQuente}}"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"timesSent 3\", () => pm.expect(pm.response.json().notification.timesSent).to.eql(3));"
+        ]
+       }
+      },
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "// espera 2 s antes de enviar",
+         "return new Promise(r => setTimeout(r, 2000));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Subscrição HTTP com localhost na URL",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/subscriptions",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"description\": \"URL com localhost\",\n  \"subject\": {\n    \"entities\": [\n      {\n        \"id\": \"urn:ngsi-ld:Room:K501\",\n        \"type\": \"Room\"\n      }\n    ],\n    \"condition\": {\n      \"attrs\": [\n        \"capacity\"\n      ]\n    }\n  },\n  \"notification\": {\n    \"http\": {\n      \"url\": \"http://localhost:5050/notify\"\n    },\n    \"attrsFormat\": \"keyValues\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+         "pm.collectionVariables.set(\"subLocal\", pm.response.headers.get(\"Location\").split(\"/\").pop());"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Muda capacity - dispara a subscrição do localhost",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501/attrs",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"capacity\": {\n    \"type\": \"Number\",\n    \"value\": 40\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "A falha aparece no status",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       }
+      ],
+      "url": "http://{{orion}}/v2/subscriptions/{{subLocal}}"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "const n = pm.response.json().notification;",
+         "pm.test(\"failsCounter contou\", () => pm.expect(n.failsCounter).to.be.at.least(1));",
+         "pm.test(\"Motivo registrado\", () => pm.expect(n.lastFailureReason).to.be.a(\"string\"));",
+         "pm.test(\"O status continua active\", () => pm.expect(pm.response.json().status).to.eql(\"active\"));"
+        ]
+       }
+      },
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "// espera 4 s antes de enviar",
+         "return new Promise(r => setTimeout(r, 4000));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "A listagem filtra pelo cabeçalho",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/"
+       }
+      ],
+      "url": "http://{{orion}}/v2/subscriptions"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Nenhuma subscrição na raiz\", () => pm.expect(pm.response.json()).to.eql([]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "DELETE com curinga - 400",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/#"
+       }
+      ],
+      "url": "http://{{orion}}/v2/subscriptions/{{subLocal}}"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Volta as temperaturas",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": "http://{{orion}}/v2/op/update",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"actionType\": \"update\",\n  \"entities\": [\n    {\n      \"id\": \"urn:ngsi-ld:Room:K501\",\n      \"type\": \"Room\",\n      \"temperature\": {\n        \"type\": \"Number\",\n        \"value\": 27.5\n      }\n    },\n    {\n      \"id\": \"urn:ngsi-ld:Lab:K503\",\n      \"type\": \"Lab\",\n      \"temperature\": {\n        \"type\": \"Number\",\n        \"value\": 31\n      }\n    }\n  ]\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "C6 - Limpeza",
+   "description": "Remove tudo o que a coleção criou no tenant pel220. Não toca no tenant ccm130 da Base.",
+   "item": [
+    {
+     "name": "Remove todas as subscrições do tenant pel220",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       }
+      ],
+      "url": "http://{{orion}}/v2/subscriptions?limit=100",
+      "description": "Lista as subscrições do tenant (sem fiware-servicepath: todas) e remove uma a uma."
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "const subs = pm.response.json();",
+         "subs.forEach(s => pm.sendRequest({url: pm.variables.replaceIn(\"http://{{orion}}/v2/subscriptions/\") + s.id,",
+         "  method: \"DELETE\", header: {\"fiware-service\": pm.variables.get(\"service\")}}, () => {}));",
+         "pm.test(\"Subscrições encontradas: \" + subs.length, () => pm.expect(subs).to.be.an(\"array\"));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Não sobrou subscrição",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       }
+      ],
+      "url": "http://{{orion}}/v2/subscriptions"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Resposta esperada\", () => pm.expect(pm.response.json()).to.eql([]));"
+        ]
+       }
+      },
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "// espera 1 s antes de enviar",
+         "return new Promise(r => setTimeout(r, 1000));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Remove Room:K501",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K501"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204 ou 404\", () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Remove Room:K502",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K502"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204 ou 404\", () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Remove Lab:K503",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Lab:K503"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204 ou 404\", () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Remove Room:K401",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar4"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Room:K401"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204 ou 404\", () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Remove Door:K5",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       },
+       {
+        "key": "fiware-servicepath",
+        "value": "/predioK/andar5"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities/urn:ngsi-ld:Door:K5"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 204 ou 404\", () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "O tenant ficou vazio",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "fiware-service",
+        "value": "{{service}}"
+       }
+      ],
+      "url": "http://{{orion}}/v2/entities?options=keyValues&attrs=name"
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+         "pm.test(\"Entidades: nenhuma\", () => pm.expect(pm.response.json().map(e => e.id.split(\":\").pop()).sort()).to.eql([]));"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

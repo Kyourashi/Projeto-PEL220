@@ -10,7 +10,8 @@ Plataforma FIWARE da disciplina (Orion, IoT Agent JSON, Mosquitto, Cygnus, MySQL
 fiware/          a plataforma: docker-compose.yml e serviços de apoio
 modelo-dados/    modelo de dados NGSI-v2 da estufa (marco da Aula 7) + teste no Orion
 docs/aula06/     roteiro da Aula 6, material complementar e coleção Postman
-ferramentas/     scripts auxiliares (ex.: latencia_comando.py)
+docs/aula07/     roteiro da Aula 7 (Orion avançado, Cygnus, Grafana), material complementar e coleção Postman
+ferramentas/     scripts auxiliares (latencia_comando.py, concorrencia.py, gerar_colecao.py)
 ```
 
 ## Como subir (GitHub Codespaces ou máquina local com Docker)
