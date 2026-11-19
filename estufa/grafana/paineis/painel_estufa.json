@@ -10,7 +10,7 @@
   "editable": true,
   "graphTooltip": 1,
   "schemaVersion": 39,
-  "version": 3,
+  "version": 4,
   "refresh": "10s",
   "time": {
     "from": "now-30m",
@@ -352,8 +352,8 @@
     },
     {
       "id": 7,
-      "type": "stat",
-      "title": "Umidade do ar",
+      "type": "gauge",
+      "title": "Caixa d'água",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
@@ -362,6 +362,79 @@
         "x": 16,
         "y": 3,
         "w": 4,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "litre",
+          "decimals": 0,
+          "min": 0,
+          "max": 500,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#F2495C",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 100.0
+              },
+              {
+                "color": "#73BF69",
+                "value": 200.0
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "showThresholdMarkers": true,
+        "showThresholdLabels": false,
+        "sizing": "auto",
+        "minVizWidth": 75,
+        "minVizHeight": 75
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,1)) AS \"caixa\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'tankWaterVolume'\nORDER BY recvTimeTs DESC\nLIMIT 1"
+        }
+      ],
+      "description": "Água na caixa de 500 L: ultrassom na tampa, convertido em litros na ESP32. Vermelho abaixo de 20% da caixa, laranja abaixo de 40%. A bomba tira água e a boia repõe."
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Umidade do ar",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 8,
         "h": 3
       },
       "fieldConfig": {
@@ -405,7 +478,7 @@
       "description": "relativeHumidity de 0 a 1, mostrada em %, com a curva do período. Quem diz se o ar está úmido ou seco demais é o VPD, que junta umidade e temperatura."
     },
     {
-      "id": 8,
+      "id": 9,
       "type": "stat",
       "title": "Luz agora",
       "datasource": {
@@ -413,9 +486,9 @@
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 16,
-        "y": 6,
-        "w": 4,
+        "x": 8,
+        "y": 9,
+        "w": 8,
         "h": 3
       },
       "fieldConfig": {
@@ -459,7 +532,61 @@
       "description": "Iluminância do BH1750, em klx, com a curva do período (o dia e a noite). O que conta para a planta é a luz do dia inteiro: o DLI."
     },
     {
-      "id": 9,
+      "id": 10,
+      "type": "stat",
+      "title": "Vazão depois da bomba",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 9,
+        "w": 8,
+        "h": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: L/min",
+          "decimals": 1,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#5794F2"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "value",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"vazão\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'waterFlow'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        }
+      ],
+      "description": "Medidor de vazão de pulsos (efeito Hall) no cano depois da bomba. Zero com a bomba desligada. Bomba ligada com vazão perto de zero = caixa vazia ou cano entupido."
+    },
+    {
+      "id": 11,
       "type": "stat",
       "title": "Ventilador",
       "datasource": {
@@ -536,7 +663,7 @@
       "description": "Estado que a ESP32 informa (fanState). É o estado observado, não o comando pedido."
     },
     {
-      "id": 10,
+      "id": 12,
       "type": "stat",
       "title": "Bomba",
       "datasource": {
@@ -613,20 +740,20 @@
       "description": "Estado que a ESP32 informa (pumpState)."
     },
     {
-      "id": 11,
+      "id": 13,
       "type": "row",
       "title": "2 · O controle mantém a estufa nas faixas?  —  para o grupo, que avalia a regra de histerese",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 9,
+        "y": 12,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 12,
+      "id": 14,
       "type": "timeseries",
       "title": "Temperatura do ar: dentro, lá fora e os limites do ventilador (22 e 24 °C)",
       "datasource": {
@@ -635,7 +762,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 10,
+        "y": 13,
         "w": 12,
         "h": 8
       },
@@ -750,7 +877,7 @@
       "description": "Dentro (DHT22): a curva deve oscilar entre as linhas; o ventilador liga ao cruzar 24 °C (linha vermelha) e desliga ao cruzar 22 °C (linha verde). Lá fora (clima-externo, uma leitura a cada 15 min, em degraus): na estufa real, o ventilador só resfria até perto dela; com lá fora acima de 22 °C, ele não consegue desligar. A simulação não usa o clima de fora."
     },
     {
-      "id": 13,
+      "id": 15,
       "type": "timeseries",
       "title": "Umidade do solo e os limites da bomba (30 e 45 %)",
       "datasource": {
@@ -759,7 +886,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 10,
+        "y": 13,
         "w": 12,
         "h": 8
       },
@@ -829,7 +956,7 @@
       "description": "Dente de serra: o solo seca devagar e a bomba o molha depressa. A bomba liga ao cruzar 30 % (linha vermelha) e desliga ao cruzar 45 % (linha azul)."
     },
     {
-      "id": 14,
+      "id": 16,
       "type": "state-timeline",
       "title": "Quando cada relé esteve ligado",
       "datasource": {
@@ -838,7 +965,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 18,
+        "y": 21,
         "w": 24,
         "h": 4
       },
@@ -939,20 +1066,20 @@
       "description": "Faixa colorida = relé ligado (ventilador em verde, bomba em azul). Cada faixa verde deve começar em 24 °C e terminar em 22 °C. À noite (luz zero) o ventilador fica desligado."
     },
     {
-      "id": 15,
+      "id": 17,
       "type": "row",
       "title": "3 · Quanto tempo os atuadores ficam ligados?  —  para quem paga a energia e a água",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 22,
+        "y": 25,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 16,
+      "id": 18,
       "type": "barchart",
       "title": "Tempo ligado em cada janela de 5 minutos",
       "datasource": {
@@ -961,7 +1088,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 23,
+        "y": 26,
         "w": 12,
         "h": 8
       },
@@ -1045,7 +1172,7 @@
       "description": "Fração do tempo com o relé ligado (ciclo de trabalho), por janela de 5 min. Ventilador: energia; bomba: energia e água."
     },
     {
-      "id": 17,
+      "id": 19,
       "type": "bargauge",
       "title": "Tempo ligado no período",
       "datasource": {
@@ -1054,7 +1181,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 23,
+        "y": 26,
         "w": 6,
         "h": 4
       },
@@ -1121,7 +1248,7 @@
       "description": "Ciclo de trabalho no período do seletor: média das amostras ligadas (uma a cada 5 s)."
     },
     {
-      "id": 18,
+      "id": 20,
       "type": "stat",
       "title": "Acionamentos no período",
       "datasource": {
@@ -1130,7 +1257,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 27,
+        "y": 30,
         "w": 6,
         "h": 4
       },
@@ -1205,7 +1332,7 @@
       "description": "Quantas vezes cada relé passou de OFF para ON: desgaste do relé e picos de partida do motor."
     },
     {
-      "id": 19,
+      "id": 21,
       "type": "stat",
       "title": "Energia e água no período",
       "datasource": {
@@ -1214,7 +1341,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 23,
+        "y": 26,
         "w": 6,
         "h": 8
       },
@@ -1321,10 +1448,160 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  541  * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS \"ventilador\",\n  180 * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS \"bomba\",\n  1500 * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS \"água\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState')\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
+          "rawSql": "SELECT\n  541  * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS \"ventilador\",\n  180 * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS \"bomba\",\n  5 * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS \"água\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState', 'waterFlow')\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
         }
       ],
-      "description": "Energia = potência nominal × tempo ligado; água = vazão nominal × tempo ligado; cada amostra ON vale 5 s. Valores nominais (atributos estáticos da ESP32): ventilador 541 W, bomba 180 W e 1500 L/h. A física da simulação é acelerada: o número mostra o cálculo, não o consumo de um dia real."
+      "description": "Energia = potência nominal × tempo ligado (cada amostra ON vale 5 s): ventilador 541 W e bomba 180 W, atributos estáticos da ESP32. Água = soma da vazão MEDIDA × 5 s ÷ 60 (medidor de vazão). A física da simulação é acelerada: o número mostra o cálculo, não o consumo de um dia real."
+    },
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "Caixa d'água (500 L) e vazão: o nível cai quando a bomba liga, e a boia repõe",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 34,
+        "w": 24,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "litre",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#8AB8FF"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "#F2495C",
+                "value": 100.0
+              },
+              {
+                "color": "#FF9830",
+                "value": 200.0
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "lineInterpolation": "smooth",
+            "showPoints": "never",
+            "fillOpacity": 18,
+            "gradientMode": "opacity",
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "caixa"
+            },
+            "properties": [
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "vazão"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "suffix: L/min"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.lineInterpolation",
+                "value": "stepAfter"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 35
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.gradientMode",
+                "value": "none"
+              },
+              {
+                "id": "custom.thresholdsStyle",
+                "value": {
+                  "mode": "off"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,1)) AS \"caixa\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'tankWaterVolume'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"vazão\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'waterFlow'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        }
+      ],
+      "description": "Litros na caixa (eixo da esquerda) e vazão medida depois da bomba (eixo da direita, em degraus). Linhas tracejadas: reserva de 40% e 20% da caixa. A água gasta no período é a área sob a vazão."
     }
   ]
 }

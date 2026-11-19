@@ -19,7 +19,8 @@ O que faz, nesta ordem:
      - unitCode presente em toda grandeza numérica, igual ao do provisionamento;
      - relativeHumidity entre 0 e 1;
      - vaporPressureDeficit coerente com temperature e relativeHumidity (Tetens);
-     - potências e vazão nominais iguais às do provisionamento;
+     - potências, vazão nominal e capacidade da caixa iguais às do provisionamento;
+     - água na caixa entre 0 e a capacidade;
      - o alvo de cada Relationship existe;
      - não surgiu uma entidade Thing (dispositivo não provisionado);
   6. grava o que o Orion devolveu em exemplos/*.lido.json.
@@ -48,7 +49,7 @@ DEVICE = "urn:ngsi-ld:Device:ESP32-001"
 ESTUFA = "urn:ngsi-ld:AgriGreenhouse:001"
 CLIMA = "urn:ngsi-ld:WeatherObserved:FEI"
 # v = e_s(26,4 °C) · (1 - 0,62) = 3,442 kPa · 0,38 = 1,31 kPa
-MEDIDA = {"t": 26.4, "h": 0.62, "v": 1.31, "m": 38.5, "l": 21500, "f": "OFF", "p": "OFF"}
+MEDIDA = {"t": 26.4, "h": 0.62, "v": 1.31, "m": 38.5, "l": 21500, "a": 486.5, "q": 17.8, "f": "OFF", "p": "ON"}
 
 AQUI = pathlib.Path(__file__).parent
 falhas = 0
@@ -177,6 +178,9 @@ if "Device" in lidos:
                   lido.get("value") == MEDIDA[a["object_id"]], lido.get("value"))
             teste(f"{a['name']}: unitCode {unidade(a)} como no provisionamento", unidade(lido) == unidade(a),
                   unidade(lido))
+    cap = next(a["value"] for a in dispositivo["static_attributes"] if a["name"] == "tankCapacity")
+    teste(f"tankWaterVolume entre 0 e a capacidade ({cap} L)", 0 <= d["tankWaterVolume"]["value"] <= cap,
+          d["tankWaterVolume"]["value"])
     t, h = d["temperature"]["value"], d["relativeHumidity"]["value"]
     vpd = 0.6108 * math.exp(17.27 * t / (t + 237.3)) * (1 - h)
     teste(f"vaporPressureDeficit coerente com t e h (Tetens: {vpd:.3f} kPa)",
@@ -188,9 +192,9 @@ if "Device" in lidos:
                   lido.get("value") == a["value"] and unidade(lido) == unidade(a), lido)
     for c in ("fanOn", "fanOff", "pumpOn", "pumpOff"):
         teste(f"comando {c} registrado", d.get(c, {}).get("type") == "command", d.get(c))
-    teste("controlledProperty (exigido pelo SDM Device)",
-          d.get("controlledProperty", {}).get("value") == ["temperature", "humidity", "soilMoisture", "light"],
-          d.get("controlledProperty"))
+    props = next(a["value"] for a in dispositivo["static_attributes"] if a["name"] == "controlledProperty")
+    teste(f"controlledProperty = {props} (exigido pelo SDM Device)",
+          d.get("controlledProperty", {}).get("value") == props, d.get("controlledProperty"))
 if "AgriGreenhouse" in lidos:
     g = lidos["AgriGreenhouse"]
     for nome in ("fanOnTemperature", "fanOffTemperature", "irrigationOnSoilMoisture", "irrigationOffSoilMoisture"):

@@ -40,7 +40,7 @@ MODELO = RAIZ / "modelo-dados"
 CLIMA = "urn:ngsi-ld:WeatherObserved:FEI"
 
 ATRIBUTOS_NO = ["temperature", "relativeHumidity", "vaporPressureDeficit", "soilMoisture", "illuminance",
-                "fanState", "pumpState"]
+                "tankWaterVolume", "waterFlow", "fanState", "pumpState"]
 ATRIBUTOS_CLIMA = ["temperature", "relativeHumidity", "windSpeed", "dateObserved", "source"]
 
 

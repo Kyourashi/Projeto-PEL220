@@ -63,6 +63,28 @@
           }
         },
         {
+          "object_id": "a",
+          "name": "tankWaterVolume",
+          "type": "Number",
+          "metadata": {
+            "unitCode": {
+              "type": "Text",
+              "value": "LTR"
+            }
+          }
+        },
+        {
+          "object_id": "q",
+          "name": "waterFlow",
+          "type": "Number",
+          "metadata": {
+            "unitCode": {
+              "type": "Text",
+              "value": "L2"
+            }
+          }
+        },
+        {
           "object_id": "f",
           "name": "fanState",
           "type": "Text"
@@ -104,7 +126,9 @@
             "temperature",
             "humidity",
             "soilMoisture",
-            "light"
+            "light",
+            "waterLevel",
+            "waterFlow"
           ]
         },
         {
@@ -137,6 +161,17 @@
             "unitCode": {
               "type": "Text",
               "value": "E32"
+            }
+          }
+        },
+        {
+          "name": "tankCapacity",
+          "type": "Number",
+          "value": 500,
+          "metadata": {
+            "unitCode": {
+              "type": "Text",
+              "value": "LTR"
             }
           }
         }

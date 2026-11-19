@@ -9,7 +9,7 @@
 
    medidas    publica  /json/<chave>/<device_id>/attrs
                        {"t": 23.4, "h": 0.72, "v": 0.81, "m": 38.5, "l": 21500,
-                        "f": "OFF", "p": "OFF"}
+                        "a": 492.3, "q": 0.0, "f": "OFF", "p": "OFF"}
    comandos   assina   /<chave>/<device_id>/cmd
                        {"fanOn": ""} · {"fanOff": ""} · {"pumpOn": ""} · {"pumpOff": ""}
    resultado  publica  /json/<chave>/<device_id>/cmdexe
@@ -17,8 +17,17 @@
 
    t  temperatura do ar (°C, DHT22)            m  umidade do solo (%, capacitivo)
    h  umidade relativa do ar (0 a 1, DHT22)    l  iluminância (lx, BH1750)
-   v  déficit de pressão de vapor (kPa),       f  relé do ventilador (ON/OFF)
-      calculado na placa a partir de t e h     p  relé da bomba (ON/OFF)
+   v  déficit de pressão de vapor (kPa),       a  água na caixa (L): ultrassom na tampa,
+      calculado na placa a partir de t e h        convertido em litros na placa
+   f  relé do ventilador (ON/OFF)              q  vazão depois da bomba (L/min):
+   p  relé da bomba (ON/OFF)                      medidor de vazão de pulsos (efeito Hall)
+
+ Caixa d'água (cilíndrica, premissa): o ultrassom mede a distância d até a
+ água; com H = distância do sensor ao fundo e A = área da seção,
+   a = 1000 · A · (H - d)       litros (A em m², H e d em m)
+ Medidor de vazão: K pulsos por litro (folha de dados do sensor); com n pulsos
+ no intervalo Δt (s),
+   q = 60 · n / (K · Δt)        L/min
 
  O DHT22 entrega a umidade em %; o firmware divide por 100, porque o modelo
  de dados usa relativeHumidity de 0 a 1 (como o Smart Data Model).
@@ -41,13 +50,16 @@
      o BH1750 satura em 65 535 lx;
    - sem ventilação, o ar tende a 19 °C à noite e a 32 °C ao meio-dia;
      com o ventilador, a 21 °C;
-   - o solo seca devagar e a bomba o molha depressa;
+   - o solo seca devagar e a bomba o molha depressa, se houver água na caixa;
+   - a bomba tira VAZAO_LPM da caixa; a boia repõe BOIA_LPM até encher;
+     com a caixa vazia, a vazão cai ao que a boia repõe;
    - a umidade do ar cai com o calor e com a ventilação e sobe com a rega.
 
  Variáveis de ambiente (padrão entre parênteses):
    DEVICE_ID (estufa001)  APIKEY (estufa)  MQTT_HOST (mosquitto)  MQTT_PORT (1883)
    INTERVALO (5) s · LIGA_VENT (24) · DESLIGA_VENT (22) · LIGA_BOMBA (30)
    DESLIGA_BOMBA (45) · PERIODO_LUZ (600) s · PICO_LUX (34000) lx
+   CAIXA_LITROS (500) · VAZAO_LPM (18) · BOIA_LPM (3)
 ============================================================================
 """
 
@@ -74,6 +86,9 @@ DESLIGA_BOMBA = float(os.getenv("DESLIGA_BOMBA", "45"))
 PERIODO_LUZ = float(os.getenv("PERIODO_LUZ", "600"))
 PICO_LUX = float(os.getenv("PICO_LUX", "34000"))
 FIM_DE_ESCALA_BH1750 = 65535                            # 16 bits, 1 lx por contagem
+CAIXA_LITROS = float(os.getenv("CAIXA_LITROS", "500"))   # capacidade da caixa d'água
+VAZAO_LPM = float(os.getenv("VAZAO_LPM", "18"))          # vazão da bomba no gotejamento (premissa)
+BOIA_LPM = float(os.getenv("BOIA_LPM", "3"))             # reposição pela boia, da rede (premissa)
 
 TOPICO_MEDIDAS = f"/json/{CHAVE}/{DEVICE_ID}/attrs"
 TOPICO_COMANDOS = f"/{CHAVE}/{DEVICE_ID}/cmd"
@@ -85,6 +100,8 @@ TOPICO_RESULTADO = f"/json/{CHAVE}/{DEVICE_ID}/cmdexe"
 inicio = time.time()
 temperatura = random.uniform(20.5, 22.5)
 solo = random.uniform(36.0, 42.0)
+caixa = CAIXA_LITROS * random.uniform(0.92, 0.98)        # litros na caixa
+vazao = 0.0                                              # L/min no cano depois da bomba
 ventilador = False                                      # estado seguro: começa desligado
 bomba = False
 
@@ -99,12 +116,16 @@ def ler_bh1750():
 
 def passo_fisico(lux):
     """Avança a física da estufa em um intervalo de medida."""
-    global temperatura, solo
+    global temperatura, solo, caixa, vazao
     luz = lux / PICO_LUX                                # 0 à noite, ~1 ao meio-dia
     alvo = 21.0 if ventilador else 19.0 + 13.0 * luz
     temperatura += 0.05 * (alvo - temperatura) + random.uniform(-0.12, 0.12)
     secagem = 0.18 + 0.004 * max(temperatura - 20, 0)    # mais calor, mais evaporação
-    solo += 1.6 if bomba else -secagem
+    minutos = INTERVALO / 60
+    disponivel = caixa / minutos + BOIA_LPM               # L/min que a caixa e a boia dão neste passo
+    vazao = min(VAZAO_LPM * random.uniform(0.97, 1.03), disponivel) if bomba else 0.0   # caixa vazia: só o que a boia repõe
+    caixa = min(max(caixa - vazao * minutos + BOIA_LPM * minutos, 0.0), CAIXA_LITROS)
+    solo += 1.6 * vazao / VAZAO_LPM - (0 if vazao else secagem)   # molha na proporção da vazão; sem água, seca
     solo = min(max(solo + random.uniform(-0.05, 0.05), 5.0), 80.0)
 
 
@@ -214,7 +235,8 @@ try:
         regra_local()
         t = round(temperatura, 1)
         h = round(ler_umidade_ar(), 2)
-        medida = {"t": t, "h": h, "v": round(calcular_vpd(t, h), 2), "m": round(solo, 1), "l": lux}
+        medida = {"t": t, "h": h, "v": round(calcular_vpd(t, h), 2), "m": round(solo, 1), "l": lux,
+                  "a": round(min(max(caixa + random.uniform(-1.5, 1.5), 0.0), CAIXA_LITROS), 1), "q": round(vazao, 1)}
         medida.update(estados())
         publicar(cliente, medida)
         time.sleep(INTERVALO)

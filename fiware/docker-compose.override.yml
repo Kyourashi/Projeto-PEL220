@@ -26,7 +26,7 @@ services:
 
   # --- O nó da estufa (tenant estufa) ---------------------------------------------
   esp32-estufa:
-    # DHT22, sensor de solo, BH1750 e dois relés, em software. Acompanhe: docker logs -f esp32-estufa
+    # DHT22, sensor de solo, BH1750, ultrassom da caixa, medidor de vazão e dois relés, em software. Acompanhe: docker logs -f esp32-estufa
     build: ../estufa/esp32_estufa
     image: pel220/esp32-estufa
     container_name: esp32-estufa
@@ -44,6 +44,9 @@ services:
       - DESLIGA_BOMBA=45
       - PERIODO_LUZ=600     # um "dia" simulado dura 10 min
       - PICO_LUX=34000      # luz ao meio-dia dentro da estufa (premissa da simulação)
+      - CAIXA_LITROS=500    # caixa d'água (tankCapacity no dispositivo.json)
+      - VAZAO_LPM=18        # vazão da bomba no gotejamento (premissa)
+      - BOIA_LPM=3          # reposição pela boia, da rede (premissa)
 
   # --- O clima externo no histórico (tenant estufa) ---------------------------------
   gravador-clima:

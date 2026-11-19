@@ -4,6 +4,7 @@
 //  a WeatherObserved) e atualiza a cena:
 //    - DHT22, sensor de solo e BH1750: ponto colorido pelas faixas da alface;
 //    - o exaustor gira quando fanState = ON; a irrigação acende quando pumpState = ON;
+//    - a água sobe e desce na caixa (tankWaterVolume) e a vazão medida aparece na bomba;
 //    - a luz da cena segue a iluminância medida (dia e noite da simulação);
 //    - os limites de cor vêm da AgriGreenhouse no Orion, não deste arquivo.
 // =============================================================================
@@ -16,19 +17,21 @@ const C = 10, L = 5, H_PAREDE = 2.4, H_CUMEEIRA = 3.4;     // m: 10 × 5 = 50 m�
 const FRIO = 18;                                           // °C: abaixo disso, frio para a alface
 const VPD_FAIXA = [0.45, 1.25, 1.5];                       // kPa: úmido | faixa | atenção | estresse
 const LUX_SOL = 34000;                                     // lx: meio-dia da simulação (escurece a cena à noite)
+const RESERVA = [0.2, 0.4];                                // fração da caixa: vermelho | laranja | verde
 const PADRAO = { fanOnTemperature: 24, fanOffTemperature: 22,
                  irrigationOnSoilMoisture: 30, irrigationOffSoilMoisture: 45 };
 const COR = { verde: 0x73bf69, azul: 0x5794f2, laranja: 0xff9830, vermelho: 0xf2495c,
               amarelo: 0xfade2a, cinza: 0x8e8e8e, roxo: 0xb877d9 };
 const CSS = Object.fromEntries(Object.entries(COR).map(([k, v]) => [k, '#' + v.toString(16).padStart(6, '0')]));
 
+const marcadores = [];                                     // pontos coloridos que pulsam
 let semente = 20261119;                                    // sorteio fixo: a cena é sempre a mesma
 const sorteio = () => (semente = (semente * 16807) % 2147483647) / 2147483647;
 
 // --- cena, câmera, controles --------------------------------------------------------
 const cena = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(43, innerWidth / innerHeight, 0.1, 200);
-camera.position.set(-10.2, 6.3, 9.2);
+camera.position.set(-11.0, 6.3, 9.0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -44,7 +47,7 @@ camadaRotulos.domElement.className = 'rotulos';
 document.body.appendChild(camadaRotulos.domElement);
 
 const controles = new OrbitControls(camera, camadaRotulos.domElement);
-controles.target.set(-0.4, 0.9, 0.4);
+controles.target.set(-1.2, 0.9, 0.2);
 controles.enableDamping = true;
 controles.maxPolarAngle = Math.PI * 0.48;
 controles.minDistance = 4;
@@ -78,7 +81,11 @@ const mat = {
   branco: new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.5 }),
   placaAzul: new THREE.MeshStandardMaterial({ color: 0x2c5282, roughness: 0.5 }),
   placaPreta: new THREE.MeshStandardMaterial({ color: 0x1a202c, roughness: 0.5 }),
-  aguaCaixa: new THREE.MeshStandardMaterial({ color: 0x5a7d9a, roughness: 0.4, metalness: 0.2 }),
+  casca: new THREE.MeshPhysicalMaterial({ color: 0x9cc3ee, roughness: 0.3, transparent: true, opacity: 0.22,
+                                          side: THREE.DoubleSide, depthWrite: false }),
+  tampa: new THREE.MeshStandardMaterial({ color: 0x1f4f8f, roughness: 0.5 }),
+  agua: new THREE.MeshStandardMaterial({ color: 0x1f7fe0, roughness: 0.15, transparent: true, opacity: 0.88,
+                                         emissive: 0x0f4fa0, emissiveIntensity: 0.3 }),
   pa: new THREE.MeshStandardMaterial({ color: 0x3a4048, roughness: 0.4, metalness: 0.5 }),
 };
 
@@ -188,11 +195,21 @@ for (const z of CAMAS) for (const dz of [-0.12, 0.12]) {
 }
 cano(v(XC, 0.12, CAMAS[0] - 0.12), v(XC, 0.12, CAMAS[2] + 0.12), 0.02);
 cano(v(-C / 2 - 1.0, 0.12, CAMAS[0] - 0.12), v(XC, 0.12, CAMAS[0] - 0.12), 0.02);
-malha(new THREE.CylinderGeometry(0.5, 0.5, 1.2, 28), mat.aguaCaixa, -C / 2 - 1.85, 0.6, -1.7);
+const CAIXA = { x: -C / 2 - 1.85, z: -1.7, r: 0.46, h: 0.95, hAgua: 0.75 };  // D 0,92 m: 500 L até 0,75 m de altura
+malha(new THREE.CylinderGeometry(CAIXA.r, CAIXA.r, CAIXA.h, 32, 1, true), mat.casca, CAIXA.x, CAIXA.h / 2, CAIXA.z, { sombra: false });
+malha(new THREE.CylinderGeometry(CAIXA.r + 0.02, CAIXA.r + 0.02, 0.04, 32), mat.tampa, CAIXA.x, CAIXA.h + 0.02, CAIXA.z);
+malha(new THREE.CylinderGeometry(CAIXA.r, CAIXA.r, 0.02, 32), mat.tampa, CAIXA.x, 0.01, CAIXA.z);
+const agua = malha(new THREE.CylinderGeometry(CAIXA.r - 0.015, CAIXA.r - 0.015, 1, 32), mat.agua, CAIXA.x, 0.5, CAIXA.z, { sombra: false });
+malha(new THREE.BoxGeometry(0.11, 0.04, 0.06), mat.placaAzul, CAIXA.x + 0.12, CAIXA.h + 0.06, CAIXA.z);   // placa do ultrassom
+malha(new THREE.CylinderGeometry(0.03, 0.03, 0.07, 16), mat.placaPreta, CAIXA.x, CAIXA.h + 0.02, CAIXA.z);  // sonda, olhando para a água
+const mCaixa = marcador(CAIXA.x, CAIXA.h + 0.26, CAIXA.z);
+const medidor = malha(new THREE.CylinderGeometry(0.04, 0.04, 0.14, 16), mat.placaPreta, -C / 2 - 0.65, 0.12, CAMAS[0] - 0.12);
+medidor.rotation.z = Math.PI / 2;                     // medidor de vazão no cano, depois da bomba
+malha(new THREE.CylinderGeometry(0.022, 0.022, 0.05, 12), mat.branco, -C / 2 - 0.65, 0.18, CAMAS[0] - 0.12);
 malha(new THREE.BoxGeometry(0.36, 0.24, 0.26), mat.caixa, -C / 2 - 1.15, 0.13, CAMAS[0] - 0.12);
 const motor = malha(new THREE.CylinderGeometry(0.1, 0.1, 0.3, 18), mat.placaAzul, -C / 2 - 1.45, 0.13, CAMAS[0] - 0.12);
 motor.rotation.z = Math.PI / 2;
-cano(v(-C / 2 - 1.4, 0.12, -1.72), v(-C / 2 - 1.33, 0.12, CAMAS[0] - 0.12), 0.02);
+cano(v(CAIXA.x + CAIXA.r, 0.12, CAIXA.z), v(-C / 2 - 1.33, 0.12, CAMAS[0] - 0.12), 0.02);
 const luzBomba = malha(new THREE.SphereGeometry(0.05, 16, 12),
                        new THREE.MeshStandardMaterial({ color: COR.azul, emissive: COR.azul, emissiveIntensity: 0.05 }),
                        -C / 2 - 1.15, 0.3, CAMAS[0] - 0.12, { sombra: false });
@@ -230,7 +247,6 @@ const led = malha(new THREE.SphereGeometry(0.022, 12, 8),
                   -C / 2 + 0.11, 1.4, 1.55, { sombra: false });
 
 // --- sensores: haste, placa e um ponto colorido pela faixa ------------------------------
-const marcadores = [];
 function marcador(x, y, z) {
   const m = malha(new THREE.SphereGeometry(0.08, 24, 16),
                   new THREE.MeshStandardMaterial({ color: COR.cinza, emissive: COR.cinza, emissiveIntensity: 0.7, roughness: 0.3 }),
@@ -278,7 +294,8 @@ const rot = {
   solo: rotulo(SOLO.x, ALT + 0.42, SOLO.z),
   bh: rotulo(BH.x, 1.48, BH.z),
   vent: rotulo(XE, EXAUSTOR.y + 0.62, 0),
-  bomba: rotulo(-C / 2 - 1.15, 0.45, CAMAS[0] - 0.12),
+  bomba: rotulo(-C / 2 - 0.65, 0.3, CAMAS[0] - 0.12),
+  caixa: rotulo(CAIXA.x, CAIXA.h + 0.8, CAIXA.z),
   esp: rotulo(-C / 2 + 0.06, 1.5, 1.55),
   fora: rotulo(FORA.x, 2.32, FORA.z),
 };
@@ -311,7 +328,7 @@ function preencher(div, cor, titulo, valor, detalhe = '') {
                   (detalhe ? `<div class="s">${detalhe}</div>` : '');
 }
 
-let alvoLuz = 1, luzAtual = 1, alvoGiro = 0, giro = 0, bombaLigada = false;
+let alvoLuz = 1, luzAtual = 1, alvoGiro = 0, giro = 0, bombaLigada = false, alvoAgua = 0.95, nivel = 0.95;
 let ultimaResposta = 0, ultimaMedida = null, falha = null, semNo = false, primeira = true;
 
 function aplicar(estado) {
@@ -344,9 +361,18 @@ function aplicar(estado) {
 
   bombaLigada = no.pumpState === 'ON';
   mat.tubo.color.setHex(bombaLigada ? 0x3ea8ff : 0x2b3036);
-  preencher(rot.bomba, bombaLigada ? 'azul' : 'cinza',
-            `Bomba · ${num(no.pumpRatedPower, 0)} W · ${num(no.pumpFlowRate, 0)} L/h`,
-            bombaLigada ? 'Ligada' : 'Desligada');
+  preencher(rot.bomba, bombaLigada ? 'azul' : 'cinza', `Bomba · ${num(no.pumpRatedPower, 0)} W · vazão medida`,
+            `${bombaLigada ? 'Ligada' : 'Desligada'} · ${num(no.waterFlow)} L/min`,
+            bombaLigada && no.waterFlow != null && no.waterFlow < 0.5 * (no.pumpFlowRate || 1500) / 60
+              ? 'vazão baixa: caixa vazia ou cano entupido?' : '');
+
+  const capacidade = no.tankCapacity || 500, litros = no.tankWaterVolume;
+  const fracaoCaixa = litros == null ? 0 : Math.min(1, Math.max(0, litros / capacidade));
+  const cc = litros == null ? 'cinza' : fracaoCaixa < RESERVA[0] ? 'vermelho' : fracaoCaixa < RESERVA[1] ? 'laranja' : 'verde';
+  pintar(mCaixa, cc);
+  preencher(rot.caixa, cc, `Caixa d'água · ${num(capacidade, 0)} L`, `${num(litros, 0)} L`,
+            `${num(fracaoCaixa * 100, 0)} % · ultrassom na tampa`);
+  alvoAgua = fracaoCaixa;
 
   ultimaMedida = no.TimeInstant ? new Date(no.TimeInstant).toLocaleTimeString('pt-BR') : null;
   rot.esp.style.borderTopColor = CSS.verde;
@@ -359,6 +385,7 @@ function aplicar(estado) {
   if (primeira) {                                   // ao abrir a página, já começa no estado certo
     luzAtual = alvoLuz;
     giro = alvoGiro;
+    nivel = alvoAgua;
     primeira = false;
   }
 }
@@ -413,6 +440,10 @@ renderer.setAnimationLoop(() => {
   luzAtual += (alvoLuz - luzAtual) * Math.min(1, dt * 0.8);
   aplicarLuz(luzAtual);
   giro += (alvoGiro - giro) * Math.min(1, dt * 1.2);
+  nivel += (alvoAgua - nivel) * Math.min(1, dt * 1.5);
+  const hAgua = Math.max(0.005, CAIXA.hAgua * nivel);
+  agua.scale.y = hAgua;
+  agua.position.y = 0.02 + hAgua / 2;
   rotor.rotation.x -= giro * dt;
   mat.tubo.emissiveIntensity = bombaLigada ? 0.55 + 0.35 * Math.sin(t * 5) : Math.max(0, mat.tubo.emissiveIntensity - dt);
   luzBomba.material.emissiveIntensity = bombaLigada ? 1.8 : 0.05;

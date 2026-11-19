@@ -28,6 +28,8 @@ NOMINAL = {a["name"]: a["value"] for a in NO["static_attributes"] if a["type"] =
 LIGA_VENT, DESLIGA_VENT = ESTUFA["fanOnTemperature"]["value"], ESTUFA["fanOffTemperature"]["value"]
 LIGA_BOMBA, DESLIGA_BOMBA = ESTUFA["irrigationOnSoilMoisture"]["value"], ESTUFA["irrigationOffSoilMoisture"]["value"]
 P_VENT, P_BOMBA, Q_BOMBA = NOMINAL["fanRatedPower"], NOMINAL["pumpRatedPower"], NOMINAL["pumpFlowRate"]
+CAIXA = NOMINAL["tankCapacity"]                       # L
+RESERVA = (0.2, 0.4)                                  # fração da caixa: vermelho abaixo de 20 %, laranja abaixo de 40 %
 DT = 5                       # s entre amostras (INTERVALO da ESP32): cada amostra ON vale 5 s ligado
 FRIO_ALFACE = 18             # °C, limite inferior da faixa da alface (18 a 23 °C)
 DLI_MIN, DLI_MAX = 14, 18    # mol/m²/dia para alface
@@ -196,14 +198,14 @@ FROM (
 ) AS mudancas
 WHERE attrValue = 'ON' AND anterior = 'OFF'"""
 
-# E = P · Δt · Σ s_i  (Wh = W · s / 3600)   ·   V = Q · Δt · Σ s_i  (L = L/h · s / 3600)
+# E = P · Δt · Σ s_i  (Wh = W · s / 3600)   ·   V = Δt · Σ q_i / 60  (L = s · L/min / 60, vazão medida)
 CONSUMO = f"""
 SELECT
   {P_VENT}  * {DT} * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS "ventilador",
   {P_BOMBA} * {DT} * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS "bomba",
-  {Q_BOMBA} * {DT} * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS "água"
+  {DT} * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS "água"
 FROM {TABELA}
-WHERE attrName IN ('fanState', 'pumpState')
+WHERE attrName IN ('fanState', 'pumpState', 'waterFlow')
   AND $__unixEpochFilter(recvTimeTs / 1000)"""
 
 
@@ -258,10 +260,11 @@ def serie(titulo, x, y, w, h, alvos, unidade, nome_cor, limiares, descricao, min
     return base("timeseries", titulo, x, y, w, h, alvos, descricao,
                 defaults={"unit": unidade, "color": fixa(nome_cor),
                           "thresholds": {"mode": "absolute", "steps": limiares},
-                          "custom": {"lineWidth": 2, "lineInterpolation": "smooth", "showPoints": "never",
-                                     "fillOpacity": 18, "gradientMode": "opacity",
-                                     "axisSoftMin": minimo, "axisSoftMax": maximo,
-                                     "thresholdsStyle": {"mode": "dashed"}}},
+                          "custom": {k: val for k, val in {
+                              "lineWidth": 2, "lineInterpolation": "smooth", "showPoints": "never",
+                              "fillOpacity": 18, "gradientMode": "opacity",
+                              "axisSoftMin": minimo, "axisSoftMax": maximo,
+                              "thresholdsStyle": {"mode": "dashed"}}.items() if val is not None}},
                 overrides=sobreposicoes,
                 opcoes={"legend": {"showLegend": legenda, "displayMode": "list", "placement": "bottom"},
                         "tooltip": {"mode": "multi" if legenda else "single", "sort": "none"}})
@@ -300,16 +303,25 @@ painel += [
             f"Luz diária integrada das últimas 24 h: média da iluminância × {br(LUX_PARA_PPFD)} (lx → µmol/m²/s, "
             f"luz do sol) × 86 400 s ÷ 10⁶. Alface: {DLI_MIN} a {DLI_MAX} mol/m²/dia (verde).",
             timeFrom="24h", hideTimeOverride=True),
-    tendencia("Umidade do ar", 16, 3, 4, 3,
+    medidor("Caixa d'água", 16, 3, 4, 6, [alvo(agora("tankWaterVolume", "caixa", "CAST(attrValue AS DECIMAL(10,1))"))],
+            "litre", 0, 0, CAIXA,
+            [cor("vermelho", None), cor("laranja", RESERVA[0] * CAIXA), cor("verde", RESERVA[1] * CAIXA)],
+            f"Água na caixa de {CAIXA} L: ultrassom na tampa, convertido em litros na ESP32. Vermelho abaixo de "
+            f"{RESERVA[0]:.0%} da caixa, laranja abaixo de {RESERVA[1]:.0%}. A bomba tira água e a boia repõe."),
+    tendencia("Umidade do ar", 0, 9, 8, 3,
               [alvo(historico("relativeHumidity", "umidade do ar", "CAST(attrValue AS DECIMAL(6,2))"))],
               "percentunit", 0, "agua",
               "relativeHumidity de 0 a 1, mostrada em %, com a curva do período. Quem diz se o ar está úmido ou "
               "seco demais é o VPD, que junta umidade e temperatura."),
-    tendencia("Luz agora", 16, 6, 4, 3,
+    tendencia("Luz agora", 8, 9, 8, 3,
               [alvo(historico("illuminance", "luz", "CAST(attrValue AS DECIMAL(10,1)) / 1000"))],
               "suffix: klx", 1, "luz",
               "Iluminância do BH1750, em klx, com a curva do período (o dia e a noite). O que conta para a planta "
               "é a luz do dia inteiro: o DLI."),
+    tendencia("Vazão depois da bomba", 16, 9, 8, 3,
+              [alvo(historico("waterFlow", "vazão"))], "suffix: L/min", 1, "bomba",
+              "Medidor de vazão de pulsos (efeito Hall) no cano depois da bomba. Zero com a bomba desligada. "
+              "Bomba ligada com vazão perto de zero = caixa vazia ou cano entupido."),
     estado("Ventilador", 20, 3, 4, 3, "fanState", "ventilador", "ventilador",
            "Estado que a ESP32 informa (fanState). É o estado observado, não o comando pedido."),
     estado("Bomba", 20, 6, 4, 3, "pumpState", "bomba", "bomba",
@@ -317,10 +329,10 @@ painel += [
 ]
 
 # --- Pergunta 2 -------------------------------------------------------------------
-painel.append(linha("2 · O controle mantém a estufa nas faixas?  —  para o grupo, que avalia a regra de histerese", 9))
+painel.append(linha("2 · O controle mantém a estufa nas faixas?  —  para o grupo, que avalia a regra de histerese", 12))
 painel += [
     serie(f"Temperatura do ar: dentro, lá fora e os limites do ventilador ({DESLIGA_VENT} e {LIGA_VENT} °C)",
-          0, 10, 12, 8, [alvo(historico("temperature", "dentro"), "A"), alvo(LA_FORA, "B")], "celsius",
+          0, 13, 12, 8, [alvo(historico("temperature", "dentro"), "A"), alvo(LA_FORA, "B")], "celsius",
           "temperatura", [cor("transparent", None), cor("verde", DESLIGA_VENT), cor("vermelho", LIGA_VENT)],
           f"Dentro (DHT22): a curva deve oscilar entre as linhas; o ventilador liga ao cruzar {LIGA_VENT} °C (linha "
           f"vermelha) e desliga ao cruzar {DESLIGA_VENT} °C (linha verde). Lá fora (clima-externo, uma leitura a "
@@ -329,13 +341,13 @@ painel += [
           16, 28, legenda=True,
           sobreposicoes=[campo("lá fora", color=fixa("fora"), custom__lineInterpolation="stepAfter",
                                custom__fillOpacity=0, custom__lineStyle={"fill": "dash", "dash": [10, 6]})]),
-    serie(f"Umidade do solo e os limites da bomba ({LIGA_BOMBA} e {DESLIGA_BOMBA} %)", 12, 10, 12, 8,
+    serie(f"Umidade do solo e os limites da bomba ({LIGA_BOMBA} e {DESLIGA_BOMBA} %)", 12, 13, 12, 8,
           [alvo(historico("soilMoisture", "solo"))], "percent", "agua",
           [cor("transparent", None), cor("vermelho", LIGA_BOMBA), cor("azul_escuro", DESLIGA_BOMBA)],
           f"Dente de serra: o solo seca devagar e a bomba o molha depressa. A bomba liga ao cruzar {LIGA_BOMBA} % "
           f"(linha vermelha) e desliga ao cruzar {DESLIGA_BOMBA} % (linha azul).",
           20, 55),
-    base("state-timeline", "Quando cada relé esteve ligado", 0, 18, 24, 4,
+    base("state-timeline", "Quando cada relé esteve ligado", 0, 21, 24, 4,
          [alvo(historico("fanState", "ventilador", "attrValue"), "A"),
           alvo(historico("pumpState", "bomba", "attrValue"), "B")],
          f"Faixa colorida = relé ligado (ventilador em verde, bomba em azul). Cada faixa verde deve começar em "
@@ -348,9 +360,9 @@ painel += [
 ]
 
 # --- Pergunta 3 -------------------------------------------------------------------
-painel.append(linha("3 · Quanto tempo os atuadores ficam ligados?  —  para quem paga a energia e a água", 22))
+painel.append(linha("3 · Quanto tempo os atuadores ficam ligados?  —  para quem paga a energia e a água", 25))
 painel += [
-    base("barchart", "Tempo ligado em cada janela de 5 minutos", 0, 23, 12, 8, [alvo(JANELAS)],
+    base("barchart", "Tempo ligado em cada janela de 5 minutos", 0, 26, 12, 8, [alvo(JANELAS)],
          "Fração do tempo com o relé ligado (ciclo de trabalho), por janela de 5 min. Ventilador: energia; "
          "bomba: energia e água.",
          defaults={"unit": "percent", "decimals": 0, "min": 0, "max": 100,
@@ -360,7 +372,7 @@ painel += [
                  "barWidth": 0.9, "barRadius": 0.15, "text": {"valueSize": 12},
                  "legend": {"showLegend": True, "displayMode": "list", "placement": "bottom"},
                  "tooltip": {"mode": "multi"}}),
-    base("bargauge", "Tempo ligado no período", 12, 23, 6, 4, [alvo(PERIODO, formato="table")],
+    base("bargauge", "Tempo ligado no período", 12, 26, 6, 4, [alvo(PERIODO, formato="table")],
          "Ciclo de trabalho no período do seletor: média das amostras ligadas (uma a cada 5 s).",
          defaults={"unit": "percent", "decimals": 0, "min": 0, "max": 100, "color": fixa("ventilador")},
          overrides=[campo("bomba", color=fixa("bomba"))],
@@ -368,18 +380,29 @@ painel += [
                  "displayMode": "gradient", "orientation": "horizontal", "showUnfilled": True, "valueMode": "color",
                  "namePlacement": "auto", "sizing": "auto", "minVizHeight": 16, "minVizWidth": 8,
                  "maxVizHeight": 300}),
-    numeros("Acionamentos no período", 12, 27, 6, 4, [alvo(ACIONAMENTOS, formato="table")],
+    numeros("Acionamentos no período", 12, 30, 6, 4, [alvo(ACIONAMENTOS, formato="table")],
             "Quantas vezes cada relé passou de OFF para ON: desgaste do relé e picos de partida do motor.",
             [campo("ventilador", color=fixa("ventilador")), campo("bomba", color=fixa("bomba"))], decimais=0),
-    numeros("Energia e água no período", 18, 23, 6, 8, [alvo(CONSUMO, formato="table")],
-            f"Energia = potência nominal × tempo ligado; água = vazão nominal × tempo ligado; cada amostra ON vale "
-            f"{DT} s. Valores nominais (atributos estáticos da ESP32): ventilador {P_VENT} W, bomba {P_BOMBA} W e "
-            f"{br(Q_BOMBA)} L/h. A física da simulação é acelerada: o número mostra o cálculo, não o consumo de um "
-            f"dia real.",
+    numeros("Energia e água no período", 18, 26, 6, 8, [alvo(CONSUMO, formato="table")],
+            f"Energia = potência nominal × tempo ligado (cada amostra ON vale {DT} s): ventilador {P_VENT} W e bomba "
+            f"{P_BOMBA} W, atributos estáticos da ESP32. Água = soma da vazão MEDIDA × {DT} s ÷ 60 (medidor de vazão). "
+            f"A física da simulação é acelerada: o número mostra o cálculo, não o consumo de um dia real.",
             [campo("ventilador", color=fixa("ventilador"), unit="watth", decimals=1),
              campo("bomba", color=fixa("bomba"), unit="watth", decimals=1),
              campo("água", color=fixa("agua"), unit="litre", decimals=0)],
             orientacao="horizontal"),
+    serie(f"Caixa d'água ({CAIXA} L) e vazão: o nível cai quando a bomba liga, e a boia repõe", 0, 34, 24, 7,
+          [alvo(historico("tankWaterVolume", "caixa", "CAST(attrValue AS DECIMAL(10,1))"), "A"),
+           alvo(historico("waterFlow", "vazão"), "B")], "litre", "agua",
+          [cor("transparent", None), cor("vermelho", RESERVA[0] * CAIXA), cor("laranja", RESERVA[1] * CAIXA)],
+          f"Litros na caixa (eixo da esquerda) e vazão medida depois da bomba (eixo da direita, em degraus). "
+          f"Linhas tracejadas: reserva de {RESERVA[1]:.0%} e {RESERVA[0]:.0%} da caixa. A água gasta no período é a "
+          f"área sob a vazão.",
+          None, None, legenda=True,
+          sobreposicoes=[campo("caixa", custom__fillOpacity=0, custom__lineWidth=2),
+                         campo("vazão", color=fixa("bomba"), unit="suffix: L/min", custom__axisPlacement="right",
+                               custom__lineInterpolation="stepAfter", custom__fillOpacity=35, custom__lineWidth=1,
+                               custom__gradientMode="none", custom__thresholdsStyle={"mode": "off"})]),
 ]
 
 dashboard = {
@@ -392,7 +415,7 @@ dashboard = {
     "editable": True,
     "graphTooltip": 1,                                 # cursor compartilhado entre os gráficos
     "schemaVersion": 39,
-    "version": 3,
+    "version": 4,
     "refresh": "10s",                                  # 5 s pesa no túnel de portas do Codespace
     "time": {"from": "now-30m", "to": "now"},
     "templating": {"list": []},

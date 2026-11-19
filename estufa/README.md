@@ -11,7 +11,7 @@ O marco pede três itens:
 
 | Peça | Onde |
 |---|---|
-| Nó da estufa (ESP32 simulada) | `esp32_estufa/`, no tenant `estufa`: publica `t`, `h`, `v`, `m`, `l`, `f`, `p` e responde aos comandos |
+| Nó da estufa (ESP32 simulada) | `esp32_estufa/`, no tenant `estufa`: publica `t`, `h`, `v`, `m`, `l`, `a`, `q`, `f`, `p` e responde aos comandos |
 | Clima externo | `gravador_clima/`: a cada 15 min, copia o `clima-externo` da Base para a `WeatherObserved:FEI` |
 | Subscrições do grupo | criadas por `configurar.py`: **"Historico da estufa para o Cygnus"** e **"Clima externo para o Cygnus"** |
 | Histórico | MySQL, banco `estufa`: tabelas `` `urn_ngsi-ld_Device_ESP32-001_Device` `` e `` `urn_ngsi-ld_WeatherObserved_FEI_WeatherObserved` `` |
@@ -27,9 +27,10 @@ O painel do Grafana mostra o **passado** (MySQL). A página `http://localhost:30
 
 ![Estufa em 3D](estufa-3d.png)
 
-- **Sensores no lugar:** DHT22, sensor de solo e BH1750, cada um com um ponto colorido pelas faixas da alface (as mesmas cores do painel).
+- **Sensores no lugar:** DHT22, sensor de solo, BH1750, ultrassom na tampa da caixa d'água e medidor de vazão no cano da bomba, cada um com um ponto colorido pelas faixas da alface (as mesmas cores do painel).
 - **Limites lidos do Orion:** as cores usam os limites da `AgriGreenhouse` (`fanOnTemperature`, `irrigationOnSoilMoisture`…). Se o grupo mudar um limite no Orion, a cena muda junto.
-- **Atuadores:** o exaustor gira quando `fanState = ON`. A irrigação acende em azul quando `pumpState = ON`. Os rótulos mostram as potências e a vazão nominais.
+- **Atuadores:** o exaustor gira quando `fanState = ON`. A irrigação acende em azul quando `pumpState = ON`, e o rótulo da bomba mostra a vazão medida (avisa se a bomba está ligada com menos da metade da vazão de catálogo).
+- **Caixa d'água:** a água sobe e desce com o `tankWaterVolume`, e a cor segue a reserva: vermelho abaixo de 20 %, laranja abaixo de 40 %.
 - **Dia e noite:** a luz da cena segue a iluminância medida pelo BH1750.
 - **Lá fora:** a estação do lado de fora mostra a `WeatherObserved` gravada pelo `gravador-clima`.
 
@@ -90,9 +91,9 @@ docker compose restart grafana-estufa         # carrega o painel do arquivo
 
 | # | Pergunta | Para quem | Que decisão apoia | Visualização |
 |---|---|---|---|---|
-| 1 | **A estufa está bem agora?** | o operador da estufa | intervir já (ex.: 25 °C com o ventilador desligado, solo abaixo de 30 % sem a bomba, VPD acima de 1,5 kPa) | **Gauge** nas faixas da alface (temperatura, solo, VPD e DLI) + **Stat** com a curva do período (umidade do ar e luz) e o estado de cada relé |
+| 1 | **A estufa está bem agora?** | o operador da estufa | intervir já (ex.: 25 °C com o ventilador desligado, solo abaixo de 30 % sem a bomba, VPD acima de 1,5 kPa, caixa abaixo de 20 %) | **Gauge** nas faixas (temperatura, solo, VPD, DLI e caixa d'água) + **Stat** com a curva do período (umidade do ar, luz e vazão) e o estado de cada relé |
 | 2 | **O controle mantém a estufa nas faixas?** | o grupo, que projeta e ajusta a regra (e, na Aula 9, o gêmeo digital) | manter ou mudar os limites 22/24 °C e 30/45 %; ver se a histerese oscila rápido demais; separar "regra ruim" de "dia quente" com a temperatura de fora | **Time series** com as linhas dos limites e a temperatura externa + **State timeline** dos relés |
-| 3 | **Quanto tempo os atuadores ficam ligados?** | quem paga a energia (ventilador) e a energia e a água (bomba) | prever o consumo; avaliar se mudar um limite compensa | **Bar chart** do tempo ligado por janela de 5 min + **Bar gauge** do período (%) + **Stat** (acionamentos, Wh e litros) |
+| 3 | **Quanto tempo os atuadores ficam ligados?** | quem paga a energia (ventilador) e a energia e a água (bomba) | prever o consumo; avaliar se mudar um limite compensa | **Bar chart** do tempo ligado por janela de 5 min + **Bar gauge** do período (%) + **Stat** (acionamentos, Wh e litros medidos) + **Time series** da caixa e da vazão |
 
 Seguimos a regra da Aula 7: a pergunta escolhe a visualização.
 - O valor de **agora** vai num Gauge, quando há uma faixa a respeitar, ou num Stat.
@@ -108,16 +109,17 @@ As cores da Pergunta 1:
 | Umidade do solo | a partir de 45 % (a bomba deve desligar) | 30 a 45 % | — | abaixo de 30 % (a bomba deve ligar) |
 | VPD | abaixo de 0,45 kPa (ar úmido demais) | 0,45 a 1,25 kPa | 1,25 a 1,5 kPa | acima de 1,5 kPa (estresse) |
 | DLI (24 h) | — | 14 a 18 mol/m²/dia | fora da faixa | — |
+| Caixa d'água (500 L) | — | a partir de 40 % (200 L) | 20 a 40 % | abaixo de 20 % (100 L) |
 
-Umidade do ar e luz agora ficam sem faixa, só com a curva do período. Quem julga o ar é o VPD, e quem julga a luz é o DLI.
+Umidade do ar, luz e vazão ficam sem faixa, só com a curva do período. Quem julga o ar é o VPD, e quem julga a luz é o DLI. Vazão zero é normal com a bomba desligada; o problema é a bomba ligada com vazão baixa (consulta no Orion mais abaixo).
 
 As cores das curvas são fixas em todo o painel: laranja para a temperatura, roxo para o clima de fora, azul-claro para a umidade e a água, amarelo para a luz, verde para o ventilador e azul para a bomba.
 
 ### A consulta de cada painel
 
-Todas leem as tabelas do Cygnus. Nelas, `attrValue` é **texto** e `recvTimeTs` está em **milissegundos**, por isso as consultas usam `CAST` e `/ 1000`. As consultas ficam em `grafana/gerar_painel.py`, que gera o JSON do painel. Os limites, as potências e a vazão saem do `modelo-dados/`; se eles mudarem, rode o gerador de novo.
+Todas leem as tabelas do Cygnus. Nelas, `attrValue` é **texto** e `recvTimeTs` está em **milissegundos**, por isso as consultas usam `CAST` e `/ 1000`. As consultas ficam em `grafana/gerar_painel.py`, que gera o JSON do painel. Os limites, as potências e a capacidade da caixa saem do `modelo-dados/`; se eles mudarem, rode o gerador de novo.
 
-**Pergunta 1 — Gauge** (temperatura; o mesmo para `soilMoisture` e `vaporPressureDeficit`)
+**Pergunta 1 — Gauge** (temperatura; o mesmo para `soilMoisture`, `vaporPressureDeficit` e `tankWaterVolume`)
 
 ```sql
 SELECT
@@ -129,7 +131,7 @@ ORDER BY recvTimeTs DESC
 LIMIT 1
 ```
 
-**Pergunta 1 — Stat com curva** (umidade do ar e luz): a mesma consulta da Pergunta 2, com `relativeHumidity` ou `illuminance`; o Stat mostra o último valor e a curva ao fundo. A umidade usa `CAST(attrValue AS DECIMAL(6,2))`, porque vai de 0 a 1. A luz usa `CAST(attrValue AS DECIMAL(10,1)) / 1000`, para mostrar em klx.
+**Pergunta 1 — Stat com curva** (umidade do ar, luz e vazão): a mesma consulta da Pergunta 2, com `relativeHumidity`, `illuminance` ou `waterFlow`; o Stat mostra o último valor e a curva ao fundo. A umidade usa `CAST(attrValue AS DECIMAL(6,2))`, porque vai de 0 a 1. A luz usa `CAST(attrValue AS DECIMAL(10,1)) / 1000`, para mostrar em klx.
 
 **Pergunta 1 — Gauge do DLI** (formato *Table*; o painel tem janela própria de 24 h, independente do seletor)
 
@@ -231,17 +233,19 @@ FROM (
 WHERE attrValue = 'ON' AND anterior = 'OFF'
 ```
 
-**Pergunta 3 — Energia e água** (formato *Table*; os números são os nominais do `dispositivo.json`)
+**Pergunta 3 — Energia e água** (formato *Table*; potências nominais do `dispositivo.json`, água pela vazão medida)
 
 ```sql
 SELECT
-  541  * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS "ventilador",
-  180  * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS "bomba",
-  1500 * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS "água"
+  541 * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS "ventilador",
+  180 * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS "bomba",
+  5 * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS "água"
 FROM `urn_ngsi-ld_Device_ESP32-001_Device`
-WHERE attrName IN ('fanState', 'pumpState')
+WHERE attrName IN ('fanState', 'pumpState', 'waterFlow')
   AND $__unixEpochFilter(recvTimeTs / 1000)
 ```
+
+**Pergunta 3 — Caixa e vazão** (Time series): a mesma consulta da Pergunta 2, com `tankWaterVolume` (eixo da esquerda, em L) e `waterFlow` (eixo da direita, em L/min).
 
 ### As contas por trás dos painéis
 
@@ -258,23 +262,67 @@ $$
 
 A aproximação vale porque as amostras são igualmente espaçadas: cada uma "representa" 5 s.
 
-**Energia e água.** Como cada amostra `ON` vale Δt de relé ligado:
+**Energia.** Como cada amostra `ON` vale Δt de relé ligado:
 
 $$
-E = \frac{P \cdot \Delta t \cdot \sum s_i}{3600} \qquad V = \frac{Q \cdot \Delta t \cdot \sum s_i}{3600}
+E = \frac{P \cdot \Delta t \cdot \sum s_i}{3600}
 $$
 
 - **E:** energia no período (Wh).
-- **V:** água no período (L).
 - **P:** potência nominal (W). Vem de `fanRatedPower` = 541 W ou `pumpRatedPower` = 180 W, atributos estáticos da ESP32.
-- **Q:** vazão nominal da bomba (L/h). Vem de `pumpFlowRate` = 1.500 L/h.
 - **Δt = 5 s:** intervalo entre amostras.
 - **Σ s_i:** número de amostras `ON` do relé no período.
 - **3600:** converte segundos em horas.
 
-Exemplo para 30 min (360 amostras), com o ventilador ligado em 72 e a bomba em 36:
+**Água.** Cada amostra de vazão vale Δt de água passando no cano:
+
+$$
+V = \frac{\Delta t \cdot \sum q_i}{60}
+$$
+
+- **V:** água no período (L).
+- **q_i:** vazão medida na amostra *i* (L/min). Vem do `waterFlow`; é zero com a bomba desligada.
+- **Δt = 5 s:** intervalo entre amostras.
+- **60:** converte segundos em minutos.
+
+Exemplo para 30 min (360 amostras), com o ventilador ligado em 72 e a bomba em 36, a 18 L/min:
 - ventilador: E = 541 × 5 × 72 / 3600 = **54,1 Wh**;
-- bomba: E = 180 × 5 × 36 / 3600 = **9,0 Wh**, e V = 1500 × 5 × 36 / 3600 = **75 L**.
+- bomba: E = 180 × 5 × 36 / 3600 = **9,0 Wh**, e V = 5 × (36 × 18) / 60 = **54 L**.
+
+Pela vazão de catálogo (`pumpFlowRate` = 1.500 L/h = 25 L/min), a conta daria 75 L: 39 % a mais. A vazão de catálogo é a máxima; no gotejamento, a perda de carga leva a bomba a um ponto de operação de vazão menor (curva da bomba × curva do sistema). Os 18 L/min da simulação são premissa; o medidor mostra o valor real.
+
+**Litros na caixa** (ultrassom na tampa). O sensor mede a distância até a água, e a ESP32 converte em litros:
+
+$$
+a = 1000 \cdot A \cdot (H - d), \qquad A = \frac{\pi D^2}{4}
+$$
+
+- **a:** água na caixa (L), o `tankWaterVolume`.
+- **A:** área da base da caixa (m²).
+- **D:** diâmetro interno (m). Premissa: caixa cilíndrica de D = 0,92 m, então A = 0,665 m².
+- **H:** distância do sensor ao fundo (m). Premissa: H = 1,00 m, sensor na tampa.
+- **d:** distância medida do sensor até a água (m).
+- **1000:** converte m³ em L.
+
+Exemplo: d = 0,52 m dá a = 1000 × 0,665 × (1,00 − 0,52) = **319 L** (64 % da caixa).
+
+Cheia (500 L), a água fica a 500 / (1000 × 0,665) = 0,75 m do fundo, e o sensor a d = 0,25 m dela: fora da zona cega de 20 cm do JSN-SR04T. Numa caixa cônica (as comuns, de polietileno), troque a conta por uma tabela d → litros, medida enchendo a caixa de 50 em 50 L.
+
+**Vazão** (medidor de pulsos, efeito Hall). Uma turbina gira com a água e gera pulsos, que a ESP32 conta a cada leitura:
+
+$$
+q = \frac{60 \cdot n}{K \cdot \Delta t}
+$$
+
+- **q:** vazão (L/min), o `waterFlow`.
+- **n:** pulsos contados no intervalo.
+- **K:** pulsos por litro. No YF-S201, 450 pulsos/L (folha de dados; o mesmo que f = 7,5 × Q).
+- **Δt = 5 s:** intervalo da leitura.
+- **60:** converte segundos em minutos.
+
+Exemplo: n = 675 pulsos em 5 s dá q = 60 × 675 / (450 × 5) = **18 L/min**.
+
+A precisão de catálogo é ±10 %. Para melhorar, calibre com um balde: passe um volume conhecido, conte os pulsos e use o K encontrado.
 
 A física da simulação é acelerada: o solo seca em minutos, e não em dias. Por isso esses números mostram o cálculo, e não o consumo de um dia real. Com a placa real, passam a ser o consumo de verdade.
 
@@ -321,14 +369,17 @@ A conta é a definição do DLI quando as 24 h estão no histórico. Com menos t
 | Ventilação necessária | 1 renovação do ar por minuto; para 50 m² × 3 m de pé-direito (premissa), 150 m³/min | [Hortidaily](https://www.hortidaily.com/article/9857497/a-guide-to-greenhouse-ventilation-sizing/) |
 | Ventilador: `fanRatedPower` | **541 W** = 6.604 cfm ÷ 12,2 cfm/W (J&D VNS30S850, 30", ½ HP). Entrega 187 m³/min, ou 1,25 renovação/min | [catálogo J&D](https://www.greenhousemegastore.com/j-d-typhoon-exhaust-fan-fa--vns) |
 | Bomba: `pumpRatedPower` | **180 W** (Ferrari IDB-35, ¼ cv) | [catálogo do revendedor](https://www.lojadomecanico.com.br/produto/607325/33/619/bomba-periferica-idb-35-14cv-24-mca-110220v-ferrari-aab1010024) |
-| Bomba: `pumpFlowRate` | **1.500 L/h**, a vazão máxima do catálogo. Na pressão do gotejamento, a vazão real é menor | o mesmo catálogo |
+| Bomba: `pumpFlowRate` | **1.500 L/h**, a vazão máxima do catálogo. Na pressão do gotejamento, a vazão real é menor (a real vem do medidor, `waterFlow`) | o mesmo catálogo |
+| Bomba: vazão no gotejamento | **18 L/min** (1.080 L/h) | premissa da simulação (`VAZAO_LPM`) |
+| Caixa d'água: `tankCapacity` | **500 L**, cilíndrica, D = 0,92 m; reserva: vermelho abaixo de 20 %, laranja abaixo de 40 % | premissa do grupo |
+| Reposição pela boia | **3 L/min**, da rede | premissa da simulação (`BOIA_LPM`) |
+| Nível da caixa | ultrassom à prova d'água JSN-SR04T: 20 a 600 cm, zona cega de 20 cm | [folha de dados JSN-SR04T-2.0](https://www.mikrocontroller.net/attachment/541933/JSN-SR04T-2.0.pdf) |
+| Vazão | YF-S201 (efeito Hall): 1 a 30 L/min, 450 pulsos/L, ±10 % | [Components101](https://components101.com/sensors/yf-s201-water-flow-measurement-sensor) |
 | Clima a cada 15 min | o "current" da Open-Meteo vem da previsão de 15 em 15 min | [Open-Meteo](https://open-meteo.com/) |
 
-**Potência e vazão são nominais.** O próximo passo é medir, e então energia e água viram atributos de origem **medida**:
-- a energia, com um sensor de energia (PZEM-004T na rede AC, ou INA219 em 12 V);
-- a água, com um medidor de vazão.
+**A água já é medida; a energia ainda é nominal.** O próximo passo é o sensor de energia (PZEM-004T na rede AC, ou INA219 em 12 V), e então a energia também vira atributo de origem **medida**.
 
-**Escala:** os valores são da estufa de 50 m² do modelo. Para uma maquete, troque os três números em `modelo-dados/provisionamento/dispositivo.json`, rode o `configurar.py` e o `gerar_painel.py`.
+**Escala:** os valores são da estufa de 50 m² do modelo. Para uma maquete, troque os números nominais em `modelo-dados/provisionamento/dispositivo.json` (potências, vazão de catálogo e capacidade da caixa) e as premissas da simulação no `fiware/docker-compose.override.yml` (`CAIXA_LITROS`, `VAZAO_LPM`, `BOIA_LPM`). Depois, rode o `configurar.py` e o `gerar_painel.py`.
 
 ## As três perguntas do marco da Aula 7
 
@@ -346,6 +397,8 @@ A conta é a definição do DLI quando as 24 h estão no histórico. Com menos t
 | alerta de estresse hídrico | `GET /v2/entities?type=Device&q=vaporPressureDeficit>1.5` |
 | os nós de uma estufa (pai → filhos) | `GET /v2/entities?q=controlledAsset==urn:ngsi-ld:AgriGreenhouse:001` |
 | relés ligados | `GET /v2/entities?type=Device&q=fanState==ON` |
+| caixa baixa (abaixo de 20 %) | `GET /v2/entities?type=Device&q=tankWaterVolume<100` |
+| bomba ligada sem vazão (menos da metade do catálogo) | `GET /v2/entities?type=Device&q=pumpState==ON;waterFlow<12.5` |
 | só medidas em °C | `GET /v2/entities?type=Device&mq=temperature.unitCode==CEL` |
 | estufas perto do campus | `GET /v2/entities?type=AgriGreenhouse&georel=near;maxDistance:1000&geometry=point&coords=-23.7245,-46.5793` |
 
@@ -353,13 +406,13 @@ A conta é a definição do DLI quando as 24 h estão no histórico. Com menos t
 
 | Subscrição | Entidades | Atributos |
 |---|---|---|
-| **"Historico da estufa para o Cygnus"** | `idPattern ".*"`, type `Device` | `temperature`, `relativeHumidity`, `vaporPressureDeficit`, `soilMoisture`, `illuminance`, `fanState`, `pumpState` |
+| **"Historico da estufa para o Cygnus"** | `idPattern ".*"`, type `Device` | `temperature`, `relativeHumidity`, `vaporPressureDeficit`, `soilMoisture`, `illuminance`, `tankWaterVolume`, `waterFlow`, `fanState`, `pumpState` |
 | **"Clima externo para o Cygnus"** | `urn:ngsi-ld:WeatherObserved:FEI` | `temperature`, `relativeHumidity`, `windSpeed`, `dateObserved`, `source` |
 
 - As duas usam `attrsFormat: normalized`, `throttling: 1 s` e a URL `http://cygnus:5050/notify`.
 - Ficam fora:
   - os comandos e o resultado deles (`fanOn`, `fanOn_status`…);
-  - os atributos estáticos (potências, vazão, `controlledAsset`), que não mudam com o tempo;
+  - os atributos estáticos (potências, vazão de catálogo, capacidade da caixa, `controlledAsset`), que não mudam com o tempo;
   - a estufa, que também não muda.
 - O `TimeInstant` vai junto, nos metadados (coluna `attrMd`).
 
@@ -375,10 +428,10 @@ $$
 
 | Fonte | n_attr | Δt | L |
 |---|---|---|---|
-| nó da estufa | 7 | 5 s | 7 × 720 = **5.040 linhas/h** |
+| nó da estufa | 9 | 5 s | 9 × 720 = **6.480 linhas/h** |
 | clima externo | 5 | 900 s | 5 × 4 = **20 linhas/h**, no máximo |
 
-O nó grava cerca de 121 mil linhas por dia. É o custo do esquema "uma linha por atributo, tudo em texto", que é a questão de pesquisa da Aula 8. O clima grava no máximo 20 linhas por hora: se a leitura não mudou, o Orion não notifica (conferimos), e o histórico não ganha linha repetida.
+O nó grava cerca de 156 mil linhas por dia. É o custo do esquema "uma linha por atributo, tudo em texto", que é a questão de pesquisa da Aula 8. O clima grava no máximo 20 linhas por hora: se a leitura não mudou, o Orion não notifica (conferimos), e o histórico não ganha linha repetida.
 
 ## O clima externo: gravador, não registro
 
@@ -397,7 +450,8 @@ Por isso, no tenant `estufa`, o `gravador-clima` faz a troca:
 ## Limitações e próximos passos
 
 - **Dados simulados:** os dados vêm de uma ESP32 simulada, com física simplificada e acelerada para o painel mostrar vários dias e ciclos em 30 min. A placa real entra no lugar dela sem mudar a plataforma, porque usa o mesmo contrato MQTT. A simulação não usa o clima de fora.
-- **Potência e vazão:** são nominais, de catálogo. Faltam o sensor de energia e o medidor de vazão.
+- **Potência:** é nominal, de catálogo. Falta o sensor de energia.
+- **Bomba a seco:** com a caixa vazia, a ESP32 ainda liga a bomba, que passa a puxar só o que a boia repõe. Falta um intertravamento: não ligar a bomba com a caixa abaixo de um mínimo.
 - **Limites da bomba:** 30/45 % ainda não foram conferidos para a alface.
 - **Regra de controle:** hoje é **local**, na ESP32 (histerese com os limites da AgriGreenhouse). Na Aula 9, o controlador e o gêmeo digital passam a ler esses limites do Orion.
 - **Build local:** `docker compose up -d --build esp32-estufa` precisa de acesso ao PyPI (`pip install paho-mqtt`). No Codespace, funciona. O `gravador-clima` só usa a biblioteca padrão do Python.
