@@ -1,0 +1,11 @@
+# Painel da estufa (serviço grafana-estufa): carrega na partida o painel de estufa/grafana/paineis/.
+apiVersion: 1
+
+providers:
+  - name: painel-estufa
+    folder: PEL 220 - Estufa
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false          # o arquivo manda: mudanças pela interface não são gravadas
+    options:
+      path: /etc/grafana/paineis

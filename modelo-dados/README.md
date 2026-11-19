@@ -81,6 +81,10 @@ O script segue estes passos:
 
 **Resultado em 18/11/2026** (Orion 4.1.0, IoT Agent JSON 3.7.0, Mosquitto 2.0.18): 63 verificações, 0 falhas.
 
+## O modelo rodando
+
+O nó da estufa publica neste modelo, e o histórico vai para o painel do grupo em [`../estufa/README.md`](../estufa/README.md), que é o marco da Aula 8.
+
 ## Em aberto para a Aula 7
 
 - **Prefixo `ref`:** usamos os nomes do catálogo (`controlledAsset`, `hasWeatherObserved`), e não o prefixo `ref…`.

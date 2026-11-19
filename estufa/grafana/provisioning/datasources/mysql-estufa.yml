@@ -1,0 +1,18 @@
+# Painel da estufa (serviço grafana-estufa): a fonte de dados MySQL, criada sozinha na partida.
+# O banco "estufa" é o fiware-service do grupo: o Cygnus o cria na primeira notificação.
+apiVersion: 1
+
+datasources:
+  - name: MySQL (histórico estufa)
+    uid: mysql-estufa              # o painel de estufa/grafana/paineis/ usa este uid
+    type: mysql
+    access: proxy
+    url: mysql-db:3306             # o MySQL visto de dentro da rede Docker (nome do serviço)
+    user: root
+    jsonData:
+      database: estufa
+      maxOpenConns: 10
+    secureJsonData:
+      password: "123"              # senha de laboratório da Base: não use em produção
+    isDefault: true
+    editable: false

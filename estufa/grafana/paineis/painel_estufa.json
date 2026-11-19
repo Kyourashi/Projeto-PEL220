@@ -1,0 +1,844 @@
+{
+  "uid": "pel220-estufa",
+  "title": "Estufa 001 — painel do grupo",
+  "description": "PEL220 · projeto estufa agrícola inteligente · marco da Aula 8. Histórico gravado pelo Cygnus no MySQL (banco estufa) a partir da subscrição 'Historico da estufa para o Cygnus'.",
+  "tags": [
+    "pel220",
+    "estufa",
+    "aula08"
+  ],
+  "editable": true,
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "1 · A estufa está bem agora?  —  para o operador da estufa",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "title": "Temperatura do ar",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 4,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 24
+              },
+              {
+                "color": "red",
+                "value": 28
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,2)) AS \"temperatura\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'temperature'\nORDER BY recvTimeTs DESC\nLIMIT 1"
+        }
+      ],
+      "description": "Última medida do DHT22. Azul abaixo de 24 °C, verde na faixa, vermelho a partir de 28 °C (os limites do ventilador na AgriGreenhouse)."
+    },
+    {
+      "id": 3,
+      "title": "Umidade do solo",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 1,
+        "w": 4,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 30
+              },
+              {
+                "color": "blue",
+                "value": 45
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,2)) AS \"solo\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'soilMoisture'\nORDER BY recvTimeTs DESC\nLIMIT 1"
+        }
+      ],
+      "description": "Última medida do sensor capacitivo. Vermelho abaixo de 30 % (a bomba deve ligar), verde na faixa, azul a partir de 45 % (a bomba deve desligar)."
+    },
+    {
+      "id": 4,
+      "title": "Umidade do ar",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 1,
+        "w": 4,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,2)) AS \"umidade do ar\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'relativeHumidity'\nORDER BY recvTimeTs DESC\nLIMIT 1"
+        }
+      ],
+      "description": "relativeHumidity de 0 a 1, mostrada em %. Sem limiar de cor: o grupo ainda não definiu uma faixa para a cultura."
+    },
+    {
+      "id": 5,
+      "title": "Luz (LDR)",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 4,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,2)) AS \"luz\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'lightLevel'\nORDER BY recvTimeTs DESC\nLIMIT 1"
+        }
+      ],
+      "description": "% da escala do ADC do LDR: nível relativo, não lux."
+    },
+    {
+      "id": 6,
+      "title": "Ventilador",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 1,
+        "w": 4,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "ON": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "Ligado"
+                },
+                "OFF": {
+                  "color": "gray",
+                  "index": 1,
+                  "text": "Desligado"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^ventilador$/",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT attrValue AS \"ventilador\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'fanState'\nORDER BY recvTimeTs DESC\nLIMIT 1"
+        }
+      ],
+      "description": "Estado que a ESP32 informa (fanState). É o estado observado, não o comando pedido."
+    },
+    {
+      "id": 7,
+      "title": "Bomba",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 1,
+        "w": 4,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "ON": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "Ligado"
+                },
+                "OFF": {
+                  "color": "gray",
+                  "index": 1,
+                  "text": "Desligado"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^bomba$/",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT attrValue AS \"bomba\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'pumpState'\nORDER BY recvTimeTs DESC\nLIMIT 1"
+        }
+      ],
+      "description": "Estado que a ESP32 informa (pumpState)."
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "2 · O controle mantém a estufa nas faixas?  —  para o grupo, que avalia a regra de histerese",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 9,
+      "title": "Temperatura do ar e os limites do ventilador (24 °C e 28 °C)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "description": "A curva deve oscilar entre as linhas: o ventilador liga ao cruzar 28 °C e desliga ao cruzar 24 °C. Ficar acima da linha vermelha por muito tempo indica ventilação insuficiente.",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "transparent",
+                "value": 24
+              },
+              {
+                "color": "red",
+                "value": 28
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "showPoints": "never",
+            "thresholdsStyle": {
+              "mode": "dashed+area"
+            }
+          },
+          "min": 20,
+          "max": 32
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"temperatura\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'temperature'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Umidade do solo e os limites da bomba (30 % e 45 %)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "description": "Dente de serra: o solo seca devagar e a bomba o molha depressa entre 30 % e 45 %.",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "transparent",
+                "value": 30
+              },
+              {
+                "color": "blue",
+                "value": 45
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "showPoints": "never",
+            "thresholdsStyle": {
+              "mode": "dashed+area"
+            }
+          },
+          "min": 20,
+          "max": 55
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"solo\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'soilMoisture'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Ventilador e bomba ao longo do tempo",
+      "type": "state-timeline",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 5
+      },
+      "description": "Quando cada relé esteve ligado. Compare com as curvas acima: cada faixa verde do ventilador deve começar em 28 °C e terminar em 24 °C.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "ON": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "Ligado"
+                },
+                "OFF": {
+                  "color": "gray",
+                  "index": 1,
+                  "text": "Desligado"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "auto",
+        "mergeValues": true,
+        "rowHeight": 0.8,
+        "legend": {
+          "showLegend": false
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  attrValue AS \"ventilador\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'fanState'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  attrValue AS \"bomba\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'pumpState'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "row",
+      "title": "3 · Quanto tempo os atuadores ficam ligados?  —  para quem paga a energia e a água",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 13,
+      "title": "Tempo ligado em cada janela de 5 minutos",
+      "type": "barchart",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 14,
+        "h": 8
+      },
+      "description": "Fração do tempo com o relé ligado (ciclo de trabalho), por janela de 5 min. Ventilador: energia; bomba: energia e água.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "min": 0,
+          "max": 100
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ventilador"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bomba"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "xTickLabelRotation": 0,
+        "showValue": "auto",
+        "groupWidth": 0.7,
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__unixEpochGroupAlias(recvTimeTs / 1000, '5m'),\n  100 * AVG(CASE WHEN attrName = 'fanState'  THEN attrValue = 'ON' END) AS \"ventilador\",\n  100 * AVG(CASE WHEN attrName = 'pumpState' THEN attrValue = 'ON' END) AS \"bomba\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState')\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nGROUP BY 1\nORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Tempo ligado no período",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 14,
+        "y": 22,
+        "w": 5,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  100 * AVG(CASE WHEN attrName = 'fanState'  THEN attrValue = 'ON' END) AS \"ventilador\",\n  100 * AVG(CASE WHEN attrName = 'pumpState' THEN attrValue = 'ON' END) AS \"bomba\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState')\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
+        }
+      ],
+      "description": "Ciclo de trabalho no período do seletor: média das amostras ligadas (uma a cada 5 s)."
+    },
+    {
+      "id": 15,
+      "title": "Acionamentos no período",
+      "type": "stat",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 19,
+        "y": 22,
+        "w": 5,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  SUM(attrName = 'fanState')  AS \"ventilador\",\n  SUM(attrName = 'pumpState') AS \"bomba\"\nFROM (\n  SELECT attrName, attrValue,\n         LAG(attrValue) OVER (PARTITION BY attrName ORDER BY recvTimeTs) AS anterior\n  FROM `urn_ngsi-ld_Device_ESP32-001_Device`\n  WHERE attrName IN ('fanState', 'pumpState')\n    AND $__unixEpochFilter(recvTimeTs / 1000)\n) AS mudancas\nWHERE attrValue = 'ON' AND anterior = 'OFF'"
+        }
+      ],
+      "description": "Quantas vezes cada relé passou de OFF para ON: desgaste do relé e picos de partida do motor."
+    }
+  ]
+}

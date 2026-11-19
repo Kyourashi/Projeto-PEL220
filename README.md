@@ -7,14 +7,28 @@ Plataforma FIWARE da disciplina (Orion, IoT Agent JSON, Mosquitto, Cygnus, MySQL
 ## Estrutura
 
 ```
-fiware/          a plataforma: docker-compose.yml e serviços de apoio
+fiware/          a plataforma: docker-compose.yml da Base + docker-compose.override.yml (serviços da estufa)
 modelo-dados/    modelo de dados NGSI-v2 da estufa (marco da Aula 7) + teste no Orion
+estufa/          o projeto rodando: ESP32 simulada da estufa, configuração do tenant e painel no Grafana (marco da Aula 8)
 docs/aula06/     roteiro da Aula 6, material complementar e coleção Postman
 docs/aula07/     roteiro da Aula 7 (Orion avançado, Cygnus, Grafana), material complementar e coleção Postman
 ferramentas/     scripts auxiliares (latencia_comando.py, concorrencia.py, gerar_colecao.py)
 ```
 
-## Como subir (GitHub Codespaces ou máquina local com Docker)
+## O projeto: a estufa no ar, com painel
+
+Passo a passo em [`estufa/README.md`](estufa/README.md). Em resumo, de dentro de `fiware/`:
+
+```bash
+docker compose up -d --wait orion
+docker compose up -d --wait iot-agent
+docker compose up -d --wait cygnus
+python3 ../estufa/configurar.py
+docker compose up -d --build esp32-estufa
+docker compose up -d grafana-estufa      # painel em http://localhost:3002
+```
+
+## A Base do professor, etapa por etapa (GitHub Codespaces ou máquina local com Docker)
 
 Todos os comandos partem da pasta `fiware/`:
 
@@ -53,7 +67,7 @@ Para parar: `docker compose down`. Para apagar também os dados, use `docker com
 | MongoDB | 27017 |
 | Cygnus | 5050 / 5080 |
 | MySQL | 3306 |
-| Grafana | 3000 (pronto: 3001) |
+| Grafana | 3000 (pronto: 3001 · painel da estufa: 3002) |
 | Controlador | 5001 (pronto: 5002) |
 | Clima externo | 3010 |
 

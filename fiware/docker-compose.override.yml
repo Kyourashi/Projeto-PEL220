@@ -1,0 +1,55 @@
+# ==================================================================================
+#  PEL220 - Projeto do grupo: estufa agrícola inteligente
+# ----------------------------------------------------------------------------------
+#  O Docker Compose lê este arquivo junto com o docker-compose.yml da Base, sozinho,
+#  em todo "docker compose …" rodado nesta pasta. Assim a Base do professor fica
+#  intacta e a estufa entra na mesma rede (fiware_default) e nos mesmos volumes.
+#
+#  Ordem (README de estufa/):
+#    docker compose up -d --wait orion
+#    docker compose up -d --wait iot-agent
+#    docker compose up -d --wait cygnus
+#    python3 ../estufa/configurar.py          # estufa, provisionamento e subscrição
+#    docker compose up -d --build esp32-estufa
+#    docker compose up -d grafana-estufa      # http://localhost:3002
+# ==================================================================================
+
+services:
+  # --- O nó da estufa (tenant estufa) ---------------------------------------------
+  esp32-estufa:
+    # DHT22, sensor de solo, LDR e dois relés, em software. Acompanhe: docker logs -f esp32-estufa
+    build: ../estufa/esp32_estufa
+    image: pel220/esp32-estufa
+    container_name: esp32-estufa
+    depends_on:
+      - mosquitto
+    environment:
+      - DEVICE_ID=estufa001
+      - APIKEY=estufa
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - INTERVALO=5
+      - LIGA_VENT=28        # os limites da AgriGreenhouse:001 (fanOnTemperature …)
+      - DESLIGA_VENT=24
+      - LIGA_BOMBA=30
+      - DESLIGA_BOMBA=45
+
+  # --- O painel do grupo (marco da Aula 8) -----------------------------------------
+  grafana-estufa:
+    # http://localhost:3002 abre direto no painel da estufa (visitante só lê; admin/admin para editar).
+    # Fonte de dados e painel carregados por provisionamento (estufa/grafana/).
+    image: grafana/grafana:10.4.0
+    hostname: grafana-estufa
+    container_name: grafana-estufa
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/paineis/painel_estufa.json
+    volumes:
+      - ../estufa/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../estufa/grafana/paineis:/etc/grafana/paineis:ro
