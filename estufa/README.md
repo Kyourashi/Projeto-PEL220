@@ -22,9 +22,20 @@ O marco pede três itens:
 
 ## Como subir (Codespace ou máquina com Docker)
 
+**Jeito mais fácil**, da raiz do repositório:
+
+```bash
+git pull && bash estufa/subir.sh
+```
+
+O script faz os passos abaixo na ordem, para no primeiro erro e, no fim, mostra os contêineres, a última medida e o link do painel. Pode rodar sempre: com a pilha no ar, parada, ou depois que o Codespace desligou. Também serve para atualizar quem tinha a versão anterior.
+
+**Passo a passo** (o que o script faz):
+
 ```bash
 git pull
 cd fiware
+docker compose stop esp32-estufa gravador-clima   # só voltam depois do cadastro
 docker compose up -d --wait orion
 docker compose up -d --wait iot-agent
 docker compose up -d --wait cygnus            # inclui o MySQL
@@ -32,27 +43,14 @@ python3 ../estufa/configurar.py               # estufa, provisionamento e subscr
 docker compose up -d --build esp32-estufa     # só DEPOIS do configurar.py
 docker compose up -d --build gravador-clima   # sobe junto o clima-externo da Base
 docker compose up -d grafana-estufa           # o painel, na porta 3002
+docker compose restart grafana-estufa         # carrega o painel do arquivo
 ```
 
-**Para atualizar quem já tinha a versão anterior** (LDR, limites 24/28 °C), com a pilha no ar ou não. A ESP32 para antes, porque o `configurar.py` percebe que o `dispositivo.json` mudou e reprovisiona a placa, o que recria a entidade do nó. O histórico fica.
-
-```bash
-git pull
-cd fiware
-docker compose stop esp32-estufa              # se ela não estiver rodando, não faz nada
-docker compose up -d --wait orion             # se já estiver no ar, também não faz nada
-docker compose up -d --wait iot-agent
-docker compose up -d --wait cygnus
-python3 ../estufa/configurar.py
-docker compose up -d --build esp32-estufa
-docker compose up -d --build gravador-clima
-docker compose up -d grafana-estufa
-docker compose restart grafana-estufa         # carrega o painel novo
-```
+**Para atualizar quem já tinha a versão anterior** (LDR, limites 24/28 °C): `git pull && bash estufa/subir.sh`. O script para a ESP32 antes do cadastro, porque o `configurar.py` percebe que o `dispositivo.json` mudou e reprovisiona a placa. O histórico fica.
 
 - **No Codespace:** aba **Portas** → porta **3002** → ícone do globo. O painel abre direto, sem login. Para editar, entre com `admin`/`admin`.
 - **O Codespace para sozinho após 30 min sem uso**, e a pilha para junto. Para a apresentação, aumente o tempo em GitHub → *Settings* → *Codespaces* → *Default idle timeout* (até 240 min). A mudança vale na próxima vez que o Codespace iniciar.
-- **Depois que o Codespace para, rode de novo o bloco "Como subir".** O desligamento é brusco. Sem correção, o Orion não voltaria (`container fiware-orion exited (1)`, com `PID-file ... found` no log), porque sobra um arquivo de PID de antes. O `docker-compose.override.yml` põe o `/tmp` do Orion em memória, e o arquivo some a cada partida.
+- **Depois que o Codespace para, rode de novo `bash estufa/subir.sh`.** O desligamento é brusco. Sem correção, o Orion não voltaria (`container fiware-orion exited (1)`, com `PID-file ... found` no log), porque sobra um arquivo de PID de antes. O `docker-compose.override.yml` põe o `/tmp` do Orion em memória, e o arquivo some a cada partida.
 - **Para apresentar, suba a pilha uns 30 min antes:** o painel mostra os últimos 30 min, e o DLI só se estabiliza depois do primeiro "dia" simulado completo (10 min). Antes disso, ele projeta o que já passou e pode aparecer laranja.
 - **Espere alguns minutos:** as curvas começam vazias e o histórico cresce uma medida a cada 5 s. A física da simulação é acelerada:
   - um "dia" dura 10 min, com 5 min de sol e 5 de noite;

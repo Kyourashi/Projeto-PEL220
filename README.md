@@ -17,19 +17,13 @@ ferramentas/     scripts auxiliares (latencia_comando.py, concorrencia.py, gerar
 
 ## O projeto: a estufa no ar, com painel
 
-Passo a passo em [`estufa/README.md`](estufa/README.md). Em resumo, de dentro de `fiware/`:
+Da raiz do repositório, um comando sobe (ou atualiza) tudo na ordem certa:
 
 ```bash
-docker compose up -d --wait orion
-docker compose up -d --wait iot-agent
-docker compose up -d --wait cygnus
-python3 ../estufa/configurar.py
-docker compose up -d --build esp32-estufa
-docker compose up -d --build gravador-clima
-docker compose up -d grafana-estufa      # painel em http://localhost:3002
+git pull && bash estufa/subir.sh       # painel em http://localhost:3002
 ```
 
-Quem já tinha a versão anterior: veja "Para atualizar" em [`estufa/README.md`](estufa/README.md).
+O passo a passo e o que cada etapa faz estão em [`estufa/README.md`](estufa/README.md).
 
 ## A Base do professor, etapa por etapa (GitHub Codespaces ou máquina local com Docker)
 
