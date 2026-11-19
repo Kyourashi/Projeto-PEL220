@@ -63,6 +63,17 @@
           }
         },
         {
+          "object_id": "e",
+          "name": "outdoorIlluminance",
+          "type": "Number",
+          "metadata": {
+            "unitCode": {
+              "type": "Text",
+              "value": "LUX"
+            }
+          }
+        },
+        {
           "object_id": "a",
           "name": "tankWaterVolume",
           "type": "Number",
@@ -93,6 +104,16 @@
           "object_id": "p",
           "name": "pumpState",
           "type": "Text"
+        },
+        {
+          "object_id": "i",
+          "name": "lampState",
+          "type": "Text"
+        },
+        {
+          "object_id": "n",
+          "name": "mistState",
+          "type": "Text"
         }
       ],
       "commands": [
@@ -110,6 +131,22 @@
         },
         {
           "name": "pumpOff",
+          "type": "command"
+        },
+        {
+          "name": "lampOn",
+          "type": "command"
+        },
+        {
+          "name": "lampOff",
+          "type": "command"
+        },
+        {
+          "name": "mistOn",
+          "type": "command"
+        },
+        {
+          "name": "mistOff",
           "type": "command"
         }
       ],
@@ -154,9 +191,42 @@
           }
         },
         {
+          "name": "lampRatedPower",
+          "type": "Number",
+          "value": 2000,
+          "metadata": {
+            "unitCode": {
+              "type": "Text",
+              "value": "WTT"
+            }
+          }
+        },
+        {
+          "name": "mistRatedPower",
+          "type": "Number",
+          "value": 48,
+          "metadata": {
+            "unitCode": {
+              "type": "Text",
+              "value": "WTT"
+            }
+          }
+        },
+        {
           "name": "pumpFlowRate",
           "type": "Number",
           "value": 1500,
+          "metadata": {
+            "unitCode": {
+              "type": "Text",
+              "value": "E32"
+            }
+          }
+        },
+        {
+          "name": "mistFlowRate",
+          "type": "Number",
+          "value": 60,
           "metadata": {
             "unitCode": {
               "type": "Text",

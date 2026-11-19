@@ -8,19 +8,26 @@
  MQTT do provisionamento (modelo-dados/provisionamento/dispositivo.json):
 
    medidas    publica  /json/<chave>/<device_id>/attrs
-                       {"t": 23.4, "h": 0.72, "v": 0.81, "m": 38.5, "l": 21500,
-                        "a": 492.3, "q": 0.0, "f": "OFF", "p": "OFF"}
+                       {"t": 23.4, "h": 0.72, "v": 0.81, "m": 38.5, "l": 21500, "e": 31600,
+                        "a": 492.3, "q": 0.0, "f": "OFF", "p": "OFF", "i": "OFF", "n": "OFF"}
    comandos   assina   /<chave>/<device_id>/cmd
-                       {"fanOn": ""} · {"fanOff": ""} · {"pumpOn": ""} · {"pumpOff": ""}
+                       {"fanOn": ""} · {"pumpOn": ""} · {"lampOn": ""} · {"mistOn": ""} (e os ...Off)
    resultado  publica  /json/<chave>/<device_id>/cmdexe
                        {"fanOn": "OK - ventilador ligado"}
 
    t  temperatura do ar (°C, DHT22)            m  umidade do solo (%, capacitivo)
-   h  umidade relativa do ar (0 a 1, DHT22)    l  iluminância (lx, BH1750)
-   v  déficit de pressão de vapor (kPa),       a  água na caixa (L): ultrassom na tampa,
-      calculado na placa a partir de t e h        convertido em litros na placa
-   f  relé do ventilador (ON/OFF)              q  vazão depois da bomba (L/min):
-   p  relé da bomba (ON/OFF)                      medidor de vazão de pulsos (efeito Hall)
+   h  umidade relativa do ar (0 a 1, DHT22)    l  luz dentro, na altura das plantas (lx, BH1750 em 0x23)
+   v  déficit de pressão de vapor (kPa),       e  luz lá fora, no teto (lx, BH1750 em 0x5C)
+      calculado na placa a partir de t e h     a  água na caixa (L): ultrassom na tampa,
+   f  relé do ventilador (ON/OFF)                 convertido em litros na placa
+   p  relé da bomba do gotejamento (ON/OFF)    q  vazão depois da bomba (L/min):
+   i  relé das lâmpadas LED (ON/OFF)              medidor de vazão de pulsos (efeito Hall)
+   n  relé da bomba da nebulização (ON/OFF)
+
+ Dois BH1750 no mesmo barramento I2C: o pino ADDR escolhe o endereço
+ (0x23 ou 0x5C). O de dentro mede o que a planta recebe (sol + lâmpadas,
+ para o DLI); o do teto mede só o sol e decide as lâmpadas. Se a regra
+ usasse o sensor de dentro, as lâmpadas acesas o fariam desligá-las.
 
  Caixa d'água (cilíndrica, premissa): o ultrassom mede a distância d até a
  água; com H = distância do sensor ao fundo e A = área da seção,
@@ -38,28 +45,35 @@
    v   = e_s · (1 - h)
 
  Regra local (na borda), com histerese — os limites da AgriGreenhouse:
-   ventilador liga com t >= LIGA_VENT e desliga com t <= DESLIGA_VENT
-   bomba      liga com m <= LIGA_BOMBA e desliga com m >= DESLIGA_BOMBA
- A regra só age quando um limite é cruzado; um comando manual vale até o
- próximo cruzamento.
+   ventilador  liga com t >= LIGA_VENT     e desliga com t <= DESLIGA_VENT
+   bomba       liga com m <= LIGA_BOMBA    e desliga com m >= DESLIGA_BOMBA
+   lâmpadas    ligam com e <= LIGA_LUZ     e desligam com e >= DESLIGA_LUZ;
+               de noite (e < NOITE_LUX), desligadas: só completam o dia
+   nebulização liga com v >= LIGA_NEBLINA  e desliga com v <= DESLIGA_NEBLINA
+ Fora da faixa, a regra manda no relé a cada leitura. Entre os dois limites,
+ ela não mexe: ali, um comando manual vale.
 
  Física simplificada e acelerada, para o painel de 30 minutos mostrar vários
  dias e vários ciclos:
    - um "dia" dura PERIODO_LUZ segundos: metade com sol, metade de noite;
-     ao meio-dia a luz chega a PICO_LUX, menos as nuvens (ruído);
+     ao meio-dia, lá fora, a luz chega a PICO_LUX, menos as nuvens (ruído);
+     dentro chega TRANSMISSAO dessa luz, mais LAMPADA_LUX com as lâmpadas;
      o BH1750 satura em 65 535 lx;
    - sem ventilação, o ar tende a 19 °C à noite e a 32 °C ao meio-dia;
-     com o ventilador, a 21 °C;
-   - o solo seca devagar e a bomba o molha depressa, se houver água na caixa;
-   - a bomba tira VAZAO_LPM da caixa; a boia repõe BOIA_LPM até encher;
-     com a caixa vazia, a vazão cai ao que a boia repõe;
-   - a umidade do ar cai com o calor e com a ventilação e sobe com a rega.
+     com o ventilador, a 21 °C; a névoa evapora e tira 2,5 °C;
+   - a umidade do ar muda devagar: cai com o calor, o sol e a ventilação,
+     e sobe com o solo úmido e com a névoa;
+   - o solo seca devagar e o gotejamento o molha depressa, se houver água;
+   - a bomba tira VAZAO_LPM da caixa e a névoa, NEBLINA_LPM; a boia repõe
+     BOIA_LPM até encher; com a caixa vazia, a vazão cai ao que a boia repõe.
 
  Variáveis de ambiente (padrão entre parênteses):
    DEVICE_ID (estufa001)  APIKEY (estufa)  MQTT_HOST (mosquitto)  MQTT_PORT (1883)
    INTERVALO (5) s · LIGA_VENT (24) · DESLIGA_VENT (22) · LIGA_BOMBA (30)
-   DESLIGA_BOMBA (45) · PERIODO_LUZ (600) s · PICO_LUX (34000) lx
-   CAIXA_LITROS (500) · VAZAO_LPM (18) · BOIA_LPM (3)
+   DESLIGA_BOMBA (45) · LIGA_LUZ (15000) lx · DESLIGA_LUZ (20000) lx · NOITE_LUX (500) lx
+   LIGA_NEBLINA (1.25) kPa · DESLIGA_NEBLINA (0.95) kPa
+   PERIODO_LUZ (600) s · PICO_LUX (50000) lx · TRANSMISSAO (0.68) · LAMPADA_LUX (5400) lx
+   CAIXA_LITROS (500) · VAZAO_LPM (18) · BOIA_LPM (3) · NEBLINA_LPM (1)
 ============================================================================
 """
 
@@ -83,12 +97,20 @@ LIGA_VENT = float(os.getenv("LIGA_VENT", "24"))
 DESLIGA_VENT = float(os.getenv("DESLIGA_VENT", "22"))
 LIGA_BOMBA = float(os.getenv("LIGA_BOMBA", "30"))
 DESLIGA_BOMBA = float(os.getenv("DESLIGA_BOMBA", "45"))
+LIGA_LUZ = float(os.getenv("LIGA_LUZ", "15000"))         # luz lá fora, no teto
+DESLIGA_LUZ = float(os.getenv("DESLIGA_LUZ", "20000"))
+NOITE_LUX = float(os.getenv("NOITE_LUX", "500"))         # abaixo disso é noite (premissa)
+LIGA_NEBLINA = float(os.getenv("LIGA_NEBLINA", "1.25"))  # VPD, kPa
+DESLIGA_NEBLINA = float(os.getenv("DESLIGA_NEBLINA", "0.95"))
 PERIODO_LUZ = float(os.getenv("PERIODO_LUZ", "600"))
-PICO_LUX = float(os.getenv("PICO_LUX", "34000"))
+PICO_LUX = float(os.getenv("PICO_LUX", "50000"))         # sol ao meio-dia, lá fora (premissa)
+TRANSMISSAO = float(os.getenv("TRANSMISSAO", "0.68"))    # fração da luz de fora que chega dentro (premissa)
+LAMPADA_LUX = float(os.getenv("LAMPADA_LUX", "5400"))    # luz das lâmpadas no sensor de dentro (premissa)
 FIM_DE_ESCALA_BH1750 = 65535                            # 16 bits, 1 lx por contagem
 CAIXA_LITROS = float(os.getenv("CAIXA_LITROS", "500"))   # capacidade da caixa d'água
 VAZAO_LPM = float(os.getenv("VAZAO_LPM", "18"))          # vazão da bomba no gotejamento (premissa)
 BOIA_LPM = float(os.getenv("BOIA_LPM", "3"))             # reposição pela boia, da rede (premissa)
+NEBLINA_LPM = float(os.getenv("NEBLINA_LPM", "1"))       # 10 nebulizadores × 6 L/h (premissa)
 
 TOPICO_MEDIDAS = f"/json/{CHAVE}/{DEVICE_ID}/attrs"
 TOPICO_COMANDOS = f"/{CHAVE}/{DEVICE_ID}/cmd"
@@ -99,41 +121,50 @@ TOPICO_RESULTADO = f"/json/{CHAVE}/{DEVICE_ID}/cmdexe"
 # ---------------------------------------------------------------------------
 inicio = time.time()
 temperatura = random.uniform(20.5, 22.5)
+umidade = random.uniform(0.76, 0.82)                     # umidade relativa do ar, de 0 a 1
 solo = random.uniform(36.0, 42.0)
 caixa = CAIXA_LITROS * random.uniform(0.92, 0.98)        # litros na caixa
 vazao = 0.0                                              # L/min no cano depois da bomba
-ventilador = False                                      # estado seguro: começa desligado
+ventilador = False                                      # estado seguro: tudo começa desligado
 bomba = False
+lampadas = False
+neblina = False
 
 
-def ler_bh1750():
-    """Iluminância em lux: sol na primeira metade do 'dia', noite na segunda."""
+def luz_de_fora():
+    """Luz no teto, em lux: sol na primeira metade do 'dia', noite na segunda."""
     fase = 2 * math.pi * (time.time() - inicio) / PERIODO_LUZ
     sol = max(math.sin(fase), 0.0)                      # seno negativo = noite
-    lux = PICO_LUX * sol * random.uniform(0.85, 1.0)     # nuvens
-    return int(min(lux, FIM_DE_ESCALA_BH1750))
+    return PICO_LUX * sol * random.uniform(0.85, 1.0)     # nuvens
 
 
-def passo_fisico(lux):
+def bh1750(lux):
+    """O que o sensor entrega: lux inteiro, de 0 ao fim de escala."""
+    return int(min(max(lux, 0.0), FIM_DE_ESCALA_BH1750))
+
+
+def passo_fisico(fora):
     """Avança a física da estufa em um intervalo de medida."""
-    global temperatura, solo, caixa, vazao
-    luz = lux / PICO_LUX                                # 0 à noite, ~1 ao meio-dia
-    alvo = 21.0 if ventilador else 19.0 + 13.0 * luz
+    global temperatura, umidade, solo, caixa, vazao
+    luz = fora / PICO_LUX                               # 0 à noite, ~1 ao meio-dia
+    alvo = (21.0 if ventilador else 19.0 + 13.0 * luz) - (2.5 if neblina else 0.0)
     temperatura += 0.05 * (alvo - temperatura) + random.uniform(-0.12, 0.12)
+    alvo_ur = (74 - 1.8 * (temperatura - 25) + 0.5 * (solo - 37.5) - 20 * luz
+               - (8 if ventilador else 0) + (18 if neblina else 0)) / 100
+    umidade += 0.15 * (alvo_ur - umidade)               # o ar muda devagar
     secagem = 0.18 + 0.004 * max(temperatura - 20, 0)    # mais calor, mais evaporação
     minutos = INTERVALO / 60
     disponivel = caixa / minutos + BOIA_LPM               # L/min que a caixa e a boia dão neste passo
     vazao = min(VAZAO_LPM * random.uniform(0.97, 1.03), disponivel) if bomba else 0.0   # caixa vazia: só o que a boia repõe
-    caixa = min(max(caixa - vazao * minutos + BOIA_LPM * minutos, 0.0), CAIXA_LITROS)
+    nevoa = min(NEBLINA_LPM, disponivel - vazao) if neblina else 0.0
+    caixa = min(max(caixa - (vazao + nevoa) * minutos + BOIA_LPM * minutos, 0.0), CAIXA_LITROS)
     solo += 1.6 * vazao / VAZAO_LPM - (0 if vazao else secagem)   # molha na proporção da vazão; sem água, seca
     solo = min(max(solo + random.uniform(-0.05, 0.05), 5.0), 80.0)
 
 
 def ler_umidade_ar():
     """Umidade relativa de 0 a 1 (o DHT22 dá %, o firmware divide por 100)."""
-    ur = 75 - 1.8 * (temperatura - 25) + 0.5 * (solo - 37.5) - (6 if ventilador else 0)
-    ur += random.uniform(-1.0, 1.0)
-    return min(max(ur, 30.0), 95.0) / 100
+    return min(max(umidade + random.uniform(-0.01, 0.01), 0.30), 0.95)
 
 
 def calcular_vpd(t, ur):
@@ -142,9 +173,9 @@ def calcular_vpd(t, ur):
     return e_s * (1 - ur)
 
 
-def regra_local():
-    """Histerese na borda: só muda o relé quando um limite é cruzado."""
-    global ventilador, bomba
+def regra_local(fora, vpd):
+    """Histerese na borda: fora da faixa, manda no relé; entre os limites, não mexe."""
+    global ventilador, bomba, lampadas, neblina
     if temperatura >= LIGA_VENT and not ventilador:
         ventilador = True
         print(f"regra   -> ventilador ON  (t = {temperatura:.1f} °C)", flush=True)
@@ -157,10 +188,30 @@ def regra_local():
     elif solo >= DESLIGA_BOMBA and bomba:
         bomba = False
         print(f"regra   -> bomba OFF (m = {solo:.1f} %)", flush=True)
+    noite = fora < NOITE_LUX
+    if lampadas and (noite or fora >= DESLIGA_LUZ):
+        lampadas = False
+        print(f"regra   -> lâmpadas OFF (e = {fora:.0f} lx)", flush=True)
+    elif not lampadas and not noite and fora <= LIGA_LUZ:
+        lampadas = True
+        print(f"regra   -> lâmpadas ON  (e = {fora:.0f} lx)", flush=True)
+    if vpd >= LIGA_NEBLINA and not neblina:
+        neblina = True
+        print(f"regra   -> nebulização ON  (v = {vpd:.2f} kPa)", flush=True)
+    elif vpd <= DESLIGA_NEBLINA and neblina:
+        neblina = False
+        print(f"regra   -> nebulização OFF (v = {vpd:.2f} kPa)", flush=True)
 
 
 def estados():
-    return {"f": "ON" if ventilador else "OFF", "p": "ON" if bomba else "OFF"}
+    liga = lambda x: "ON" if x else "OFF"
+    return {"f": liga(ventilador), "p": liga(bomba), "i": liga(lampadas), "n": liga(neblina)}
+
+
+RELES = {"fan": ("ventilador", "ventilador ligado", "ventilador desligado"),
+         "pump": ("bomba", "bomba ligada", "bomba desligada"),
+         "lamp": ("lampadas", "lâmpadas ligadas", "lâmpadas desligadas"),
+         "mist": ("neblina", "nebulização ligada", "nebulização desligada")}
 
 
 def executar(comando):
@@ -168,19 +219,11 @@ def executar(comando):
 
     O Orion recusa < > " ' = ; ( ) nos valores: o texto não pode tê-los.
     """
-    global ventilador, bomba
-    if comando == "fanOn":
-        ventilador = True
-        return "OK - ventilador ligado"
-    if comando == "fanOff":
-        ventilador = False
-        return "OK - ventilador desligado"
-    if comando == "pumpOn":
-        bomba = True
-        return "OK - bomba ligada"
-    if comando == "pumpOff":
-        bomba = False
-        return "OK - bomba desligada"
+    for prefixo, (variavel, ligado, desligado) in RELES.items():
+        if comando in (prefixo + "On", prefixo + "Off"):
+            liga = comando.endswith("On")
+            globals()[variavel] = liga
+            return "OK - " + (ligado if liga else desligado)
     return "ERRO - comando desconhecido"
 
 
@@ -230,12 +273,14 @@ while True:                                             # o broker pode subir de
 cliente.loop_start()                                    # a rede roda à parte; o laço só mede
 try:
     while True:
-        lux = ler_bh1750()
-        passo_fisico(lux)
-        regra_local()
+        fora = luz_de_fora()
+        passo_fisico(fora)
         t = round(temperatura, 1)
         h = round(ler_umidade_ar(), 2)
-        medida = {"t": t, "h": h, "v": round(calcular_vpd(t, h), 2), "m": round(solo, 1), "l": lux,
+        v = round(calcular_vpd(t, h), 2)
+        regra_local(fora, v)
+        dentro = TRANSMISSAO * fora + (LAMPADA_LUX if lampadas else 0.0)
+        medida = {"t": t, "h": h, "v": v, "m": round(solo, 1), "l": bh1750(dentro), "e": bh1750(fora),
                   "a": round(min(max(caixa + random.uniform(-1.5, 1.5), 0.0), CAIXA_LITROS), 1), "q": round(vazao, 1)}
         medida.update(estados())
         publicar(cliente, medida)

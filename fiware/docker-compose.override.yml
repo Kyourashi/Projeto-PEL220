@@ -26,7 +26,8 @@ services:
 
   # --- O nó da estufa (tenant estufa) ---------------------------------------------
   esp32-estufa:
-    # DHT22, sensor de solo, BH1750, ultrassom da caixa, medidor de vazão e dois relés, em software. Acompanhe: docker logs -f esp32-estufa
+    # DHT22, solo, dois BH1750 (dentro e no teto), ultrassom da caixa, medidor de vazão e quatro relés, em software.
+    # Acompanhe: docker logs -f esp32-estufa
     build: ../estufa/esp32_estufa
     image: pel220/esp32-estufa
     container_name: esp32-estufa
@@ -42,11 +43,19 @@ services:
       - DESLIGA_VENT=22
       - LIGA_BOMBA=30
       - DESLIGA_BOMBA=45
+      - LIGA_LUZ=15000      # lâmpadas: luz lá fora, no teto (lampOnOutdoorIlluminance …)
+      - DESLIGA_LUZ=20000
+      - NOITE_LUX=500       # abaixo disso é noite: lâmpadas desligadas (premissa)
+      - LIGA_NEBLINA=1.25   # nebulização: VPD em kPa (mistOnVaporPressureDeficit …)
+      - DESLIGA_NEBLINA=0.95
       - PERIODO_LUZ=600     # um "dia" simulado dura 10 min
-      - PICO_LUX=34000      # luz ao meio-dia dentro da estufa (premissa da simulação)
+      - PICO_LUX=50000      # sol ao meio-dia, lá fora (premissa da simulação)
+      - TRANSMISSAO=0.68    # fração da luz de fora que chega às plantas (premissa)
+      - LAMPADA_LUX=5400    # luz das lâmpadas no sensor de dentro: 100 µmol/m²/s ÷ 0,0185 (premissa)
       - CAIXA_LITROS=500    # caixa d'água (tankCapacity no dispositivo.json)
       - VAZAO_LPM=18        # vazão da bomba no gotejamento (premissa)
       - BOIA_LPM=3          # reposição pela boia, da rede (premissa)
+      - NEBLINA_LPM=1       # 10 nebulizadores × 6 L/h (mistFlowRate = 60 L/h)
 
   # --- O clima externo no histórico (tenant estufa) ---------------------------------
   gravador-clima:

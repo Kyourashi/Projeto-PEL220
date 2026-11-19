@@ -19,7 +19,9 @@ O que faz, nesta ordem:
      - unitCode presente em toda grandeza numérica, igual ao do provisionamento;
      - relativeHumidity entre 0 e 1;
      - vaporPressureDeficit coerente com temperature e relativeHumidity (Tetens);
-     - potências, vazão nominal e capacidade da caixa iguais às do provisionamento;
+     - potências, vazões nominais e capacidade da caixa iguais às do provisionamento;
+     - os 8 comandos registrados (ventilador, bomba, lâmpadas e nebulização);
+     - os limites de controle da estufa iguais aos do exemplo;
      - água na caixa entre 0 e a capacidade;
      - o alvo de cada Relationship existe;
      - não surgiu uma entidade Thing (dispositivo não provisionado);
@@ -49,7 +51,9 @@ DEVICE = "urn:ngsi-ld:Device:ESP32-001"
 ESTUFA = "urn:ngsi-ld:AgriGreenhouse:001"
 CLIMA = "urn:ngsi-ld:WeatherObserved:FEI"
 # v = e_s(26,4 °C) · (1 - 0,62) = 3,442 kPa · 0,38 = 1,31 kPa
-MEDIDA = {"t": 26.4, "h": 0.62, "v": 1.31, "m": 38.5, "l": 21500, "a": 486.5, "q": 17.8, "f": "OFF", "p": "ON"}
+# l = 0,68 × e (lâmpadas desligadas); v = 1,31 kPa, acima do limite da névoa: n = ON
+MEDIDA = {"t": 26.4, "h": 0.62, "v": 1.31, "m": 38.5, "l": 21500, "e": 31600, "a": 486.5, "q": 17.8,
+          "f": "OFF", "p": "ON", "i": "OFF", "n": "ON"}
 
 AQUI = pathlib.Path(__file__).parent
 falhas = 0
@@ -190,14 +194,19 @@ if "Device" in lidos:
             lido = d.get(a["name"], {})
             teste(f"{a['name']} = {a['value']} {unidade(a)} (nominal, do provisionamento)",
                   lido.get("value") == a["value"] and unidade(lido) == unidade(a), lido)
-    for c in ("fanOn", "fanOff", "pumpOn", "pumpOff"):
+    for c in (c["name"] for c in dispositivo["commands"]):
         teste(f"comando {c} registrado", d.get(c, {}).get("type") == "command", d.get(c))
+    for a in dispositivo["attributes"]:                   # o fanState já foi conferido no ciclo do comando
+        if a["type"] == "Text" and a["object_id"] in MEDIDA and a["name"] != "fanState":
+            teste(f"{a['name']} = {MEDIDA[a['object_id']]} (veio da medida '{a['object_id']}')",
+                  d.get(a["name"], {}).get("value") == MEDIDA[a["object_id"]], d.get(a["name"]))
     props = next(a["value"] for a in dispositivo["static_attributes"] if a["name"] == "controlledProperty")
     teste(f"controlledProperty = {props} (exigido pelo SDM Device)",
           d.get("controlledProperty", {}).get("value") == props, d.get("controlledProperty"))
 if "AgriGreenhouse" in lidos:
     g = lidos["AgriGreenhouse"]
-    for nome in ("fanOnTemperature", "fanOffTemperature", "irrigationOnSoilMoisture", "irrigationOffSoilMoisture"):
+    limites = [k for k, v in estufa.items() if isinstance(v, dict) and v.get("type") == "Number" and k != "area"]
+    for nome in limites:
         teste(f"{nome} = {estufa[nome]['value']} (limite de controle)", g.get(nome, {}).get("value") == estufa[nome]["value"],
               g.get(nome))
 

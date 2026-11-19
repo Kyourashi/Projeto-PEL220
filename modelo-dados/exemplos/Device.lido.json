@@ -3,7 +3,7 @@
   "type": "Device",
   "TimeInstant": {
     "type": "DateTime",
-    "value": "2026-11-19T19:37:01.241Z",
+    "value": "2026-11-19T20:11:21.317Z",
     "metadata": {}
   },
   "controlledAsset": {
@@ -12,7 +12,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:37:01.241Z"
+        "value": "2026-11-19T20:11:21.317Z"
       }
     }
   },
@@ -29,7 +29,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:37:01.241Z"
+        "value": "2026-11-19T20:11:21.317Z"
       }
     }
   },
@@ -39,7 +39,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:37:01.163Z"
+        "value": "2026-11-19T20:11:21.241Z"
       }
     }
   },
@@ -49,7 +49,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:37:01.163Z"
+        "value": "2026-11-19T20:11:21.241Z"
       }
     }
   },
@@ -59,7 +59,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:37:01.241Z"
+        "value": "2026-11-19T20:11:21.317Z"
       },
       "unitCode": {
         "type": "Text",
@@ -73,7 +73,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:37:01.241Z"
+        "value": "2026-11-19T20:11:21.317Z"
       }
     }
   },
@@ -83,7 +83,83 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:36:57.032Z"
+        "value": "2026-11-19T20:11:17.077Z"
+      },
+      "unitCode": {
+        "type": "Text",
+        "value": "LUX"
+      }
+    }
+  },
+  "lampRatedPower": {
+    "type": "Number",
+    "value": 2000,
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-19T20:11:21.317Z"
+      },
+      "unitCode": {
+        "type": "Text",
+        "value": "WTT"
+      }
+    }
+  },
+  "lampState": {
+    "type": "Text",
+    "value": "OFF",
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-19T20:11:17.077Z"
+      }
+    }
+  },
+  "mistFlowRate": {
+    "type": "Number",
+    "value": 60,
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-19T20:11:21.317Z"
+      },
+      "unitCode": {
+        "type": "Text",
+        "value": "E32"
+      }
+    }
+  },
+  "mistRatedPower": {
+    "type": "Number",
+    "value": 48,
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-19T20:11:21.317Z"
+      },
+      "unitCode": {
+        "type": "Text",
+        "value": "WTT"
+      }
+    }
+  },
+  "mistState": {
+    "type": "Text",
+    "value": "ON",
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-19T20:11:17.077Z"
+      }
+    }
+  },
+  "outdoorIlluminance": {
+    "type": "Number",
+    "value": 31600,
+    "metadata": {
+      "TimeInstant": {
+        "type": "DateTime",
+        "value": "2026-11-19T20:11:17.077Z"
       },
       "unitCode": {
         "type": "Text",
@@ -97,7 +173,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:37:01.241Z"
+        "value": "2026-11-19T20:11:21.317Z"
       },
       "unitCode": {
         "type": "Text",
@@ -111,7 +187,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:37:01.241Z"
+        "value": "2026-11-19T20:11:21.317Z"
       },
       "unitCode": {
         "type": "Text",
@@ -125,7 +201,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:36:57.032Z"
+        "value": "2026-11-19T20:11:17.077Z"
       }
     }
   },
@@ -135,7 +211,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:36:57.032Z"
+        "value": "2026-11-19T20:11:17.077Z"
       },
       "unitCode": {
         "type": "Text",
@@ -149,7 +225,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:36:57.032Z"
+        "value": "2026-11-19T20:11:17.077Z"
       },
       "unitCode": {
         "type": "Text",
@@ -163,7 +239,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:37:01.241Z"
+        "value": "2026-11-19T20:11:21.317Z"
       },
       "unitCode": {
         "type": "Text",
@@ -177,7 +253,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:36:57.032Z"
+        "value": "2026-11-19T20:11:17.077Z"
       },
       "unitCode": {
         "type": "Text",
@@ -191,7 +267,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:36:57.032Z"
+        "value": "2026-11-19T20:11:17.077Z"
       },
       "unitCode": {
         "type": "Text",
@@ -205,7 +281,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:36:57.032Z"
+        "value": "2026-11-19T20:11:17.077Z"
       },
       "unitCode": {
         "type": "Text",
@@ -219,7 +295,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T19:36:57.032Z"
+        "value": "2026-11-19T20:11:17.077Z"
       },
       "unitCode": {
         "type": "Text",
@@ -243,6 +319,26 @@
     "metadata": {}
   },
   "pumpOff": {
+    "type": "command",
+    "value": "",
+    "metadata": {}
+  },
+  "lampOn": {
+    "type": "command",
+    "value": "",
+    "metadata": {}
+  },
+  "lampOff": {
+    "type": "command",
+    "value": "",
+    "metadata": {}
+  },
+  "mistOn": {
+    "type": "command",
+    "value": "",
+    "metadata": {}
+  },
+  "mistOff": {
     "type": "command",
     "value": "",
     "metadata": {}

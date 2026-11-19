@@ -11,7 +11,7 @@ O marco pede três itens:
 
 | Peça | Onde |
 |---|---|
-| Nó da estufa (ESP32 simulada) | `esp32_estufa/`, no tenant `estufa`: publica `t`, `h`, `v`, `m`, `l`, `a`, `q`, `f`, `p` e responde aos comandos |
+| Nó da estufa (ESP32 simulada) | `esp32_estufa/`, no tenant `estufa`: publica `t`, `h`, `v`, `m`, `l`, `e`, `a`, `q`, `f`, `p`, `i`, `n` e responde aos comandos |
 | Clima externo | `gravador_clima/`: a cada 15 min, copia o `clima-externo` da Base para a `WeatherObserved:FEI` |
 | Subscrições do grupo | criadas por `configurar.py`: **"Historico da estufa para o Cygnus"** e **"Clima externo para o Cygnus"** |
 | Histórico | MySQL, banco `estufa`: tabelas `` `urn_ngsi-ld_Device_ESP32-001_Device` `` e `` `urn_ngsi-ld_WeatherObserved_FEI_WeatherObserved` `` |
@@ -27,11 +27,16 @@ O painel do Grafana mostra o **passado** (MySQL). A página `http://localhost:30
 
 ![Estufa em 3D](estufa-3d.png)
 
-- **Sensores no lugar:** DHT22, sensor de solo, BH1750, ultrassom na tampa da caixa d'água e medidor de vazão no cano da bomba, cada um com um ponto colorido pelas faixas da alface (as mesmas cores do painel).
+- **Sensores no lugar:** DHT22, sensor de solo, um BH1750 dentro e outro no teto, ultrassom na tampa da caixa d'água e medidor de vazão no cano da bomba, cada um com um ponto colorido pelas faixas da alface (as mesmas cores do painel).
 - **Limites lidos do Orion:** as cores usam os limites da `AgriGreenhouse` (`fanOnTemperature`, `irrigationOnSoilMoisture`…). Se o grupo mudar um limite no Orion, a cena muda junto.
-- **Atuadores:** o exaustor gira quando `fanState = ON`. A irrigação acende em azul quando `pumpState = ON`, e o rótulo da bomba mostra a vazão medida (avisa se a bomba está ligada com menos da metade da vazão de catálogo).
+- **Atuadores:**
+  - o exaustor gira quando `fanState = ON`;
+  - o gotejamento pinga quando `pumpState = ON`; as manchas molhadas e a cor da terra seguem o `soilMoisture`; o rótulo da bomba mostra a vazão medida e avisa se a bomba está ligada com menos da metade da vazão de catálogo;
+  - as lâmpadas LED acendem quando `lampState = ON` e iluminam os canteiros;
+  - a névoa sai dos 10 bicos no alto e evapora quando `mistState = ON`.
 - **Caixa d'água:** a água sobe e desce com o `tankWaterVolume`, e a cor segue a reserva: vermelho abaixo de 20 %, laranja abaixo de 40 %.
-- **Dia e noite:** a luz da cena segue a iluminância medida pelo BH1750.
+- **Dia e noite:** a luz da cena segue o BH1750 do teto (`outdoorIlluminance`), que só vê o sol.
+- **Rótulos:** quando dois se encostam na tela, o de cima sobe, em qualquer ângulo da câmera.
 - **Lá fora:** a estação do lado de fora mostra a `WeatherObserved` gravada pelo `gravador-clima`.
 
 **Como funciona:** o serviço `estufa-3d` (`estufa_3d/servidor.py`, só biblioteca padrão) serve a página e responde `GET /api/estado` com as três entidades do tenant `estufa` em `keyValues`. O navegador nunca fala com o Orion, então não é preciso abrir CORS nem expor a porta 1026. O three.js fica no repositório (`estufa_3d/web/vendor/`), sem depender de CDN.
@@ -91,9 +96,9 @@ docker compose restart grafana-estufa         # carrega o painel do arquivo
 
 | # | Pergunta | Para quem | Que decisão apoia | Visualização |
 |---|---|---|---|---|
-| 1 | **A estufa está bem agora?** | o operador da estufa | intervir já (ex.: 25 °C com o ventilador desligado, solo abaixo de 30 % sem a bomba, VPD acima de 1,5 kPa, caixa abaixo de 20 %) | **Gauge** nas faixas (temperatura, solo, VPD, DLI e caixa d'água) + **Stat** com a curva do período (umidade do ar, luz e vazão) e o estado de cada relé |
-| 2 | **O controle mantém a estufa nas faixas?** | o grupo, que projeta e ajusta a regra (e, na Aula 9, o gêmeo digital) | manter ou mudar os limites 22/24 °C e 30/45 %; ver se a histerese oscila rápido demais; separar "regra ruim" de "dia quente" com a temperatura de fora | **Time series** com as linhas dos limites e a temperatura externa + **State timeline** dos relés |
-| 3 | **Quanto tempo os atuadores ficam ligados?** | quem paga a energia (ventilador) e a energia e a água (bomba) | prever o consumo; avaliar se mudar um limite compensa | **Bar chart** do tempo ligado por janela de 5 min + **Bar gauge** do período (%) + **Stat** (acionamentos, Wh e litros medidos) + **Time series** da caixa e da vazão |
+| 1 | **A estufa está bem agora?** | o operador da estufa | intervir já (ex.: 25 °C com o ventilador desligado, solo abaixo de 30 % sem o gotejamento, VPD acima de 1,5 kPa, caixa abaixo de 20 %) | **Gauge** nas faixas (temperatura, solo, VPD, DLI e caixa d'água) + **Stat** dos quatro relés + **Stat** com a curva do período (umidade do ar, luz dentro, luz no teto e vazão) |
+| 2 | **O controle mantém a estufa nas faixas?** | o grupo, que projeta e ajusta a regra (e, na Aula 9, o gêmeo digital) | manter ou mudar os limites 22/24 °C, 30/45 %, 15/20 klx e 0,95/1,25 kPa; ver se a histerese oscila rápido demais; separar "regra ruim" de "dia quente" com a temperatura de fora | **Time series** com as linhas dos limites (temperatura, solo, luz e VPD) e a temperatura externa + **State timeline** dos quatro relés |
+| 3 | **Quanto tempo os atuadores ficam ligados?** | quem paga a energia (os quatro relés) e a água (gotejamento e névoa) | prever o consumo; avaliar se mudar um limite compensa | **Bar chart** do tempo ligado por janela de 5 min + **Bar gauge** do período (%) + **Stat** (acionamentos, Wh e litros) + **Time series** da caixa e da vazão |
 
 Seguimos a regra da Aula 7: a pergunta escolhe a visualização.
 - O valor de **agora** vai num Gauge, quando há uma faixa a respeitar, ou num Stat.
@@ -106,14 +111,14 @@ As cores da Pergunta 1:
 | Painel | Azul | Verde | Laranja | Vermelho |
 |---|---|---|---|---|
 | Temperatura | abaixo de 18 °C | 18 a 24 °C | — | a partir de 24 °C (o ventilador deve estar ligado) |
-| Umidade do solo | a partir de 45 % (a bomba deve desligar) | 30 a 45 % | — | abaixo de 30 % (a bomba deve ligar) |
-| VPD | abaixo de 0,45 kPa (ar úmido demais) | 0,45 a 1,25 kPa | 1,25 a 1,5 kPa | acima de 1,5 kPa (estresse) |
+| Umidade do solo | a partir de 45 % (o gotejamento deve desligar) | 30 a 45 % | — | abaixo de 30 % (o gotejamento deve ligar) |
+| VPD | abaixo de 0,45 kPa (ar úmido demais) | 0,45 a 1,25 kPa | 1,25 a 1,5 kPa (a névoa deve estar ligada) | acima de 1,5 kPa (estresse) |
 | DLI (24 h) | — | 14 a 18 mol/m²/dia | fora da faixa | — |
 | Caixa d'água (500 L) | — | a partir de 40 % (200 L) | 20 a 40 % | abaixo de 20 % (100 L) |
 
 Umidade do ar, luz e vazão ficam sem faixa, só com a curva do período. Quem julga o ar é o VPD, e quem julga a luz é o DLI. Vazão zero é normal com a bomba desligada; o problema é a bomba ligada com vazão baixa (consulta no Orion mais abaixo).
 
-As cores das curvas são fixas em todo o painel: laranja para a temperatura, roxo para o clima de fora, azul-claro para a umidade e a água, amarelo para a luz, verde para o ventilador e azul para a bomba.
+As cores das curvas são fixas em todo o painel: laranja para a temperatura, roxo para o que vem de fora (o clima e a luz no teto), azul-claro para a umidade e a água, amarelo para a luz dentro. Os relés: verde para o ventilador, azul para o gotejamento, amarelo-ouro para as lâmpadas e verde-água para a névoa.
 
 ### A consulta de cada painel
 
@@ -131,7 +136,7 @@ ORDER BY recvTimeTs DESC
 LIMIT 1
 ```
 
-**Pergunta 1 — Stat com curva** (umidade do ar, luz e vazão): a mesma consulta da Pergunta 2, com `relativeHumidity`, `illuminance` ou `waterFlow`; o Stat mostra o último valor e a curva ao fundo. A umidade usa `CAST(attrValue AS DECIMAL(6,2))`, porque vai de 0 a 1. A luz usa `CAST(attrValue AS DECIMAL(10,1)) / 1000`, para mostrar em klx.
+**Pergunta 1 — Stat com curva** (umidade do ar, luz dentro, luz no teto e vazão): a mesma consulta da Pergunta 2, com `relativeHumidity`, `illuminance`, `outdoorIlluminance` ou `waterFlow`; o Stat mostra o último valor e a curva ao fundo. A umidade usa `CAST(attrValue AS DECIMAL(6,2))`, porque vai de 0 a 1. A luz usa `CAST(attrValue AS DECIMAL(10,1)) / 1000`, para mostrar em klx.
 
 **Pergunta 1 — Gauge do DLI** (formato *Table*; o painel tem janela própria de 24 h, independente do seletor)
 
@@ -143,17 +148,17 @@ WHERE attrName = 'illuminance'
   AND $__unixEpochFilter(recvTimeTs / 1000)
 ```
 
-**Pergunta 1 — Stat do relé** (formato *Table*, sem CAST; mapeamento `ON` → Ligado, `OFF` → Desligado)
+**Pergunta 1 — Relés agora** (formato *Table*, sem CAST; uma subconsulta por relé; mapeamento `ON` → Ligado, `OFF` → Desligado)
 
 ```sql
-SELECT attrValue AS "ventilador"
-FROM `urn_ngsi-ld_Device_ESP32-001_Device`
-WHERE attrName = 'fanState'
-ORDER BY recvTimeTs DESC
-LIMIT 1
+SELECT
+  (SELECT attrValue FROM `urn_ngsi-ld_Device_ESP32-001_Device` WHERE attrName = 'fanState'  ORDER BY recvTimeTs DESC LIMIT 1) AS "ventilador",
+  (SELECT attrValue FROM `urn_ngsi-ld_Device_ESP32-001_Device` WHERE attrName = 'pumpState' ORDER BY recvTimeTs DESC LIMIT 1) AS "bomba",
+  (SELECT attrValue FROM `urn_ngsi-ld_Device_ESP32-001_Device` WHERE attrName = 'lampState' ORDER BY recvTimeTs DESC LIMIT 1) AS "lâmpadas",
+  (SELECT attrValue FROM `urn_ngsi-ld_Device_ESP32-001_Device` WHERE attrName = 'mistState' ORDER BY recvTimeTs DESC LIMIT 1) AS "nebulização"
 ```
 
-**Pergunta 2 — Time series, dentro** (`temperature`; o mesmo para `soilMoisture`)
+**Pergunta 2 — Time series, dentro** (`temperature`; o mesmo para `soilMoisture`, `vaporPressureDeficit`, `illuminance` e `outdoorIlluminance`)
 
 ```sql
 SELECT
@@ -189,7 +194,7 @@ FROM (
 ORDER BY t_s
 ```
 
-**Pergunta 2 — State timeline** (consulta A com `fanState`, consulta B com `pumpState`)
+**Pergunta 2 — State timeline** (uma consulta por relé: `fanState`, `pumpState`, `lampState` e `mistState`)
 
 ```sql
 SELECT
@@ -207,9 +212,11 @@ ORDER BY recvTimeTs ASC
 SELECT
   $__unixEpochGroupAlias(recvTimeTs / 1000, '5m'),
   100 * AVG(CASE WHEN attrName = 'fanState'  THEN attrValue = 'ON' END) AS "ventilador",
-  100 * AVG(CASE WHEN attrName = 'pumpState' THEN attrValue = 'ON' END) AS "bomba"
+  100 * AVG(CASE WHEN attrName = 'pumpState' THEN attrValue = 'ON' END) AS "bomba",
+  100 * AVG(CASE WHEN attrName = 'lampState' THEN attrValue = 'ON' END) AS "lâmpadas",
+  100 * AVG(CASE WHEN attrName = 'mistState' THEN attrValue = 'ON' END) AS "nebulização"
 FROM `urn_ngsi-ld_Device_ESP32-001_Device`
-WHERE attrName IN ('fanState', 'pumpState')
+WHERE attrName IN ('fanState', 'pumpState', 'lampState', 'mistState')
   AND $__unixEpochFilter(recvTimeTs / 1000)
 GROUP BY 1
 ORDER BY 1
@@ -222,26 +229,31 @@ ORDER BY 1
 ```sql
 SELECT
   SUM(attrName = 'fanState')  AS "ventilador",
-  SUM(attrName = 'pumpState') AS "bomba"
+  SUM(attrName = 'pumpState') AS "bomba",
+  SUM(attrName = 'lampState') AS "lâmpadas",
+  SUM(attrName = 'mistState') AS "nebulização"
 FROM (
   SELECT attrName, attrValue,
          LAG(attrValue) OVER (PARTITION BY attrName ORDER BY recvTimeTs) AS anterior
   FROM `urn_ngsi-ld_Device_ESP32-001_Device`
-  WHERE attrName IN ('fanState', 'pumpState')
+  WHERE attrName IN ('fanState', 'pumpState', 'lampState', 'mistState')
     AND $__unixEpochFilter(recvTimeTs / 1000)
 ) AS mudancas
 WHERE attrValue = 'ON' AND anterior = 'OFF'
 ```
 
-**Pergunta 3 — Energia e água** (formato *Table*; potências nominais do `dispositivo.json`, água pela vazão medida)
+**Pergunta 3 — Energia e água** (formato *Table*; potências nominais do `dispositivo.json`; água do gotejamento pela vazão medida, a da névoa pela nominal)
 
 ```sql
 SELECT
-  541 * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS "ventilador",
-  180 * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS "bomba",
-  5 * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS "água"
+  541  * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS "ventilador",
+  180  * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS "bomba",
+  2000 * 5 * SUM(attrName = 'lampState' AND attrValue = 'ON') / 3600 AS "lâmpadas",
+  48   * 5 * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS "nebulização",
+  5 * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS "água do gotejamento",
+  60 * 5 * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS "água da névoa"
 FROM `urn_ngsi-ld_Device_ESP32-001_Device`
-WHERE attrName IN ('fanState', 'pumpState', 'waterFlow')
+WHERE attrName IN ('fanState', 'pumpState', 'lampState', 'mistState', 'waterFlow')
   AND $__unixEpochFilter(recvTimeTs / 1000)
 ```
 
@@ -257,7 +269,7 @@ $$
 
 - **D:** ciclo de trabalho, a fração do tempo com o relé ligado (no painel, × 100 = %).
 - **t_ON, t_total:** tempo ligado e tempo total do período, em segundos.
-- **s_i:** vale 1 se a amostra *i* está `ON` e 0 se está `OFF`. Vem dos `fanState` e `pumpState` gravados pelo Cygnus.
+- **s_i:** vale 1 se a amostra *i* está `ON` e 0 se está `OFF`. Vem dos estados dos relés (`fanState`, `pumpState`, `lampState`, `mistState`) gravados pelo Cygnus.
 - **N:** número de amostras no período, uma a cada 5 s (o intervalo da ESP32).
 
 A aproximação vale porque as amostras são igualmente espaçadas: cada uma "representa" 5 s.
@@ -269,7 +281,7 @@ E = \frac{P \cdot \Delta t \cdot \sum s_i}{3600}
 $$
 
 - **E:** energia no período (Wh).
-- **P:** potência nominal (W). Vem de `fanRatedPower` = 541 W ou `pumpRatedPower` = 180 W, atributos estáticos da ESP32.
+- **P:** potência nominal (W). Vem dos atributos estáticos da ESP32: `fanRatedPower` = 541 W, `pumpRatedPower` = 180 W, `lampRatedPower` = 2.000 W e `mistRatedPower` = 48 W.
 - **Δt = 5 s:** intervalo entre amostras.
 - **Σ s_i:** número de amostras `ON` do relé no período.
 - **3600:** converte segundos em horas.
@@ -287,7 +299,8 @@ $$
 
 Exemplo para 30 min (360 amostras), com o ventilador ligado em 72 e a bomba em 36, a 18 L/min:
 - ventilador: E = 541 × 5 × 72 / 3600 = **54,1 Wh**;
-- bomba: E = 180 × 5 × 36 / 3600 = **9,0 Wh**, e V = 5 × (36 × 18) / 60 = **54 L**.
+- bomba: E = 180 × 5 × 36 / 3600 = **9,0 Wh**, e V = 5 × (36 × 18) / 60 = **54 L**;
+- lâmpadas ligadas em 40: E = 2000 × 5 × 40 / 3600 = **111,1 Wh**, mais que o ventilador e a bomba juntos.
 
 Pela vazão de catálogo (`pumpFlowRate` = 1.500 L/h = 25 L/min), a conta daria 75 L: 39 % a mais. A vazão de catálogo é a máxima; no gotejamento, a perda de carga leva a bomba a um ponto de operação de vazão menor (curva da bomba × curva do sistema). Os 18 L/min da simulação são premissa; o medidor mostra o valor real.
 
@@ -324,6 +337,49 @@ Exemplo: n = 675 pulsos em 5 s dá q = 60 × 675 / (450 × 5) = **18 L/min**.
 
 A precisão de catálogo é ±10 %. Para melhorar, calibre com um balde: passe um volume conhecido, conte os pulsos e use o K encontrado.
 
+**Água da névoa.** O medidor fica no cano do gotejamento, então a névoa entra pela vazão nominal, como a energia:
+
+$$
+V_n = \frac{Q_n \cdot \Delta t \cdot \sum s_i}{3600}
+$$
+
+- **V_n:** água da névoa no período (L).
+- **Q_n:** vazão nominal dos bicos (L/h). Vem de `mistFlowRate` = 60 L/h (10 bicos × 6 L/h).
+- **Δt = 5 s:** intervalo entre amostras.
+- **Σ s_i:** número de amostras com `mistState = ON` no período.
+- **3600:** converte segundos em horas.
+
+Exemplo: 30 min com a névoa ligada em 24 amostras dá V_n = 60 × 5 × 24 / 3600 = **2 L**. A caixa vê as duas águas; o medidor, só a do gotejamento.
+
+**Luz dentro e as lâmpadas.** O BH1750 de dentro vê o sol que passa pelo filme e a luz das lâmpadas:
+
+$$
+l = \tau \cdot e + E_L \cdot s_L
+$$
+
+- **l:** luz dentro, na altura das plantas (lx), o `illuminance`. É a que entra no DLI.
+- **e:** luz no teto, lá fora (lx), o `outdoorIlluminance`.
+- **τ:** fração da luz de fora que chega às plantas. Premissa: 0,68.
+- **E_L:** luz das lâmpadas no sensor (lx). Premissa: 5.400 lx.
+- **s_L:** 1 com as lâmpadas ligadas, 0 com elas desligadas (`lampState`).
+
+Exemplo: no começo do dia, e = 9.000 lx com as lâmpadas ligadas dá l = 0,68 × 9.000 + 5.400 = **11.520 lx**.
+
+**Por que dois BH1750.** A regra das lâmpadas usa o do teto. Se usasse o de dentro, a luz das próprias lâmpadas (5.400 lx) entraria na medida, e ela é maior que a folga entre ligar e desligar (5.000 lx). Perto do limite, as lâmpadas acenderiam, a leitura passaria do limite de desligar, elas apagariam, e o ciclo se repetiria. O sensor do teto não vê as lâmpadas.
+
+**Potência das lâmpadas** (premissa de projeto):
+
+$$
+P_L = \frac{PPFD \cdot A}{PPE}
+$$
+
+- **P_L:** potência elétrica das lâmpadas (W), o `lampRatedPower`.
+- **PPFD:** fluxo de fótons de complemento nas plantas (µmol/m²/s). Premissa: 100 µmol/m²/s.
+- **A:** área da estufa (m²). 50 m², o `area` da AgriGreenhouse.
+- **PPE:** eficácia das luminárias (µmol/J). Premissa: 2,5 µmol/J, acima do mínimo de 1,9 µmol/J da DLC.
+
+Exemplo: P_L = 100 × 50 / 2,5 = **2.000 W**. Pelo fator da luz do sol, 100 µmol/m²/s equivalem a 100 ÷ 0,0185 ≈ **5.400 lx**, o E_L da simulação.
+
 A física da simulação é acelerada: o solo seca em minutos, e não em dias. Por isso esses números mostram o cálculo, e não o consumo de um dia real. Com a placa real, passam a ser o consumo de verdade.
 
 **VPD.** Calculado na ESP32, com a temperatura e a umidade já arredondadas:
@@ -346,7 +402,7 @@ DLI = \frac{0{,}0185 \cdot \bar{E}_v \cdot 86\,400}{10^6}
 $$
 
 - **DLI:** luz diária integrada (mol/m²/dia).
-- **Ē_v:** média da iluminância nas últimas 24 h (lx, BH1750).
+- **Ē_v:** média da iluminância nas últimas 24 h (lx, BH1750 de dentro: sol e lâmpadas).
 - **0,0185:** converte lux em PPFD (µmol/m²/s), para luz do sol (tabela Apogee/Hydrofarm).
 - **86 400:** segundos em um dia.
 - **10⁶:** converte µmol em mol.
@@ -375,11 +431,19 @@ A conta é a definição do DLI quando as 24 h estão no histórico. Com menos t
 | Reposição pela boia | **3 L/min**, da rede | premissa da simulação (`BOIA_LPM`) |
 | Nível da caixa | ultrassom à prova d'água JSN-SR04T: 20 a 600 cm, zona cega de 20 cm | [folha de dados JSN-SR04T-2.0](https://www.mikrocontroller.net/attachment/541933/JSN-SR04T-2.0.pdf) |
 | Vazão | YF-S201 (efeito Hall): 1 a 30 L/min, 450 pulsos/L, ±10 % | [Components101](https://components101.com/sensors/yf-s201-water-flow-measurement-sensor) |
+| Irrigação | **gotejamento**, que não molha as folhas | [Embrapa](https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1042266/1/cot179.pdf): na alface, evitar práticas que deixem as folhas molhadas por muito tempo e preferir o gotejamento |
+| Nebulização: bicos | **10 bicos × 6 L/h = 60 L/h** (`mistFlowRate`), de 3,1 a 4,1 bar | [guia de nebulizadores da Hunter](https://agriculture.hunterirrigation.com/sites/senninger.hunterindustries.com/files/fogger-installation-guide.pdf): 6,05 L/h por bico; o número de bicos é premissa |
+| Nebulização: bomba | **48 W** (`mistRatedPower`) = 12 V × 4 A, bomba de diafragma de 70 psi (4,8 bar) e 2,7 L/min. A bomba do gotejamento (24 mca, ≈ 2,4 bar) não chega à pressão dos bicos | [anúncio da Seaflo 21S](https://www.casasbahia.com.br/bomba-de-pressurizacao-12v-seaflo-07-gpm-21s-70psi/p/1572832984) |
+| Nebulização: quando | liga com VPD ≥ 1,25 kPa (o fim da faixa verde) e desliga com VPD ≤ 0,95 kPa | premissa do grupo; a névoa costuma ser comandada pelo VPD ([Greenhouse Management](https://www.greenhousemag.com/article/cooling-your-greenhouse-with-fog)) |
+| Lâmpadas: `lampRatedPower` | **2.000 W** = 100 µmol/m²/s × 50 m² ÷ 2,5 µmol/J | premissa; mínimo da DLC: 1,9 µmol/J ([Universidade de Kentucky](https://greenhousehort.ca.uky.edu/sites/greenhousehort.ca.uky.edu/files/2022-03/LED%20Efficacy.pdf)) |
+| Lâmpadas: quando | ligam com menos de 15 klx no teto e desligam acima de 20 klx; à noite (abaixo de 500 lx), desligadas: só completam o dia | premissa do grupo |
+| Dois BH1750 na mesma ESP32 | endereços I2C 0x23 e 0x5C, escolhidos pelo pino ADDR | [Wolles Elektronikkiste](https://wolles-elektronikkiste.de/en/bh1750fvi-gy-30-302-ambient-light-sensor) |
+| Luz lá fora e dentro | 50.000 lx no teto ao meio-dia; 68 % chegam às plantas | premissas da simulação (`PICO_LUX`, `TRANSMISSAO`) |
 | Clima a cada 15 min | o "current" da Open-Meteo vem da previsão de 15 em 15 min | [Open-Meteo](https://open-meteo.com/) |
 
 **A água já é medida; a energia ainda é nominal.** O próximo passo é o sensor de energia (PZEM-004T na rede AC, ou INA219 em 12 V), e então a energia também vira atributo de origem **medida**.
 
-**Escala:** os valores são da estufa de 50 m² do modelo. Para uma maquete, troque os números nominais em `modelo-dados/provisionamento/dispositivo.json` (potências, vazão de catálogo e capacidade da caixa) e as premissas da simulação no `fiware/docker-compose.override.yml` (`CAIXA_LITROS`, `VAZAO_LPM`, `BOIA_LPM`). Depois, rode o `configurar.py` e o `gerar_painel.py`.
+**Escala:** os valores são da estufa de 50 m² do modelo. Para uma maquete, troque os números nominais em `modelo-dados/provisionamento/dispositivo.json` (potências, vazões e capacidade da caixa) e as premissas da simulação no `fiware/docker-compose.override.yml` (`CAIXA_LITROS`, `VAZAO_LPM`, `BOIA_LPM`, `NEBLINA_LPM`, `LAMPADA_LUX`). Depois, rode o `configurar.py` e o `gerar_painel.py`.
 
 ## As três perguntas do marco da Aula 7
 
@@ -399,6 +463,8 @@ A conta é a definição do DLI quando as 24 h estão no histórico. Com menos t
 | relés ligados | `GET /v2/entities?type=Device&q=fanState==ON` |
 | caixa baixa (abaixo de 20 %) | `GET /v2/entities?type=Device&q=tankWaterVolume<100` |
 | bomba ligada sem vazão (menos da metade do catálogo) | `GET /v2/entities?type=Device&q=pumpState==ON;waterFlow<12.5` |
+| lâmpadas ligadas | `GET /v2/entities?type=Device&q=lampState==ON` |
+| névoa ligada com o ar já úmido (comando esquecido) | `GET /v2/entities?type=Device&q=mistState==ON;vaporPressureDeficit<0.95` |
 | só medidas em °C | `GET /v2/entities?type=Device&mq=temperature.unitCode==CEL` |
 | estufas perto do campus | `GET /v2/entities?type=AgriGreenhouse&georel=near;maxDistance:1000&geometry=point&coords=-23.7245,-46.5793` |
 
@@ -406,13 +472,13 @@ A conta é a definição do DLI quando as 24 h estão no histórico. Com menos t
 
 | Subscrição | Entidades | Atributos |
 |---|---|---|
-| **"Historico da estufa para o Cygnus"** | `idPattern ".*"`, type `Device` | `temperature`, `relativeHumidity`, `vaporPressureDeficit`, `soilMoisture`, `illuminance`, `tankWaterVolume`, `waterFlow`, `fanState`, `pumpState` |
+| **"Historico da estufa para o Cygnus"** | `idPattern ".*"`, type `Device` | `temperature`, `relativeHumidity`, `vaporPressureDeficit`, `soilMoisture`, `illuminance`, `outdoorIlluminance`, `tankWaterVolume`, `waterFlow`, `fanState`, `pumpState`, `lampState`, `mistState` |
 | **"Clima externo para o Cygnus"** | `urn:ngsi-ld:WeatherObserved:FEI` | `temperature`, `relativeHumidity`, `windSpeed`, `dateObserved`, `source` |
 
 - As duas usam `attrsFormat: normalized`, `throttling: 1 s` e a URL `http://cygnus:5050/notify`.
 - Ficam fora:
   - os comandos e o resultado deles (`fanOn`, `fanOn_status`…);
-  - os atributos estáticos (potências, vazão de catálogo, capacidade da caixa, `controlledAsset`), que não mudam com o tempo;
+  - os atributos estáticos (potências, vazões nominais, capacidade da caixa, `controlledAsset`), que não mudam com o tempo;
   - a estufa, que também não muda.
 - O `TimeInstant` vai junto, nos metadados (coluna `attrMd`).
 
@@ -428,10 +494,10 @@ $$
 
 | Fonte | n_attr | Δt | L |
 |---|---|---|---|
-| nó da estufa | 9 | 5 s | 9 × 720 = **6.480 linhas/h** |
+| nó da estufa | 12 | 5 s | 12 × 720 = **8.640 linhas/h** |
 | clima externo | 5 | 900 s | 5 × 4 = **20 linhas/h**, no máximo |
 
-O nó grava cerca de 156 mil linhas por dia. É o custo do esquema "uma linha por atributo, tudo em texto", que é a questão de pesquisa da Aula 8. O clima grava no máximo 20 linhas por hora: se a leitura não mudou, o Orion não notifica (conferimos), e o histórico não ganha linha repetida.
+O nó grava cerca de 207 mil linhas por dia. É o custo do esquema "uma linha por atributo, tudo em texto", que é a questão de pesquisa da Aula 8. O clima grava no máximo 20 linhas por hora: se a leitura não mudou, o Orion não notifica (conferimos), e o histórico não ganha linha repetida.
 
 ## O clima externo: gravador, não registro
 
@@ -451,6 +517,9 @@ Por isso, no tenant `estufa`, o `gravador-clima` faz a troca:
 
 - **Dados simulados:** os dados vêm de uma ESP32 simulada, com física simplificada e acelerada para o painel mostrar vários dias e ciclos em 30 min. A placa real entra no lugar dela sem mudar a plataforma, porque usa o mesmo contrato MQTT. A simulação não usa o clima de fora.
 - **Potência:** é nominal, de catálogo. Falta o sensor de energia.
+- **Luz em lux, não em PAR:** o BH1750 mede lux. O fator 0,0185 vale para a luz do sol; com LED, ele muda com o espectro, e o DLI das horas com lâmpadas vira aproximação. Um sensor quântico (PAR) resolve.
+- **BH1750 do teto ao sol pleno:** ao meio-dia de céu limpo, a luz pode passar dos 65.535 lx do sensor. A folha de dados estende a faixa até 100.000 lx com o ajuste do tempo de medida (MTreg).
+- **Calor das lâmpadas:** não entra na simulação.
 - **Bomba a seco:** com a caixa vazia, a ESP32 ainda liga a bomba, que passa a puxar só o que a boia repõe. Falta um intertravamento: não ligar a bomba com a caixa abaixo de um mínimo.
 - **Limites da bomba:** 30/45 % ainda não foram conferidos para a alface.
 - **Regra de controle:** hoje é **local**, na ESP32 (histerese com os limites da AgriGreenhouse). Na Aula 9, o controlador e o gêmeo digital passam a ler esses limites do Orion.

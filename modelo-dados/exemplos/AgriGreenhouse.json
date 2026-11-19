@@ -69,6 +69,46 @@
       }
     }
   },
+  "lampOnOutdoorIlluminance": {
+    "type": "Number",
+    "value": 15000,
+    "metadata": {
+      "unitCode": {
+        "type": "Text",
+        "value": "LUX"
+      }
+    }
+  },
+  "lampOffOutdoorIlluminance": {
+    "type": "Number",
+    "value": 20000,
+    "metadata": {
+      "unitCode": {
+        "type": "Text",
+        "value": "LUX"
+      }
+    }
+  },
+  "mistOnVaporPressureDeficit": {
+    "type": "Number",
+    "value": 1.25,
+    "metadata": {
+      "unitCode": {
+        "type": "Text",
+        "value": "KPA"
+      }
+    }
+  },
+  "mistOffVaporPressureDeficit": {
+    "type": "Number",
+    "value": 0.95,
+    "metadata": {
+      "unitCode": {
+        "type": "Text",
+        "value": "KPA"
+      }
+    }
+  },
   "hasWeatherObserved": {
     "type": "Relationship",
     "value": "urn:ngsi-ld:WeatherObserved:FEI"

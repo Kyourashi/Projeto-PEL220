@@ -10,7 +10,7 @@
   "editable": true,
   "graphTooltip": 1,
   "schemaVersion": 39,
-  "version": 4,
+  "version": 5,
   "refresh": "10s",
   "time": {
     "from": "now-30m",
@@ -196,7 +196,7 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,2)) AS \"solo\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'soilMoisture'\nORDER BY recvTimeTs DESC\nLIMIT 1"
         }
       ],
-      "description": "Última medida do sensor capacitivo. Vermelho abaixo de 30 % (a bomba deve ligar), verde na faixa, azul a partir de 45 % (a bomba deve desligar)."
+      "description": "Última medida do sensor capacitivo. Vermelho abaixo de 30 % (o gotejamento deve ligar), verde na faixa, azul a partir de 45 % (o gotejamento deve desligar)."
     },
     {
       "id": 5,
@@ -273,7 +273,7 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,2)) AS \"VPD\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'vaporPressureDeficit'\nORDER BY recvTimeTs DESC\nLIMIT 1"
         }
       ],
-      "description": "Déficit de pressão de vapor, calculado na ESP32 com a temperatura e a umidade (Tetens/FAO-56). Azul abaixo de 0,45 kPa: ar úmido demais, risco de doença. Verde até 1,25. Laranja até 1,5. Vermelho acima: estresse hídrico."
+      "description": "Déficit de pressão de vapor, calculado na ESP32 com a temperatura e a umidade (Tetens/FAO-56). Azul abaixo de 0,45 kPa: ar úmido demais, risco de doença. Verde até 1,25. Laranja até 1,5. Vermelho acima: estresse hídrico. A nebulização liga em 1,25 kPa."
     },
     {
       "id": 6,
@@ -346,7 +346,7 @@
           "rawSql": "SELECT\n  AVG(CAST(attrValue AS DECIMAL(10,1))) * 0.0185 * 86400 / 1000000 AS \"DLI\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'illuminance'\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
         }
       ],
-      "description": "Luz diária integrada das últimas 24 h: média da iluminância × 0,0185 (lx → µmol/m²/s, luz do sol) × 86 400 s ÷ 10⁶. Alface: 14 a 18 mol/m²/dia (verde).",
+      "description": "Luz diária integrada das últimas 24 h, no BH1750 de dentro (sol + lâmpadas): média da iluminância × 0,0185 (lx → µmol/m²/s, luz do sol) × 86 400 s ÷ 10⁶. Alface: 14 a 18 mol/m²/dia (verde).",
       "timeFrom": "24h",
       "hideTimeOverride": true
     },
@@ -421,10 +421,204 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,1)) AS \"caixa\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'tankWaterVolume'\nORDER BY recvTimeTs DESC\nLIMIT 1"
         }
       ],
-      "description": "Água na caixa de 500 L: ultrassom na tampa, convertido em litros na ESP32. Vermelho abaixo de 20% da caixa, laranja abaixo de 40%. A bomba tira água e a boia repõe."
+      "description": "Água na caixa de 500 L: ultrassom na tampa, convertido em litros na ESP32. Vermelho abaixo de 20% da caixa, laranja abaixo de 40%. O gotejamento e a névoa tiram água; a boia repõe."
     },
     {
       "id": 8,
+      "type": "stat",
+      "title": "Relés agora",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 3,
+        "w": 4,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "ON": {
+                  "color": "#73BF69",
+                  "index": 0,
+                  "text": "Ligado"
+                },
+                "OFF": {
+                  "color": "#8E8E8E",
+                  "index": 1,
+                  "text": "Desligado"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#8E8E8E",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ventilador"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ON": {
+                        "color": "#73BF69",
+                        "index": 0,
+                        "text": "Ligado"
+                      },
+                      "OFF": {
+                        "color": "#8E8E8E",
+                        "index": 1,
+                        "text": "Desligado"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bomba"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ON": {
+                        "color": "#5794F2",
+                        "index": 0,
+                        "text": "Ligado"
+                      },
+                      "OFF": {
+                        "color": "#8E8E8E",
+                        "index": 1,
+                        "text": "Desligado"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lâmpadas"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ON": {
+                        "color": "#F2CC0C",
+                        "index": 0,
+                        "text": "Ligado"
+                      },
+                      "OFF": {
+                        "color": "#8E8E8E",
+                        "index": 1,
+                        "text": "Desligado"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "nebulização"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ON": {
+                        "color": "#3FB8AF",
+                        "index": 0,
+                        "text": "Ligado"
+                      },
+                      "OFF": {
+                        "color": "#8E8E8E",
+                        "index": 1,
+                        "text": "Desligado"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "text": {
+          "titleSize": 13,
+          "valueSize": 22
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  (SELECT attrValue FROM `urn_ngsi-ld_Device_ESP32-001_Device` WHERE attrName = 'fanState'  ORDER BY recvTimeTs DESC LIMIT 1) AS \"ventilador\",\n  (SELECT attrValue FROM `urn_ngsi-ld_Device_ESP32-001_Device` WHERE attrName = 'pumpState' ORDER BY recvTimeTs DESC LIMIT 1) AS \"bomba\",\n  (SELECT attrValue FROM `urn_ngsi-ld_Device_ESP32-001_Device` WHERE attrName = 'lampState' ORDER BY recvTimeTs DESC LIMIT 1) AS \"lâmpadas\",\n  (SELECT attrValue FROM `urn_ngsi-ld_Device_ESP32-001_Device` WHERE attrName = 'mistState' ORDER BY recvTimeTs DESC LIMIT 1) AS \"nebulização\""
+        }
+      ],
+      "description": "Estado que a ESP32 informa (fanState, pumpState, lampState, mistState). É o estado observado, não o comando pedido."
+    },
+    {
+      "id": 9,
       "type": "stat",
       "title": "Umidade do ar",
       "datasource": {
@@ -434,7 +628,7 @@
       "gridPos": {
         "x": 0,
         "y": 9,
-        "w": 8,
+        "w": 6,
         "h": 3
       },
       "fieldConfig": {
@@ -478,17 +672,17 @@
       "description": "relativeHumidity de 0 a 1, mostrada em %, com a curva do período. Quem diz se o ar está úmido ou seco demais é o VPD, que junta umidade e temperatura."
     },
     {
-      "id": 9,
+      "id": 10,
       "type": "stat",
-      "title": "Luz agora",
+      "title": "Luz dentro",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 8,
+        "x": 6,
         "y": 9,
-        "w": 8,
+        "w": 6,
         "h": 3
       },
       "fieldConfig": {
@@ -526,23 +720,77 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,1)) / 1000 AS \"luz\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'illuminance'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,1)) / 1000 AS \"dentro\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'illuminance'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
         }
       ],
-      "description": "Iluminância do BH1750, em klx, com a curva do período (o dia e a noite). O que conta para a planta é a luz do dia inteiro: o DLI."
+      "description": "BH1750 na altura das plantas: o sol que passa pelo filme mais as lâmpadas. É a luz que a planta recebe e a que entra no DLI."
     },
     {
-      "id": 10,
+      "id": 11,
       "type": "stat",
-      "title": "Vazão depois da bomba",
+      "title": "Luz no teto (lá fora)",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
-        "x": 16,
+        "x": 12,
         "y": 9,
-        "w": 8,
+        "w": 6,
+        "h": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: klx",
+          "decimals": 1,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#B877D9"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "value",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,1)) / 1000 AS \"no teto\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'outdoorIlluminance'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        }
+      ],
+      "description": "BH1750 no teto, olhando para o céu: só o sol. É ele que decide as lâmpadas (ligam abaixo de 15 klx, desligam acima de 20 klx, desligadas à noite), porque o sensor de dentro também vê as lâmpadas."
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Vazão do gotejamento",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 9,
+        "w": 6,
         "h": 3
       },
       "fieldConfig": {
@@ -583,161 +831,7 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"vazão\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'waterFlow'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
         }
       ],
-      "description": "Medidor de vazão de pulsos (efeito Hall) no cano depois da bomba. Zero com a bomba desligada. Bomba ligada com vazão perto de zero = caixa vazia ou cano entupido."
-    },
-    {
-      "id": 11,
-      "type": "stat",
-      "title": "Ventilador",
-      "datasource": {
-        "type": "mysql",
-        "uid": "mysql-estufa"
-      },
-      "gridPos": {
-        "x": 20,
-        "y": 3,
-        "w": 4,
-        "h": 3
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "ON": {
-                  "color": "#73BF69",
-                  "index": 0,
-                  "text": "Ligado"
-                },
-                "OFF": {
-                  "color": "#8E8E8E",
-                  "index": 1,
-                  "text": "Desligado"
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#8E8E8E",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^ventilador$/",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "textMode": "value",
-        "orientation": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "mysql",
-            "uid": "mysql-estufa"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT attrValue AS \"ventilador\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'fanState'\nORDER BY recvTimeTs DESC\nLIMIT 1"
-        }
-      ],
-      "description": "Estado que a ESP32 informa (fanState). É o estado observado, não o comando pedido."
-    },
-    {
-      "id": 12,
-      "type": "stat",
-      "title": "Bomba",
-      "datasource": {
-        "type": "mysql",
-        "uid": "mysql-estufa"
-      },
-      "gridPos": {
-        "x": 20,
-        "y": 6,
-        "w": 4,
-        "h": 3
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "ON": {
-                  "color": "#5794F2",
-                  "index": 0,
-                  "text": "Ligado"
-                },
-                "OFF": {
-                  "color": "#8E8E8E",
-                  "index": 1,
-                  "text": "Desligado"
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#8E8E8E",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^bomba$/",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "textMode": "value",
-        "orientation": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "mysql",
-            "uid": "mysql-estufa"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT attrValue AS \"bomba\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'pumpState'\nORDER BY recvTimeTs DESC\nLIMIT 1"
-        }
-      ],
-      "description": "Estado que a ESP32 informa (pumpState)."
+      "description": "Medidor de vazão de pulsos (efeito Hall) no cano depois da bomba do gotejamento. Zero com a bomba desligada. Bomba ligada com vazão perto de zero = caixa vazia ou cano entupido."
     },
     {
       "id": 13,
@@ -879,7 +973,7 @@
     {
       "id": 15,
       "type": "timeseries",
-      "title": "Umidade do solo e os limites da bomba (30 e 45 %)",
+      "title": "Umidade do solo e os limites do gotejamento (30 e 45 %)",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
@@ -953,10 +1047,208 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"solo\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'soilMoisture'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
         }
       ],
-      "description": "Dente de serra: o solo seca devagar e a bomba o molha depressa. A bomba liga ao cruzar 30 % (linha vermelha) e desliga ao cruzar 45 % (linha azul)."
+      "description": "Dente de serra: o solo seca devagar e o gotejamento o molha depressa. A bomba liga ao cruzar 30 % (linha vermelha) e desliga ao cruzar 45 % (linha azul)."
     },
     {
       "id": 16,
+      "type": "timeseries",
+      "title": "Luz: no teto, dentro e os limites das lâmpadas (15 e 20 klx)",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: klx",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FADE2A"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 15.0
+              },
+              {
+                "color": "#73BF69",
+                "value": 20.0
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "lineInterpolation": "smooth",
+            "showPoints": "never",
+            "fillOpacity": 18,
+            "gradientMode": "opacity",
+            "axisSoftMin": 0,
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "no teto"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    6
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,1)) / 1000 AS \"no teto\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'outdoorIlluminance'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,1)) / 1000 AS \"dentro\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'illuminance'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        }
+      ],
+      "description": "No teto (roxo, tracejado): só o sol; as lâmpadas ligam quando ele cai abaixo de 15 klx (linha amarela) e desligam acima de 20 klx (linha verde) ou à noite. Dentro (amarelo): o sol que passa pelo filme mais as lâmpadas; o degrau no começo e no fim do dia é a luz delas."
+    },
+    {
+      "id": 17,
+      "type": "timeseries",
+      "title": "VPD e os limites da nebulização (0,95 e 1,25 kPa)",
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-estufa"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 21,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "pressurekpa",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3FB8AF"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "#73BF69",
+                "value": 0.95
+              },
+              {
+                "color": "#FF9830",
+                "value": 1.25
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 2,
+            "lineInterpolation": "smooth",
+            "showPoints": "never",
+            "fillOpacity": 18,
+            "gradientMode": "opacity",
+            "axisSoftMin": 0,
+            "axisSoftMax": 1.6,
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,2)) AS \"VPD\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'vaporPressureDeficit'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        }
+      ],
+      "description": "Com sol e ventilação, o ar seca e o VPD sobe. A névoa liga ao cruzar 1,25 kPa (linha laranja, o fim da faixa verde da alface) e desliga ao voltar a 0,95 kPa (linha verde). À noite, o ar úmido deixa o VPD baixo."
+    },
+    {
+      "id": 18,
       "type": "state-timeline",
       "title": "Quando cada relé esteve ligado",
       "datasource": {
@@ -965,9 +1257,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 29,
         "w": 24,
-        "h": 4
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -1000,6 +1292,34 @@
           {
             "matcher": {
               "id": "byName",
+              "options": "ventilador"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ON": {
+                        "color": "#73BF69",
+                        "index": 0,
+                        "text": "Ligado"
+                      },
+                      "OFF": {
+                        "color": "#3A3E45",
+                        "index": 1,
+                        "text": "Desligado"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
               "options": "bomba"
             },
             "properties": [
@@ -1011,6 +1331,62 @@
                     "options": {
                       "ON": {
                         "color": "#5794F2",
+                        "index": 0,
+                        "text": "Ligado"
+                      },
+                      "OFF": {
+                        "color": "#3A3E45",
+                        "index": 1,
+                        "text": "Desligado"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lâmpadas"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ON": {
+                        "color": "#F2CC0C",
+                        "index": 0,
+                        "text": "Ligado"
+                      },
+                      "OFF": {
+                        "color": "#3A3E45",
+                        "index": 1,
+                        "text": "Desligado"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "nebulização"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ON": {
+                        "color": "#3FB8AF",
                         "index": 0,
                         "text": "Ligado"
                       },
@@ -1061,25 +1437,47 @@
           "format": "time_series",
           "rawQuery": true,
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  attrValue AS \"bomba\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'pumpState'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  attrValue AS \"lâmpadas\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'lampState'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-estufa"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  attrValue AS \"nebulização\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'mistState'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
         }
       ],
-      "description": "Faixa colorida = relé ligado (ventilador em verde, bomba em azul). Cada faixa verde deve começar em 24 °C e terminar em 22 °C. À noite (luz zero) o ventilador fica desligado."
+      "description": "Faixa colorida = relé ligado. Ventilador (verde): de 24 a 22 °C. Gotejamento (azul): de 30 a 45 % no solo. Lâmpadas (amarelo): no começo e no fim do dia, com pouco sol. Névoa (verde-água): perto do meio-dia, com o ar seco."
     },
     {
-      "id": 17,
+      "id": 19,
       "type": "row",
       "title": "3 · Quanto tempo os atuadores ficam ligados?  —  para quem paga a energia e a água",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 25,
+        "y": 34,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 18,
+      "id": 20,
       "type": "barchart",
       "title": "Tempo ligado em cada janela de 5 minutos",
       "datasource": {
@@ -1088,7 +1486,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 26,
+        "y": 35,
         "w": 12,
         "h": 8
       },
@@ -1134,6 +1532,36 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lâmpadas"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2CC0C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "nebulização"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#3FB8AF"
+                }
+              }
+            ]
           }
         ]
       },
@@ -1141,11 +1569,11 @@
         "xTickLabelRotation": 0,
         "xTickLabelSpacing": 100,
         "showValue": "always",
-        "groupWidth": 0.75,
+        "groupWidth": 0.8,
         "barWidth": 0.9,
         "barRadius": 0.15,
         "text": {
-          "valueSize": 12
+          "valueSize": 11
         },
         "legend": {
           "showLegend": true,
@@ -1166,13 +1594,13 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__unixEpochGroupAlias(recvTimeTs / 1000, '5m'),\n  100 * AVG(CASE WHEN attrName = 'fanState'  THEN attrValue = 'ON' END) AS \"ventilador\",\n  100 * AVG(CASE WHEN attrName = 'pumpState' THEN attrValue = 'ON' END) AS \"bomba\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState')\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nGROUP BY 1\nORDER BY 1"
+          "rawSql": "SELECT\n  $__unixEpochGroupAlias(recvTimeTs / 1000, '5m'),\n  100 * AVG(CASE WHEN attrName = 'fanState'  THEN attrValue = 'ON' END) AS \"ventilador\",\n  100 * AVG(CASE WHEN attrName = 'pumpState' THEN attrValue = 'ON' END) AS \"bomba\",\n  100 * AVG(CASE WHEN attrName = 'lampState' THEN attrValue = 'ON' END) AS \"lâmpadas\",\n  100 * AVG(CASE WHEN attrName = 'mistState' THEN attrValue = 'ON' END) AS \"nebulização\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState', 'lampState', 'mistState')\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nGROUP BY 1\nORDER BY 1"
         }
       ],
-      "description": "Fração do tempo com o relé ligado (ciclo de trabalho), por janela de 5 min. Ventilador: energia; bomba: energia e água."
+      "description": "Fração do tempo com o relé ligado (ciclo de trabalho), por janela de 5 min. Todos gastam energia; o gotejamento e a névoa também gastam água."
     },
     {
-      "id": 19,
+      "id": 21,
       "type": "bargauge",
       "title": "Tempo ligado no período",
       "datasource": {
@@ -1181,7 +1609,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 26,
+        "y": 35,
         "w": 6,
         "h": 4
       },
@@ -1200,6 +1628,21 @@
           {
             "matcher": {
               "id": "byName",
+              "options": "ventilador"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
               "options": "bomba"
             },
             "properties": [
@@ -1208,6 +1651,36 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lâmpadas"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2CC0C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "nebulização"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#3FB8AF"
                 }
               }
             ]
@@ -1226,9 +1699,9 @@
         "orientation": "horizontal",
         "showUnfilled": true,
         "valueMode": "color",
-        "namePlacement": "auto",
+        "namePlacement": "left",
         "sizing": "auto",
-        "minVizHeight": 16,
+        "minVizHeight": 10,
         "minVizWidth": 8,
         "maxVizHeight": 300
       },
@@ -1242,13 +1715,13 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  100 * AVG(CASE WHEN attrName = 'fanState'  THEN attrValue = 'ON' END) AS \"ventilador\",\n  100 * AVG(CASE WHEN attrName = 'pumpState' THEN attrValue = 'ON' END) AS \"bomba\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState')\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
+          "rawSql": "SELECT\n  100 * AVG(CASE WHEN attrName = 'fanState'  THEN attrValue = 'ON' END) AS \"ventilador\",\n  100 * AVG(CASE WHEN attrName = 'pumpState' THEN attrValue = 'ON' END) AS \"bomba\",\n  100 * AVG(CASE WHEN attrName = 'lampState' THEN attrValue = 'ON' END) AS \"lâmpadas\",\n  100 * AVG(CASE WHEN attrName = 'mistState' THEN attrValue = 'ON' END) AS \"nebulização\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState', 'lampState', 'mistState')\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
         }
       ],
       "description": "Ciclo de trabalho no período do seletor: média das amostras ligadas (uma a cada 5 s)."
     },
     {
-      "id": 20,
+      "id": 22,
       "type": "stat",
       "title": "Acionamentos no período",
       "datasource": {
@@ -1257,7 +1730,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 30,
+        "y": 39,
         "w": 6,
         "h": 4
       },
@@ -1299,6 +1772,36 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lâmpadas"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2CC0C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "nebulização"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#3FB8AF"
+                }
+              }
+            ]
           }
         ]
       },
@@ -1326,13 +1829,13 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  SUM(attrName = 'fanState')  AS \"ventilador\",\n  SUM(attrName = 'pumpState') AS \"bomba\"\nFROM (\n  SELECT attrName, attrValue,\n         LAG(attrValue) OVER (PARTITION BY attrName ORDER BY recvTimeTs) AS anterior\n  FROM `urn_ngsi-ld_Device_ESP32-001_Device`\n  WHERE attrName IN ('fanState', 'pumpState')\n    AND $__unixEpochFilter(recvTimeTs / 1000)\n) AS mudancas\nWHERE attrValue = 'ON' AND anterior = 'OFF'"
+          "rawSql": "SELECT\n  SUM(attrName = 'fanState')  AS \"ventilador\",\n  SUM(attrName = 'pumpState') AS \"bomba\",\n  SUM(attrName = 'lampState') AS \"lâmpadas\",\n  SUM(attrName = 'mistState') AS \"nebulização\"\nFROM (\n  SELECT attrName, attrValue,\n         LAG(attrValue) OVER (PARTITION BY attrName ORDER BY recvTimeTs) AS anterior\n  FROM `urn_ngsi-ld_Device_ESP32-001_Device`\n  WHERE attrName IN ('fanState', 'pumpState', 'lampState', 'mistState')\n    AND $__unixEpochFilter(recvTimeTs / 1000)\n) AS mudancas\nWHERE attrValue = 'ON' AND anterior = 'OFF'"
         }
       ],
-      "description": "Quantas vezes cada relé passou de OFF para ON: desgaste do relé e picos de partida do motor."
+      "description": "Quantas vezes cada relé passou de OFF para ON: desgaste do relé e picos de partida dos motores."
     },
     {
-      "id": 21,
+      "id": 23,
       "type": "stat",
       "title": "Energia e água no período",
       "datasource": {
@@ -1341,7 +1844,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 26,
+        "y": 35,
         "w": 6,
         "h": 8
       },
@@ -1402,7 +1905,53 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "água"
+              "options": "lâmpadas"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2CC0C"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "watth"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "nebulização"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#3FB8AF"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "watth"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "água do gotejamento"
             },
             "properties": [
               {
@@ -1419,6 +1968,29 @@
               {
                 "id": "decimals",
                 "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "água da névoa"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#3FB8AF"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "litre"
+              },
+              {
+                "id": "decimals",
+                "value": 1
               }
             ]
           }
@@ -1448,22 +2020,22 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  541  * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS \"ventilador\",\n  180 * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS \"bomba\",\n  5 * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS \"água\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState', 'waterFlow')\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
+          "rawSql": "SELECT\n  541  * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS \"ventilador\",\n  180  * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS \"bomba\",\n  2000 * 5 * SUM(attrName = 'lampState' AND attrValue = 'ON') / 3600 AS \"lâmpadas\",\n  48   * 5 * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS \"nebulização\",\n  5 * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS \"água do gotejamento\",\n  60 * 5 * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS \"água da névoa\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState', 'lampState', 'mistState', 'waterFlow')\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
         }
       ],
-      "description": "Energia = potência nominal × tempo ligado (cada amostra ON vale 5 s): ventilador 541 W e bomba 180 W, atributos estáticos da ESP32. Água = soma da vazão MEDIDA × 5 s ÷ 60 (medidor de vazão). A física da simulação é acelerada: o número mostra o cálculo, não o consumo de um dia real."
+      "description": "Energia = potência nominal × tempo ligado (cada amostra ON vale 5 s): ventilador 541 W, bomba 180 W, lâmpadas 2000 W, nebulização 48 W (atributos estáticos da ESP32). Água do gotejamento = soma da vazão MEDIDA × 5 s ÷ 60. Água da névoa = vazão nominal (60 L/h) × tempo ligado. A física da simulação é acelerada: o número mostra o cálculo, não o consumo de um dia real."
     },
     {
-      "id": 22,
+      "id": 24,
       "type": "timeseries",
-      "title": "Caixa d'água (500 L) e vazão: o nível cai quando a bomba liga, e a boia repõe",
+      "title": "Caixa d'água (500 L) e vazão: o nível cai quando o gotejamento liga, e a boia repõe",
       "datasource": {
         "type": "mysql",
         "uid": "mysql-estufa"
       },
       "gridPos": {
         "x": 0,
-        "y": 34,
+        "y": 43,
         "w": 24,
         "h": 7
       },
@@ -1601,7 +2173,7 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"vazão\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'waterFlow'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
         }
       ],
-      "description": "Litros na caixa (eixo da esquerda) e vazão medida depois da bomba (eixo da direita, em degraus). Linhas tracejadas: reserva de 40% e 20% da caixa. A água gasta no período é a área sob a vazão."
+      "description": "Litros na caixa (eixo da esquerda) e vazão medida do gotejamento (eixo da direita, em degraus). A névoa também tira água da caixa (60 L/h), mas não passa pelo medidor. A água do gotejamento no período é a área sob a vazão."
     }
   ]
 }

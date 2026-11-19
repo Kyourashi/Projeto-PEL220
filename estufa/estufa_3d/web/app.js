@@ -2,10 +2,12 @@
 //  PEL220 - Estufa em 3D (Three.js): o "agora" da estufa, como um gêmeo digital.
 //  A cada 5 s lê api/estado (o servidor busca no Orion o Device, a AgriGreenhouse e
 //  a WeatherObserved) e atualiza a cena:
-//    - DHT22, sensor de solo e BH1750: ponto colorido pelas faixas da alface;
-//    - o exaustor gira quando fanState = ON; a irrigação acende quando pumpState = ON;
+//    - DHT22, sensor de solo e os dois BH1750: ponto colorido pelas faixas da alface;
+//    - o exaustor gira (fanState); as lâmpadas LED acendem (lampState);
+//    - o gotejamento pinga e as manchas molhadas crescem com a umidade do solo (pumpState, soilMoisture);
+//    - a névoa sai dos bicos no alto e evapora (mistState);
 //    - a água sobe e desce na caixa (tankWaterVolume) e a vazão medida aparece na bomba;
-//    - a luz da cena segue a iluminância medida (dia e noite da simulação);
+//    - a luz da cena segue o BH1750 do teto (dia e noite da simulação);
 //    - os limites de cor vêm da AgriGreenhouse no Orion, não deste arquivo.
 // =============================================================================
 import * as THREE from './vendor/three-0.187.0.min.js';
@@ -16,12 +18,15 @@ const { OrbitControls, CSS2DRenderer, CSS2DObject } = THREE;
 const C = 10, L = 5, H_PAREDE = 2.4, H_CUMEEIRA = 3.4;     // m: 10 × 5 = 50 m², como no modelo
 const FRIO = 18;                                           // °C: abaixo disso, frio para a alface
 const VPD_FAIXA = [0.45, 1.25, 1.5];                       // kPa: úmido | faixa | atenção | estresse
-const LUX_SOL = 34000;                                     // lx: meio-dia da simulação (escurece a cena à noite)
+const LUX_SOL = 50000;                                     // lx: meio-dia lá fora, na simulação (escurece a cena à noite)
+const NOITE_LUX = 500;                                     // lx no teto: abaixo disso é noite
 const RESERVA = [0.2, 0.4];                                // fração da caixa: vermelho | laranja | verde
 const PADRAO = { fanOnTemperature: 24, fanOffTemperature: 22,
-                 irrigationOnSoilMoisture: 30, irrigationOffSoilMoisture: 45 };
+                 irrigationOnSoilMoisture: 30, irrigationOffSoilMoisture: 45,
+                 lampOnOutdoorIlluminance: 15000, lampOffOutdoorIlluminance: 20000,
+                 mistOnVaporPressureDeficit: 1.25, mistOffVaporPressureDeficit: 0.95 };
 const COR = { verde: 0x73bf69, azul: 0x5794f2, laranja: 0xff9830, vermelho: 0xf2495c,
-              amarelo: 0xfade2a, cinza: 0x8e8e8e, roxo: 0xb877d9 };
+              amarelo: 0xfade2a, cinza: 0x8e8e8e, roxo: 0xb877d9, ouro: 0xf2cc0c, nevoa: 0x3fb8af };
 const CSS = Object.fromEntries(Object.entries(COR).map(([k, v]) => [k, '#' + v.toString(16).padStart(6, '0')]));
 
 const marcadores = [];                                     // pontos coloridos que pulsam
@@ -87,7 +92,14 @@ const mat = {
   agua: new THREE.MeshStandardMaterial({ color: 0x1f7fe0, roughness: 0.15, transparent: true, opacity: 0.88,
                                          emissive: 0x0f4fa0, emissiveIntensity: 0.3 }),
   pa: new THREE.MeshStandardMaterial({ color: 0x3a4048, roughness: 0.4, metalness: 0.5 }),
+  molhado: new THREE.MeshStandardMaterial({ color: 0x24180f, roughness: 0.6, transparent: true, opacity: 0.6,
+                                            depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }),
+  gota: new THREE.MeshStandardMaterial({ color: 0x6ec3ff, roughness: 0.1, emissive: 0x3f9fff, emissiveIntensity: 0.7 }),
+  led: new THREE.MeshStandardMaterial({ color: 0xfff3dd, emissive: 0xfff1dc, emissiveIntensity: 0 }),
+  ledCorpo: new THREE.MeshStandardMaterial({ color: 0x2d3238, roughness: 0.5, metalness: 0.4 }),
+  tuboNevoa: new THREE.MeshStandardMaterial({ color: 0x3a4048, roughness: 0.5, emissive: COR.nevoa, emissiveIntensity: 0 }),
 };
+const TERRA_SECA = new THREE.Color(0x7b5b42), TERRA_MOLHADA = new THREE.Color(0x352619);
 
 // --- ajudantes ------------------------------------------------------------------------
 const v = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -195,6 +207,31 @@ for (const z of CAMAS) for (const dz of [-0.12, 0.12]) {
 }
 cano(v(XC, 0.12, CAMAS[0] - 0.12), v(XC, 0.12, CAMAS[2] + 0.12), 0.02);
 cano(v(-C / 2 - 1.0, 0.12, CAMAS[0] - 0.12), v(XC, 0.12, CAMAS[0] - 0.12), 0.02);
+// gotejadores a cada 0,6 m: mancha molhada que cresce com a umidade do solo e gota que pinga com a bomba
+const GOTEJADORES = [];
+for (const z of CAMAS) for (const dz of [-0.12, 0.12]) {
+  for (let x = XC + 0.45; x < CX + COMP / 2 - 0.2; x += 0.6) GOTEJADORES.push(v(x, ALT + 0.03, z + dz));
+}
+const geoMancha = new THREE.CircleGeometry(1, 20);
+geoMancha.rotateX(-Math.PI / 2);
+const manchas = new THREE.InstancedMesh(geoMancha, mat.molhado, GOTEJADORES.length);
+const gotas = new THREE.InstancedMesh(new THREE.SphereGeometry(0.022, 10, 8), mat.gota, GOTEJADORES.length);
+manchas.renderOrder = 1;
+cena.add(manchas, gotas);
+const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _p = new THREE.Vector3(), _e = new THREE.Vector3();
+function desenharGotejadores(molhado, bomba, t) {
+  const m4 = _m4, q = _q, p = _p, e = _e;
+  GOTEJADORES.forEach((g, i) => {
+    const r = 0.05 + 0.17 * molhado + (bomba ? 0.02 * Math.sin(t * 3 + i) : 0);
+    manchas.setMatrixAt(i, m4.compose(p.set(g.x, ALT + 0.018, g.z), q, e.set(r, 1, r)));
+    const fase = (t * 1.6 + i * 0.37) % 1;              // cada gota cai do tubo até o solo e recomeça
+    const s = bomba ? 1 - 0.4 * fase : 0.001;
+    gotas.setMatrixAt(i, m4.compose(p.set(g.x, ALT + 0.03 - 0.025 * fase, g.z), q, e.set(s, s * 1.3, s)));
+  });
+  manchas.instanceMatrix.needsUpdate = true;
+  gotas.instanceMatrix.needsUpdate = true;
+}
+
 const CAIXA = { x: -C / 2 - 1.85, z: -1.7, r: 0.46, h: 0.95, hAgua: 0.75 };  // D 0,92 m: 500 L até 0,75 m de altura
 malha(new THREE.CylinderGeometry(CAIXA.r, CAIXA.r, CAIXA.h, 32, 1, true), mat.casca, CAIXA.x, CAIXA.h / 2, CAIXA.z, { sombra: false });
 malha(new THREE.CylinderGeometry(CAIXA.r + 0.02, CAIXA.r + 0.02, 0.04, 32), mat.tampa, CAIXA.x, CAIXA.h + 0.02, CAIXA.z);
@@ -246,6 +283,95 @@ const led = malha(new THREE.SphereGeometry(0.022, 12, 8),
                   new THREE.MeshStandardMaterial({ color: COR.verde, emissive: COR.verde, emissiveIntensity: 0.1 }),
                   -C / 2 + 0.11, 1.4, 1.55, { sombra: false });
 
+// --- lâmpadas LED sobre os canteiros (penduradas nos pórticos) -------------------------
+const Y_LED = 2.1;
+const alturaTelhado = (z) => H_PAREDE + (1 - Math.abs(z) / (L / 2)) * (H_CUMEEIRA - H_PAREDE);
+const luzesLed = [];
+for (const z of CAMAS) {
+  malha(new THREE.BoxGeometry(COMP - 0.6, 0.05, 0.12), mat.ledCorpo, CX, Y_LED, z);
+  malha(new THREE.BoxGeometry(COMP - 0.7, 0.012, 0.08), mat.led, CX, Y_LED - 0.031, z, { sombra: false });
+  for (const x of [-2, 0, 2]) cano(v(x + CX, Y_LED, z), v(x + CX, alturaTelhado(z), z), 0.004, mat.metal);
+  for (const x of [-2.1, 2.5]) {
+    const p = new THREE.PointLight(0xfff1dc, 0, 5.5, 1.6);
+    p.position.set(x, Y_LED - 0.25, z);
+    cena.add(p);
+    luzesLed.push(p);
+  }
+}
+
+// --- nebulização: bomba de pressão, duas linhas no alto e 10 bicos ---------------------
+const Y_NEVOA = 2.3, Z_NEVOA = [-0.8, 0.8], X_BICOS = [-4, -2, 0, 2, 4];
+malha(new THREE.BoxGeometry(0.22, 0.16, 0.18), mat.caixa, -C / 2 - 1.15, 0.09, -0.75);     // bomba de diafragma
+cano(v(CAIXA.x + CAIXA.r - 0.05, 0.08, CAIXA.z + 0.2), v(-C / 2 - 1.26, 0.08, -0.75), 0.012, mat.tuboNevoa);
+cano(v(-C / 2 - 1.04, 0.08, -0.75), v(-C / 2 + 0.25, 0.08, -0.75), 0.012, mat.tuboNevoa);
+cano(v(-C / 2 + 0.25, 0.08, -0.75), v(-C / 2 + 0.25, Y_NEVOA, -0.75), 0.012, mat.tuboNevoa);
+cano(v(-C / 2 + 0.25, Y_NEVOA, Z_NEVOA[0]), v(-C / 2 + 0.25, Y_NEVOA, Z_NEVOA[1]), 0.012, mat.tuboNevoa);
+const BICOS = [];
+for (const z of Z_NEVOA) {
+  cano(v(-C / 2 + 0.25, Y_NEVOA, z), v(X_BICOS[X_BICOS.length - 1] + 0.3, Y_NEVOA, z), 0.012, mat.tuboNevoa);
+  for (const x of X_BICOS) {
+    malha(new THREE.CylinderGeometry(0.018, 0.01, 0.06, 10), mat.metal, x, Y_NEVOA - 0.04, z, { sombra: false });
+    BICOS.push(v(x, Y_NEVOA - 0.08, z));
+  }
+}
+
+// névoa: partículas que saem dos bicos, se espalham, descem devagar e evaporam (somem)
+function escalaPontos() {                             // pixels por metro, a 1 m da câmera
+  return renderer.getPixelRatio() * innerHeight / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+}
+function texturaRedonda() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d'), grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.45, 'rgba(255,255,255,0.45)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+const POR_BICO = 80, N_NEVOA = BICOS.length * POR_BICO;
+const posNevoa = new Float32Array(N_NEVOA * 3), alfaNevoa = new Float32Array(N_NEVOA), tamNevoa = new Float32Array(N_NEVOA);
+const velNevoa = new Float32Array(N_NEVOA * 3), idadeNevoa = new Float32Array(N_NEVOA).fill(99);
+const vidaNevoa = new Float32Array(N_NEVOA);
+const geoNevoa = new THREE.BufferGeometry();
+geoNevoa.setAttribute('position', new THREE.BufferAttribute(posNevoa, 3));
+geoNevoa.setAttribute('alfa', new THREE.BufferAttribute(alfaNevoa, 1));
+geoNevoa.setAttribute('tamanho', new THREE.BufferAttribute(tamNevoa, 1));
+const nevoa = new THREE.Points(geoNevoa, new THREE.ShaderMaterial({
+  uniforms: { mapa: { value: texturaRedonda() }, cor: { value: new THREE.Color(0xf4f9ff) },
+              escala: { value: escalaPontos() } },
+  vertexShader: `attribute float alfa; attribute float tamanho; uniform float escala; varying float vAlfa;
+    void main() { vAlfa = alfa; vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      gl_PointSize = tamanho * escala / -mv.z; gl_Position = projectionMatrix * mv; }`,
+  fragmentShader: `uniform sampler2D mapa; uniform vec3 cor; varying float vAlfa;
+    void main() { vec4 t = texture2D(mapa, gl_PointCoord); gl_FragColor = vec4(cor, t.a * vAlfa); }`,
+  transparent: true, depthWrite: false,
+}));
+nevoa.frustumCulled = false;
+cena.add(nevoa);
+function animarNevoa(ligada, dt) {
+  for (let i = 0; i < N_NEVOA; i++) {
+    if (idadeNevoa[i] >= vidaNevoa[i]) {
+      if (!ligada || Math.random() > dt * 2.2) { alfaNevoa[i] = 0; continue; }   // nasce aos poucos
+      const b = BICOS[Math.floor(i / POR_BICO)], ang = Math.random() * Math.PI * 2, abre = 0.25 + Math.random() * 0.35;
+      posNevoa.set([b.x, b.y, b.z], i * 3);
+      velNevoa.set([Math.cos(ang) * abre, -0.12 - Math.random() * 0.25, Math.sin(ang) * abre], i * 3);
+      idadeNevoa[i] = 0;
+      vidaNevoa[i] = 1.8 + Math.random() * 1.6;
+    }
+    idadeNevoa[i] += dt;
+    const k = i * 3, f = idadeNevoa[i] / vidaNevoa[i];
+    velNevoa[k] *= 1 - dt * 0.9; velNevoa[k + 2] *= 1 - dt * 0.9; velNevoa[k + 1] -= dt * 0.03;
+    posNevoa[k] += velNevoa[k] * dt; posNevoa[k + 1] += velNevoa[k + 1] * dt; posNevoa[k + 2] += velNevoa[k + 2] * dt;
+    alfaNevoa[i] = 0.8 * Math.min(1, f * 5) * (1 - f);     // aparece rápido e evapora no fim da vida
+    tamNevoa[i] = 0.15 + 0.8 * f;                           // a gotícula vira nuvem
+  }
+  geoNevoa.attributes.position.needsUpdate = true;
+  geoNevoa.attributes.alfa.needsUpdate = true;
+  geoNevoa.attributes.tamanho.needsUpdate = true;
+}
+
 // --- sensores: haste, placa e um ponto colorido pela faixa ------------------------------
 function marcador(x, y, z) {
   const m = malha(new THREE.SphereGeometry(0.08, 24, 16),
@@ -273,6 +399,12 @@ cano(v(BH.x, 0, BH.z), v(BH.x, 1.15, BH.z), 0.018, mat.metal);
 malha(new THREE.BoxGeometry(0.06, 0.01, 0.06), mat.placaAzul, BH.x, 1.16, BH.z);
 const mBh = marcador(BH.x, 1.36, BH.z);
 
+const BH_TETO = v(1.0, H_CUMEEIRA, 0);               // no teto, do lado de fora do filme, olhando para o céu
+cano(v(BH_TETO.x, H_CUMEEIRA, 0), v(BH_TETO.x, H_CUMEEIRA + 0.12, 0), 0.012, mat.metal);
+malha(new THREE.BoxGeometry(0.06, 0.01, 0.06), mat.placaAzul, BH_TETO.x, H_CUMEEIRA + 0.125, 0);
+const mBhTeto = marcador(BH_TETO.x, H_CUMEEIRA + 0.3, 0);
+pintar(mBhTeto, 'roxo');
+
 const FORA = v(3.6, 0, L / 2 + 1.9);                 // estação do clima, do lado de fora
 cano(v(FORA.x, 0, FORA.z), v(FORA.x, 1.8, FORA.z), 0.025, mat.metal);
 for (let k = 0; k < 4; k++) malha(new THREE.CylinderGeometry(0.12, 0.12, 0.035, 20), mat.branco, FORA.x, 1.82 + k * 0.06, FORA.z);
@@ -293,12 +425,39 @@ const rot = {
   dht: rotulo(DHT.x, 1.82, DHT.z),
   solo: rotulo(SOLO.x, ALT + 0.42, SOLO.z),
   bh: rotulo(BH.x, 1.48, BH.z),
+  bhTeto: rotulo(BH_TETO.x, H_CUMEEIRA + 0.42, 0),
+  lampadas: rotulo(-4.7, Y_LED - 0.1, CAMAS[0]),
+  nevoa: rotulo(-C / 2 - 1.15, 0.3, -0.75),         // na bomba da névoa, como a do gotejamento
   vent: rotulo(XE, EXAUSTOR.y + 0.62, 0),
   bomba: rotulo(-C / 2 - 0.65, 0.3, CAMAS[0] - 0.12),
   caixa: rotulo(CAIXA.x, CAIXA.h + 0.8, CAIXA.z),
   esp: rotulo(-C / 2 + 0.06, 1.5, 1.55),
   fora: rotulo(FORA.x, 2.32, FORA.z),
 };
+
+// rótulos que se encostam na tela sobem até ficar livres (refeito 5 vezes por segundo)
+const todosRotulos = Object.values(rot);
+let proximaArrumacao = 0;
+function arrumarRotulos(agora) {
+  if (agora < proximaArrumacao) return;
+  proximaArrumacao = agora + 0.2;
+  const caixas = todosRotulos.map((d) => {
+    const r = d.getBoundingClientRect(), sobe = Number(d.dataset.sobe || 0);
+    return { d, x0: r.left, x1: r.right, y0: r.top + sobe, y1: r.bottom + sobe, sobe: 0, ok: r.width > 0 };
+  }).filter((c) => c.ok).sort((a, b) => b.y1 - a.y1);   // de baixo para cima
+  const postas = [];
+  for (const c of caixas) {
+    for (let volta = 0; volta < 8; volta++) {
+      const bate = postas.find((o) => c.x0 < o.x1 + 4 && c.x1 > o.x0 - 4 &&
+                                      c.y0 - c.sobe < o.y1 - o.sobe + 4 && c.y1 - c.sobe > o.y0 - o.sobe - 4);
+      if (!bate) break;
+      c.sobe = c.y1 - (bate.y0 - bate.sobe) + 4;
+    }
+    postas.push(c);
+    c.d.dataset.sobe = c.sobe;
+    c.d.style.marginTop = `${-c.sobe}px`;
+  }
+}
 
 // --- dados: api/estado a cada 5 s -------------------------------------------------------
 const num = (x, casas = 1) => x == null ? '—' :
@@ -329,6 +488,7 @@ function preencher(div, cor, titulo, valor, detalhe = '') {
 }
 
 let alvoLuz = 1, luzAtual = 1, alvoGiro = 0, giro = 0, bombaLigada = false, alvoAgua = 0.95, nivel = 0.95;
+let alvoMolhado = 0.5, molhado = 0.5, lampadasLigadas = false, brilhoLed = 0, nevoaLigada = false;
 let ultimaResposta = 0, ultimaMedida = null, falha = null, semNo = false, primeira = true;
 
 function aplicar(estado) {
@@ -336,7 +496,9 @@ function aplicar(estado) {
   const e = Object.assign({}, PADRAO, estado.estufa || {});
   semNo = !estado.no;
   const t = no.temperature, h = no.relativeHumidity, vpd = no.vaporPressureDeficit;
-  const solo = no.soilMoisture, lux = no.illuminance;
+  const solo = no.soilMoisture, lux = no.illuminance, luxFora = no.outdoorIlluminance;
+  lampadasLigadas = no.lampState === 'ON';
+  nevoaLigada = no.mistState === 'ON';
 
   const ct = corTemperatura(t, e), cv = corVpd(vpd), cs = corSolo(solo, e);
   pintar(mDht, ct);
@@ -344,15 +506,27 @@ function aplicar(estado) {
             `UR ${h == null ? '—' : num(h * 100, 0)} % · ${bola(cv)}VPD ${num(vpd, 2)} kPa`);
   pintar(mSolo, cs);
   preencher(rot.solo, cs, 'Sensor de solo', `${num(solo)} %`,
-            `bomba liga < ${e.irrigationOnSoilMoisture} % · desliga ≥ ${e.irrigationOffSoilMoisture} %`);
+            `gotejamento liga < ${e.irrigationOnSoilMoisture} % · desliga ≥ ${e.irrigationOffSoilMoisture} %`);
+  alvoMolhado = solo == null ? 0.5 : Math.min(1, Math.max(0, (solo - 25) / 25));   // terra e manchas mais escuras
 
-  const fracao = lux == null ? 1 : Math.min(1, Math.max(0, lux / LUX_SOL));
-  const dia = lux != null && lux > 300;
-  mBh.material.color.setHex(dia ? COR.amarelo : COR.cinza);
-  mBh.material.emissive.setHex(dia ? COR.amarelo : COR.cinza);
-  preencher(rot.bh, dia ? 'amarelo' : 'cinza', 'BH1750 · luz', `${num(lux == null ? null : lux / 1000)} klx`,
-            dia ? 'dia' : 'noite');
-  alvoLuz = fracao;
+  const ceuLux = luxFora != null ? luxFora : (lux == null ? null : lux / 0.68);     // sem o sensor do teto, estima
+  const dia = ceuLux != null && ceuLux > NOITE_LUX;
+  const cb = lampadasLigadas ? 'ouro' : dia ? 'amarelo' : 'cinza';
+  pintar(mBh, cb);
+  preencher(rot.bh, cb, 'BH1750 · dentro', `${num(lux == null ? null : lux / 1000)} klx`,
+            lampadasLigadas ? (dia ? 'sol + lâmpadas' : 'lâmpadas') : dia ? 'sol · entra no DLI' : 'noite');
+  preencher(rot.bhTeto, 'roxo', 'BH1750 · teto (lá fora)', `${num(luxFora == null ? null : luxFora / 1000)} klx`,
+            dia ? 'só o sol · decide as lâmpadas' : 'noite');
+  alvoLuz = ceuLux == null ? 1 : Math.min(1, Math.max(0, ceuLux / LUX_SOL));
+
+  preencher(rot.lampadas, lampadasLigadas ? 'ouro' : 'cinza', `Lâmpadas LED · ${num(no.lampRatedPower, 0)} W`,
+            lampadasLigadas ? 'Ligadas' : 'Desligadas',
+            `ligam < ${num(e.lampOnOutdoorIlluminance / 1000, 0)} klx no teto · desligam > ` +
+            `${num(e.lampOffOutdoorIlluminance / 1000, 0)} klx`);
+  preencher(rot.nevoa, nevoaLigada ? 'nevoa' : 'cinza',
+            `Nebulização · ${num(no.mistRatedPower, 0)} W · ${num(no.mistFlowRate, 0)} L/h`,
+            nevoaLigada ? 'Ligada' : 'Desligada',
+            `liga VPD ≥ ${num(e.mistOnVaporPressureDeficit, 2)} · desliga ≤ ${num(e.mistOffVaporPressureDeficit, 2)} kPa`);
 
   const ventOn = no.fanState === 'ON';
   alvoGiro = ventOn ? 16 : 0;
@@ -361,7 +535,7 @@ function aplicar(estado) {
 
   bombaLigada = no.pumpState === 'ON';
   mat.tubo.color.setHex(bombaLigada ? 0x3ea8ff : 0x2b3036);
-  preencher(rot.bomba, bombaLigada ? 'azul' : 'cinza', `Bomba · ${num(no.pumpRatedPower, 0)} W · vazão medida`,
+  preencher(rot.bomba, bombaLigada ? 'azul' : 'cinza', `Gotejamento · bomba ${num(no.pumpRatedPower, 0)} W`,
             `${bombaLigada ? 'Ligada' : 'Desligada'} · ${num(no.waterFlow)} L/min`,
             bombaLigada && no.waterFlow != null && no.waterFlow < 0.5 * (no.pumpFlowRate || 1500) / 60
               ? 'vazão baixa: caixa vazia ou cano entupido?' : '');
@@ -386,6 +560,8 @@ function aplicar(estado) {
     luzAtual = alvoLuz;
     giro = alvoGiro;
     nivel = alvoAgua;
+    molhado = alvoMolhado;
+    brilhoLed = lampadasLigadas ? 1 : 0;
     primeira = false;
   }
 }
@@ -447,11 +623,21 @@ renderer.setAnimationLoop(() => {
   rotor.rotation.x -= giro * dt;
   mat.tubo.emissiveIntensity = bombaLigada ? 0.55 + 0.35 * Math.sin(t * 5) : Math.max(0, mat.tubo.emissiveIntensity - dt);
   luzBomba.material.emissiveIntensity = bombaLigada ? 1.8 : 0.05;
+  molhado += (alvoMolhado - molhado) * Math.min(1, dt * 1.5);
+  mat.terra.color.copy(TERRA_SECA).lerp(TERRA_MOLHADA, molhado);
+  desenharGotejadores(molhado, bombaLigada, t);
+  brilhoLed += ((lampadasLigadas ? 1 : 0) - brilhoLed) * Math.min(1, dt * 4);
+  mat.led.emissiveIntensity = 2.4 * brilhoLed;
+  for (const p of luzesLed) p.intensity = 4.5 * brilhoLed;
+  mat.tuboNevoa.emissiveIntensity = nevoaLigada ? 0.45 + 0.25 * Math.sin(t * 4)
+                                                : Math.max(0, mat.tuboNevoa.emissiveIntensity - dt);
+  animarNevoa(nevoaLigada, dt);
   led.material.emissiveIntensity = Math.max(0.1, led.material.emissiveIntensity - dt * 3);
   for (const m of marcadores) m.scale.setScalar(1 + 0.12 * Math.sin(t * 3 + m.position.x));
   controles.update();
   renderer.render(cena, camera);
   camadaRotulos.render(cena, camera);
+  arrumarRotulos(t);
 });
 
 addEventListener('resize', () => {
@@ -459,4 +645,5 @@ addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   camadaRotulos.setSize(innerWidth, innerHeight);
+  nevoa.material.uniforms.escala.value = escalaPontos();
 });

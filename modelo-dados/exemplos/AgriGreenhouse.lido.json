@@ -61,6 +61,26 @@
       }
     }
   },
+  "lampOffOutdoorIlluminance": {
+    "type": "Number",
+    "value": 20000,
+    "metadata": {
+      "unitCode": {
+        "type": "Text",
+        "value": "LUX"
+      }
+    }
+  },
+  "lampOnOutdoorIlluminance": {
+    "type": "Number",
+    "value": 15000,
+    "metadata": {
+      "unitCode": {
+        "type": "Text",
+        "value": "LUX"
+      }
+    }
+  },
   "location": {
     "type": "geo:json",
     "value": {
@@ -71,6 +91,26 @@
       ]
     },
     "metadata": {}
+  },
+  "mistOffVaporPressureDeficit": {
+    "type": "Number",
+    "value": 0.95,
+    "metadata": {
+      "unitCode": {
+        "type": "Text",
+        "value": "KPA"
+      }
+    }
+  },
+  "mistOnVaporPressureDeficit": {
+    "type": "Number",
+    "value": 1.25,
+    "metadata": {
+      "unitCode": {
+        "type": "Text",
+        "value": "KPA"
+      }
+    }
   },
   "name": {
     "type": "Text",
