@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estufa 001 em 3D · PEL220</title>
+<style>
+  :root {
+    --verde: #73BF69; --azul: #5794F2; --laranja: #FF9830; --vermelho: #F2495C;
+    --amarelo: #FADE2A; --cinza: #8E8E8E; --roxo: #B877D9;
+  }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0e1a2b;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Liberation Sans", sans-serif; }
+  #cena { position: fixed; inset: 0; }
+  .rotulos { position: fixed !important; inset: 0; z-index: 1; }
+  .painel { position: fixed; z-index: 2; background: rgba(17, 18, 23, 0.84); color: #e6e9ee;
+    border-radius: 10px; padding: 12px 14px; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35); }
+  #hud { top: 14px; left: 14px; max-width: 380px; }
+  #hud h1 { font-size: 18px; margin: 0 0 6px; font-weight: 650; }
+  #hud p { margin: 3px 0; font-size: 12.5px; line-height: 1.45; color: #b9c2cf; }
+  #hud b { color: #e6e9ee; }
+  #status { margin-top: 8px !important; }
+  .ponto, .legenda i, .rotulo i { display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    margin-right: 6px; vertical-align: 0; }
+  .ponto { background: var(--cinza); }
+  .legenda i { margin-left: 4px; margin-right: 3px; }
+  #links { top: 14px; right: 14px; font-size: 13px; padding: 9px 13px; }
+  #links a { color: #8ab8ff; text-decoration: none; }
+  #ajuda { bottom: 14px; left: 14px; font-size: 12px; color: #b9c2cf; padding: 8px 12px; }
+  .rotulo { pointer-events: none; color: #fff; background: rgba(17, 18, 23, 0.86); border-radius: 7px;
+    padding: 6px 9px 7px; white-space: nowrap; font-size: 12px; line-height: 1.35;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); margin-bottom: 8px; border-top: 3px solid var(--cinza); }
+  .rotulo b { display: block; font-size: 11.5px; font-weight: 600; color: #c9d1dc; }
+  .rotulo .v { font-size: 16px; font-weight: 650; }
+  .rotulo .s { font-size: 11.5px; color: #c9d1dc; }
+  .rotulo .s i { width: 7px; height: 7px; margin-right: 4px; }
+</style>
+</head>
+<body>
+<div id="cena"></div>
+
+<div id="hud" class="painel">
+  <h1>Estufa 001 · alface</h1>
+  <p>O <b>agora</b> da estufa, lido do Orion (tenant <b>estufa</b>) a cada 5 s. O passado está no painel do Grafana.</p>
+  <p class="legenda">Cores das faixas da alface:<i style="background:var(--verde)"></i>na faixa
+    <i style="background:var(--azul)"></i>abaixo <i style="background:var(--laranja)"></i><i
+    style="background:var(--vermelho)"></i>acima</p>
+  <p id="status"><span class="ponto"></span>conectando ao Orion…</p>
+</div>
+
+<div id="links" class="painel"><a id="link-painel" href="#">Painel com o histórico →</a></div>
+<div id="ajuda" class="painel">Arraste para girar · roda do mouse para aproximar · botão direito para mover</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -9,7 +9,7 @@ Plataforma FIWARE da disciplina (Orion, IoT Agent JSON, Mosquitto, Cygnus, MySQL
 ```
 fiware/          a plataforma: docker-compose.yml da Base + docker-compose.override.yml (serviços da estufa)
 modelo-dados/    modelo de dados NGSI-v2 da estufa (marco da Aula 7) + teste no Orion
-estufa/          o projeto rodando (alface): ESP32 simulada, gravador do clima, configuração do tenant e painel no Grafana (marco da Aula 8)
+estufa/          o projeto rodando (alface): ESP32 simulada, gravador do clima, configuração do tenant, painel no Grafana (marco da Aula 8) e estufa em 3D
 docs/aula06/     roteiro da Aula 6, material complementar e coleção Postman
 docs/aula07/     roteiro da Aula 7 (Orion avançado, Cygnus, Grafana), material complementar e coleção Postman
 ferramentas/     scripts auxiliares (latencia_comando.py, concorrencia.py, gerar_colecao.py)
@@ -20,7 +20,7 @@ ferramentas/     scripts auxiliares (latencia_comando.py, concorrencia.py, gerar
 Da raiz do repositório, um comando sobe (ou atualiza) tudo na ordem certa:
 
 ```bash
-git pull && bash estufa/subir.sh       # painel em http://localhost:3002
+git pull && bash estufa/subir.sh       # painel em http://localhost:3002 · estufa em 3D em http://localhost:3003
 ```
 
 O passo a passo e o que cada etapa faz estão em [`estufa/README.md`](estufa/README.md).
@@ -65,6 +65,7 @@ Para parar: `docker compose down`. Para apagar também os dados, use `docker com
 | Cygnus | 5050 / 5080 |
 | MySQL | 3306 |
 | Grafana | 3000 (pronto: 3001 · painel da estufa: 3002) |
+| Estufa em 3D | 3003 |
 | Controlador | 5001 (pronto: 5002) |
 | Clima externo | 3010 |
 

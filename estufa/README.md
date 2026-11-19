@@ -16,9 +16,26 @@ O marco pede três itens:
 | Subscrições do grupo | criadas por `configurar.py`: **"Historico da estufa para o Cygnus"** e **"Clima externo para o Cygnus"** |
 | Histórico | MySQL, banco `estufa`: tabelas `` `urn_ngsi-ld_Device_ESP32-001_Device` `` e `` `urn_ngsi-ld_WeatherObserved_FEI_WeatherObserved` `` |
 | Painel | `grafana/paineis/painel_estufa.json`, servido em `http://localhost:3002` pelo serviço `grafana-estufa` |
+| Estufa em 3D | `estufa_3d/`, servida em `http://localhost:3003` pelo serviço `estufa-3d` |
 | Serviços novos | `fiware/docker-compose.override.yml`; o `docker-compose.yml` da Base fica intacto |
 
 ![Painel da estufa](painel-estufa.png)
+
+## A estufa em 3D: o "agora", como um gêmeo digital
+
+O painel do Grafana mostra o **passado** (MySQL). A página `http://localhost:3003` mostra o **presente**, lido do Orion a cada 5 s, numa estufa em 3D (Three.js) que gira com o mouse.
+
+![Estufa em 3D](estufa-3d.png)
+
+- **Sensores no lugar:** DHT22, sensor de solo e BH1750, cada um com um ponto colorido pelas faixas da alface (as mesmas cores do painel).
+- **Limites lidos do Orion:** as cores usam os limites da `AgriGreenhouse` (`fanOnTemperature`, `irrigationOnSoilMoisture`…). Se o grupo mudar um limite no Orion, a cena muda junto.
+- **Atuadores:** o exaustor gira quando `fanState = ON`. A irrigação acende em azul quando `pumpState = ON`. Os rótulos mostram as potências e a vazão nominais.
+- **Dia e noite:** a luz da cena segue a iluminância medida pelo BH1750.
+- **Lá fora:** a estação do lado de fora mostra a `WeatherObserved` gravada pelo `gravador-clima`.
+
+**Como funciona:** o serviço `estufa-3d` (`estufa_3d/servidor.py`, só biblioteca padrão) serve a página e responde `GET /api/estado` com as três entidades do tenant `estufa` em `keyValues`. O navegador nunca fala com o Orion, então não é preciso abrir CORS nem expor a porta 1026. O three.js fica no repositório (`estufa_3d/web/vendor/`), sem depender de CDN.
+
+**No Codespace:** aba **Portas** → **Adicionar Porta** → `3003`, se ela não estiver na lista. O `subir.sh` mostra o link no fim.
 
 ## Como subir (Codespace ou máquina com Docker)
 

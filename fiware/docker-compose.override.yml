@@ -65,6 +65,22 @@ services:
       - LATITUDE=-23.7245   # FEI, São Bernardo do Campo (as mesmas do clima-externo)
       - LONGITUDE=-46.5793
 
+  # --- A estufa em 3D: o "agora" lido do Orion -------------------------------------
+  estufa-3d:
+    # http://localhost:3003 · Three.js no navegador; o servidor lê o Orion a cada pedido da página.
+    build: ../estufa/estufa_3d
+    image: pel220/estufa-3d
+    container_name: estufa-3d
+    depends_on:
+      - orion
+    ports:
+      - "3003:3003"
+    environment:
+      - ORION=http://orion:1026
+      - FIWARE_SERVICE=estufa
+      - FIWARE_SERVICEPATH=/
+      - PORTA=3003
+
   # --- O painel do grupo (marco da Aula 8) -----------------------------------------
   grafana-estufa:
     # http://localhost:3002 abre direto no painel da estufa (visitante só lê; admin/admin para editar).
