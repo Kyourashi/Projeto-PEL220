@@ -40,6 +40,7 @@ docker logs --tail 1 gravador-clima
 echo
 if [ -n "${CODESPACE_NAME:-}" ]; then
   echo "Painel: https://${CODESPACE_NAME}-3002.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
+  echo "Se o link der 404: aba PORTAS → Encaminhar uma Porta → 3002 → Enter, e abra o link de novo."
 else
   echo "Painel: http://localhost:3002"
 fi
