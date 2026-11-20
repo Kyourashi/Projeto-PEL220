@@ -197,17 +197,20 @@ alfaces.receiveShadow = true;
 cena.add(alfaces);
 
 // --- irrigação: caixa d'água e bomba do lado de fora; aspersores no alto, sobre os canteiros ---
-const XC = CX - COMP / 2 + 0.15;                     // cabeçal, logo depois da porta
-const Y_ASPERSAO = 1.95, Y_BICO = 1.68;              // cano no alto; o aspersor fica pendurado num microtubo
+// A água entra pela parede da frente (à esquerda da porta), sobe uma vez junto à parede, corre
+// por um coletor no alto (acima da porta) e desce para os aspersores pelas linhas sobre os canteiros.
+const XW = -C / 2 + 0.1;                             // junto à parede da frente, antes dos canteiros
+const Z_ENTRADA = CAMAS[0] - 0.12;                   // à esquerda da porta
+const Y_ASPERSAO = PORTA.altura + 0.15, Y_BICO = 1.68;   // linhas acima da porta; o aspersor pendurado num microtubo
 const DZ_ASPERSAO = 0.3;                             // ao lado da barra de LED
 const X_ASPERSORES = [-3.15, -1.05, 1.05, 3.15].map((dx) => CX + dx);   // 4 por canteiro: 12 × 90 L/h = 18 L/min
-cano(v(-C / 2 - 1.0, 0.12, CAMAS[0] - 0.12), v(XC, 0.12, CAMAS[0] - 0.12), 0.02);
-cano(v(XC, 0.12, CAMAS[0] - 0.12), v(XC, 0.12, CAMAS[2] + DZ_ASPERSAO), 0.02);          // cabeçal no chão
+cano(v(-C / 2 - 1.0, 0.12, Z_ENTRADA), v(XW, 0.12, Z_ENTRADA), 0.02);                    // atravessa a parede
+cano(v(XW, 0.12, Z_ENTRADA), v(XW, Y_ASPERSAO, Z_ENTRADA), 0.02);                        // sobe junto à parede
+cano(v(XW, Y_ASPERSAO, Z_ENTRADA), v(XW, Y_ASPERSAO, CAMAS[2] + DZ_ASPERSAO), 0.018);    // coletor no alto
 const ASPERSORES = [];
 for (const z of CAMAS) {
   const zl = z + DZ_ASPERSAO;
-  cano(v(XC, 0.12, zl), v(XC, Y_ASPERSAO, zl), 0.014);                                  // sobe até o alto
-  cano(v(XC, Y_ASPERSAO, zl), v(CX + COMP / 2 - 0.2, Y_ASPERSAO, zl), 0.014);
+  cano(v(XW, Y_ASPERSAO, zl), v(CX + COMP / 2 - 0.2, Y_ASPERSAO, zl), 0.014);             // linha sobre o canteiro
   for (const x of X_ASPERSORES) {
     cano(v(x, Y_ASPERSAO, zl), v(x, Y_BICO + 0.05, zl), 0.004, mat.metal);               // microtubo
     malha(new THREE.CylinderGeometry(0.03, 0.022, 0.05, 12), mat.placaPreta, x, Y_BICO + 0.025, zl, { sombra: false });
