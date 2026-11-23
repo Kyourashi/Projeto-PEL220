@@ -38,6 +38,7 @@ CAIXA_RETOMA = 150                                    # L: e libera daqui para c
 RESERVA = 0.4                                         # fração da caixa: laranja abaixo de 40 %
 DT = 5                       # s entre amostras (INTERVALO da ESP32): cada amostra ON vale 5 s ligado
 FRIO_ALFACE = 18             # °C, limite inferior da faixa da alface (18 a 23 °C)
+QUENTE_ALFACE = 23           # °C, limite superior da faixa da alface
 DLI_MIN, DLI_MAX = 14, 18    # mol/m²/dia para alface
 VPD = (0.45, 1.25, 1.5)      # kPa: úmido demais | faixa | atenção | estresse
 LUX_PARA_PPFD = 0.0185       # µmol/m²/s por lx, luz do sol
@@ -300,7 +301,7 @@ painel.append({
     "gridPos": {"x": 0, "y": 0, "w": 24, "h": 2},
     "options": {"mode": "markdown", "content":
                 f"#### Estufa 001 · alface &nbsp;·&nbsp; FEI, São Bernardo do Campo\n"
-                f"Faixas da alface: **ar {FRIO_ALFACE} a {LIGA_VENT} °C** · **solo {LIGA_BOMBA} a {DESLIGA_BOMBA} %** · "
+                f"Faixas da alface: **ar {FRIO_ALFACE} a {QUENTE_ALFACE} °C** · **solo {LIGA_BOMBA} a {DESLIGA_BOMBA} %** · "
                 f"**VPD {br(VPD[0])} a {br(VPD[1])} kPa** · **luz {DLI_MIN} a {DLI_MAX} mol/m²/dia** &nbsp;—&nbsp; "
                 f"histórico do Cygnus no MySQL, painel atualizado a cada 10 s"}})
 
