@@ -545,7 +545,7 @@ function aplicar(estado) {
 
   const ventOn = no.fanState === 'ON';
   alvoGiro = ventOn ? 16 : 0;
-  preencher(rot.vent, ventOn ? 'verde' : 'cinza', `Exaustor · ${num(no.fanRatedPower, 0)} W`,
+  preencher(rot.vent, ventOn ? 'verde' : 'cinza', `Ventilador · ${num(no.fanRatedPower, 0)} W`,
             ventOn ? 'Ligado' : 'Desligado', `liga ≥ ${e.fanOnTemperature} °C · desliga ≤ ${e.fanOffTemperature} °C`);
 
   const capacidade = no.tankCapacity || 500, litros = no.tankWaterVolume, minimo = e.irrigationMinTankVolume;
