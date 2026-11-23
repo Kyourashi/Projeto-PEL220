@@ -382,7 +382,7 @@
               },
               {
                 "color": "#FF9830",
-                "value": 100.0
+                "value": 100
               },
               {
                 "color": "#73BF69",
@@ -421,7 +421,7 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(10,1)) AS \"caixa\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'tankWaterVolume'\nORDER BY recvTimeTs DESC\nLIMIT 1"
         }
       ],
-      "description": "Água na caixa de 500 L: ultrassom na tampa, convertido em litros na ESP32. Vermelho abaixo de 20% da caixa, laranja abaixo de 40%. A aspersão e a névoa tiram água; a boia repõe."
+      "description": "Água na caixa de 500 L: ultrassom na tampa, convertido em litros na ESP32. Vermelho abaixo de 100 L (irrigationMinTankVolume): a ESP32 bloqueia a bomba, para ela não rodar a seco, e só libera com 150 L. Laranja abaixo de 40% da caixa. A aspersão e a névoa tiram água; a boia repõe."
     },
     {
       "id": 8,
@@ -2020,10 +2020,10 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  541  * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS \"ventilador\",\n  180  * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS \"bomba\",\n  2000 * 5 * SUM(attrName = 'lampState' AND attrValue = 'ON') / 3600 AS \"lâmpadas\",\n  48   * 5 * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS \"nebulização\",\n  5 * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS \"água da aspersão\",\n  60 * 5 * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS \"água da névoa\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState', 'lampState', 'mistState', 'waterFlow')\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
+          "rawSql": "SELECT\n  541  * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS \"ventilador\",\n  750  * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS \"bomba\",\n  2000 * 5 * SUM(attrName = 'lampState' AND attrValue = 'ON') / 3600 AS \"lâmpadas\",\n  48   * 5 * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS \"nebulização\",\n  5 * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS \"água da aspersão\",\n  60 * 5 * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS \"água da névoa\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName IN ('fanState', 'pumpState', 'lampState', 'mistState', 'waterFlow')\n  AND $__unixEpochFilter(recvTimeTs / 1000)"
         }
       ],
-      "description": "Energia = potência nominal × tempo ligado (cada amostra ON vale 5 s): ventilador 541 W, bomba 180 W, lâmpadas 2000 W, nebulização 48 W (atributos estáticos da ESP32). Água da aspersão = soma da vazão MEDIDA × 5 s ÷ 60. Água da névoa = vazão nominal (60 L/h) × tempo ligado. A física da simulação é acelerada: o número mostra o cálculo, não o consumo de um dia real."
+      "description": "Energia = potência nominal × tempo ligado (cada amostra ON vale 5 s): ventilador 541 W, bomba 750 W, lâmpadas 2000 W, nebulização 48 W (atributos estáticos da ESP32). Água da aspersão = soma da vazão MEDIDA × 5 s ÷ 60. Água da névoa = vazão nominal (60 L/h) × tempo ligado. A física da simulação é acelerada: o número mostra o cálculo, não o consumo de um dia real."
     },
     {
       "id": 24,
@@ -2055,7 +2055,7 @@
               },
               {
                 "color": "#F2495C",
-                "value": 100.0
+                "value": 100
               },
               {
                 "color": "#FF9830",
@@ -2173,7 +2173,7 @@
           "rawSql": "SELECT\n  recvTimeTs / 1000 AS \"time\",\n  CAST(attrValue AS DECIMAL(6,1)) AS \"vazão\"\nFROM `urn_ngsi-ld_Device_ESP32-001_Device`\nWHERE attrName = 'waterFlow'\n  AND $__unixEpochFilter(recvTimeTs / 1000)\nORDER BY recvTimeTs ASC"
         }
       ],
-      "description": "Litros na caixa (eixo da esquerda) e vazão medida da aspersão (eixo da direita, em degraus). A névoa também tira água da caixa (60 L/h), mas não passa pelo medidor. A água da aspersão no período é a área sob a vazão."
+      "description": "Litros na caixa (eixo da esquerda) e vazão medida da aspersão (eixo da direita, em degraus). Linha vermelha: 100 L, o mínimo; abaixo dela, a bomba fica bloqueada até a caixa voltar a 150 L. A névoa também tira água da caixa (60 L/h), mas não passa pelo medidor. A água da aspersão no período é a área sob a vazão."
     }
   ]
 }

@@ -62,10 +62,10 @@ A versão apresentada na Aula 7 (18/11) está no histórico do git, no commit `e
 | `waterFlow` | `q` | Number | L/min (`L2`) | medida, medidor de vazão de pulsos no cano depois da bomba |
 | `fanState`, `pumpState`, `lampState`, `mistState` | `f`, `p`, `i`, `n` | Text | ON/OFF | medida, estado dos relés (ventilador, aspersão, lâmpadas, nebulização) |
 | `fanRatedPower` | — | Number | W (`WTT`) | estático: 541 W, nominal do ventilador |
-| `pumpRatedPower` | — | Number | W (`WTT`) | estático: 180 W, nominal da bomba da aspersão |
+| `pumpRatedPower` | — | Number | W (`WTT`) | estático: 750 W, nominal da bomba da aspersão (Ferrari IDB-50 Premium, 1 cv) |
 | `lampRatedPower` | — | Number | W (`WTT`) | estático: 2.000 W, das lâmpadas LED (premissa de projeto) |
 | `mistRatedPower` | — | Number | W (`WTT`) | estático: 48 W, da bomba de diafragma da nebulização |
-| `pumpFlowRate` | — | Number | L/h (`E32`) | estático: 1.500 L/h, vazão máxima de catálogo (a real é a `waterFlow`) |
+| `pumpFlowRate` | — | Number | L/h (`E32`) | estático: 3.000 L/h, vazão máxima de catálogo (a real é a `waterFlow`) |
 | `mistFlowRate` | — | Number | L/h (`E32`) | estático: 60 L/h, 10 bicos de nebulização |
 | `tankCapacity` | — | Number | L (`LTR`) | estático: 500 L, capacidade da caixa d'água |
 | `controlledAsset` | — | Relationship | — | estático: a estufa |
@@ -97,6 +97,8 @@ A cultura escolhida foi a **alface**.
 | Lâmpadas LED | — | relé `lampState`, comandos `lampOn`/`lampOff`; limites `lampOnOutdoorIlluminance` = 15.000 lx e `lampOffOutdoorIlluminance` = 20.000 lx na estufa |
 | Nebulização | — | relé `mistState`, comandos `mistOn`/`mistOff`, `mistFlowRate` = 60 L/h; limites `mistOnVaporPressureDeficit` = 1,25 kPa e `mistOffVaporPressureDeficit` = 0,95 kPa na estufa. A irrigação é por aspersão, no alto |
 | Água | sem dados | **medida**: `tankWaterVolume` (L, ultrassom na caixa) e `waterFlow` (L/min, medidor de vazão); `tankCapacity` = 500 L (estático); `controlledProperty` ganha `waterLevel` e `waterFlow` (valores do SDM); `pumpFlowRate` fica como referência de catálogo |
+| Bomba a seco | — | limite `irrigationMinTankVolume` = 100 L na estufa: abaixo dele, a ESP32 bloqueia a bomba, também no `pumpOn` (`pumpOn_info` = `ERRO - caixa abaixo do mínimo, bomba bloqueada`) |
+| Bomba da aspersão | — | **Ferrari IDB-50 Premium**: `pumpRatedPower` = 750 W e `pumpFlowRate` = 3.000 L/h. A IDB-35, de ¼ cv, não chega à pressão dos aspersores |
 | Clima externo | provedor, por **registro** (não vai ao histórico) | **gravador-clima** a cada 15 min + subscrição para o Cygnus; sem registro no tenant |
 | Descrição da estufa | — | `description` = "Estufa de alface" |
 
@@ -132,11 +134,11 @@ O script segue estes passos:
    - `vaporPressureDeficit` coerente com a temperatura e a umidade;
    - potências, vazões nominais e capacidade da caixa iguais às do provisionamento;
    - os estados dos quatro relés e os 8 comandos registrados (ventilador, bomba, lâmpadas e nebulização);
-   - os 8 limites de controle iguais aos da estufa;
+   - os 9 limites de controle iguais aos da estufa;
    - existência do alvo de cada `Relationship`;
    - ausência de uma entidade `Thing:teste001`.
 
-**Resultado em 19/11/2026** (Orion 4.1.0, IoT Agent JSON 3.7.0, Mosquitto 2.0.18): 132 verificações, 0 falhas.
+**Resultado em 23/11/2026** (Orion 4.1.0, IoT Agent JSON 3.7.0, Mosquitto 2.0.18): 135 verificações, 0 falhas.
 
 ## O modelo rodando
 

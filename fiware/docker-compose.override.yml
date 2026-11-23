@@ -53,6 +53,9 @@ services:
       - TRANSMISSAO=0.68    # fração da luz de fora que chega às plantas (premissa)
       - LAMPADA_LUX=5400    # luz das lâmpadas no sensor de dentro: 100 µmol/m²/s ÷ 0,0185 (premissa)
       - CAIXA_LITROS=500    # caixa d'água (tankCapacity no dispositivo.json)
+      - CAIXA_MINIMA=100    # bomba bloqueada daqui para baixo, para não rodar a seco (irrigationMinTankVolume)
+      - CAIXA_RETOMA=150    # ...e liberada quando a caixa volta a este nível (premissa)
+      - CAIXA_INICIAL=${CAIXA_INICIAL:-}   # litros no começo; vazio = sorteado (92 a 98 %). Para ver a proteção: CAIXA_INICIAL=90 docker compose up -d esp32-estufa
       - VAZAO_LPM=18        # aspersão: 12 aspersores × 90 L/h (premissa)
       - BOIA_LPM=3          # reposição pela boia, da rede (premissa)
       - NEBLINA_LPM=1       # 10 nebulizadores × 6 L/h (mistFlowRate = 60 L/h)

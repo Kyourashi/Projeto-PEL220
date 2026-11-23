@@ -3,7 +3,7 @@
   "type": "Device",
   "TimeInstant": {
     "type": "DateTime",
-    "value": "2026-11-19T22:48:04.409Z",
+    "value": "2026-11-23T12:49:57.916Z",
     "metadata": {}
   },
   "controlledAsset": {
@@ -12,7 +12,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:04.409Z"
+        "value": "2026-11-23T12:49:57.916Z"
       }
     }
   },
@@ -29,7 +29,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:04.409Z"
+        "value": "2026-11-23T12:49:57.916Z"
       }
     }
   },
@@ -39,7 +39,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:04.325Z"
+        "value": "2026-11-23T12:49:57.800Z"
       }
     }
   },
@@ -49,7 +49,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:04.325Z"
+        "value": "2026-11-23T12:49:57.800Z"
       }
     }
   },
@@ -59,7 +59,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:04.409Z"
+        "value": "2026-11-23T12:49:57.916Z"
       },
       "unitCode": {
         "type": "Text",
@@ -73,7 +73,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:04.409Z"
+        "value": "2026-11-23T12:49:57.916Z"
       }
     }
   },
@@ -83,7 +83,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:00.195Z"
+        "value": "2026-11-23T12:49:53.627Z"
       },
       "unitCode": {
         "type": "Text",
@@ -97,7 +97,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:04.409Z"
+        "value": "2026-11-23T12:49:57.916Z"
       },
       "unitCode": {
         "type": "Text",
@@ -111,7 +111,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:00.195Z"
+        "value": "2026-11-23T12:49:53.627Z"
       }
     }
   },
@@ -121,7 +121,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:04.409Z"
+        "value": "2026-11-23T12:49:57.916Z"
       },
       "unitCode": {
         "type": "Text",
@@ -135,7 +135,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:04.409Z"
+        "value": "2026-11-23T12:49:57.916Z"
       },
       "unitCode": {
         "type": "Text",
@@ -149,7 +149,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:00.195Z"
+        "value": "2026-11-23T12:49:53.627Z"
       }
     }
   },
@@ -159,7 +159,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:00.195Z"
+        "value": "2026-11-23T12:49:53.627Z"
       },
       "unitCode": {
         "type": "Text",
@@ -169,11 +169,11 @@
   },
   "pumpFlowRate": {
     "type": "Number",
-    "value": 1500,
+    "value": 3000,
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:04.409Z"
+        "value": "2026-11-23T12:49:57.916Z"
       },
       "unitCode": {
         "type": "Text",
@@ -183,11 +183,11 @@
   },
   "pumpRatedPower": {
     "type": "Number",
-    "value": 180,
+    "value": 750,
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:04.409Z"
+        "value": "2026-11-23T12:49:57.916Z"
       },
       "unitCode": {
         "type": "Text",
@@ -201,7 +201,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:00.195Z"
+        "value": "2026-11-23T12:49:53.627Z"
       }
     }
   },
@@ -211,7 +211,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:00.195Z"
+        "value": "2026-11-23T12:49:53.627Z"
       },
       "unitCode": {
         "type": "Text",
@@ -225,7 +225,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:00.195Z"
+        "value": "2026-11-23T12:49:53.627Z"
       },
       "unitCode": {
         "type": "Text",
@@ -239,7 +239,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:04.409Z"
+        "value": "2026-11-23T12:49:57.916Z"
       },
       "unitCode": {
         "type": "Text",
@@ -253,7 +253,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:00.195Z"
+        "value": "2026-11-23T12:49:53.627Z"
       },
       "unitCode": {
         "type": "Text",
@@ -267,7 +267,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:00.195Z"
+        "value": "2026-11-23T12:49:53.627Z"
       },
       "unitCode": {
         "type": "Text",
@@ -281,7 +281,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:00.195Z"
+        "value": "2026-11-23T12:49:53.627Z"
       },
       "unitCode": {
         "type": "Text",
@@ -295,7 +295,7 @@
     "metadata": {
       "TimeInstant": {
         "type": "DateTime",
-        "value": "2026-11-19T22:48:00.195Z"
+        "value": "2026-11-23T12:49:53.627Z"
       },
       "unitCode": {
         "type": "Text",

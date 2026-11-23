@@ -41,6 +41,16 @@
     "value": "urn:ngsi-ld:WeatherObserved:FEI",
     "metadata": {}
   },
+  "irrigationMinTankVolume": {
+    "type": "Number",
+    "value": 100,
+    "metadata": {
+      "unitCode": {
+        "type": "Text",
+        "value": "LTR"
+      }
+    }
+  },
   "irrigationOffSoilMoisture": {
     "type": "Number",
     "value": 45,

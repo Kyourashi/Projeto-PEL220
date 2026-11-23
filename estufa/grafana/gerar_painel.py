@@ -33,7 +33,9 @@ LIGA_NEBLINA, DESLIGA_NEBLINA = (ESTUFA["mistOnVaporPressureDeficit"]["value"],
 P_VENT, P_BOMBA = NOMINAL["fanRatedPower"], NOMINAL["pumpRatedPower"]
 P_LAMPADAS, P_NEBLINA, Q_NEBLINA = NOMINAL["lampRatedPower"], NOMINAL["mistRatedPower"], NOMINAL["mistFlowRate"]
 CAIXA = NOMINAL["tankCapacity"]                       # L
-RESERVA = (0.2, 0.4)                                  # fração da caixa: vermelho abaixo de 20 %, laranja abaixo de 40 %
+CAIXA_MIN = ESTUFA["irrigationMinTankVolume"]["value"]   # L: abaixo disso, a ESP32 bloqueia a bomba
+CAIXA_RETOMA = 150                                    # L: e libera daqui para cima (CAIXA_RETOMA no compose)
+RESERVA = 0.4                                         # fração da caixa: laranja abaixo de 40 %
 DT = 5                       # s entre amostras (INTERVALO da ESP32): cada amostra ON vale 5 s ligado
 FRIO_ALFACE = 18             # °C, limite inferior da faixa da alface (18 a 23 °C)
 DLI_MIN, DLI_MAX = 14, 18    # mol/m²/dia para alface
@@ -326,10 +328,11 @@ painel += [
             timeFrom="24h", hideTimeOverride=True),
     medidor("Caixa d'água", 16, 3, 4, 6, [alvo(agora("tankWaterVolume", "caixa", "CAST(attrValue AS DECIMAL(10,1))"))],
             "litre", 0, 0, CAIXA,
-            [cor("vermelho", None), cor("laranja", RESERVA[0] * CAIXA), cor("verde", RESERVA[1] * CAIXA)],
-            f"Água na caixa de {CAIXA} L: ultrassom na tampa, convertido em litros na ESP32. Vermelho abaixo de "
-            f"{RESERVA[0]:.0%} da caixa, laranja abaixo de {RESERVA[1]:.0%}. A aspersão e a névoa tiram água; "
-            f"a boia repõe."),
+            [cor("vermelho", None), cor("laranja", CAIXA_MIN), cor("verde", RESERVA * CAIXA)],
+            f"Água na caixa de {CAIXA} L: ultrassom na tampa, convertido em litros na ESP32. Vermelho abaixo "
+            f"de {CAIXA_MIN} L (irrigationMinTankVolume): a ESP32 bloqueia a bomba, para ela não rodar a seco, "
+            f"e só libera com {CAIXA_RETOMA} L. Laranja abaixo de {RESERVA:.0%} da caixa. A aspersão e a névoa "
+            f"tiram água; a boia repõe."),
     reles_agora("Relés agora", 20, 3, 4, 6,
                 "Estado que a ESP32 informa (fanState, pumpState, lampState, mistState). É o estado observado, não o "
                 "comando pedido."),
@@ -444,10 +447,12 @@ painel += [
     serie(f"Caixa d'água ({CAIXA} L) e vazão: o nível cai quando a aspersão liga, e a boia repõe", 0, 43, 24, 7,
           [alvo(historico("tankWaterVolume", "caixa", "CAST(attrValue AS DECIMAL(10,1))"), "A"),
            alvo(historico("waterFlow", "vazão"), "B")], "litre", "agua",
-          [cor("transparent", None), cor("vermelho", RESERVA[0] * CAIXA), cor("laranja", RESERVA[1] * CAIXA)],
-          f"Litros na caixa (eixo da esquerda) e vazão medida da aspersão (eixo da direita, em degraus). A névoa "
-          f"também tira água da caixa ({Q_NEBLINA} L/h), mas não passa pelo medidor. A água da aspersão no "
-          f"período é a área sob a vazão.",
+          [cor("transparent", None), cor("vermelho", CAIXA_MIN), cor("laranja", RESERVA * CAIXA)],
+          f"Litros na caixa (eixo da esquerda) e vazão medida da aspersão (eixo da direita, em degraus). Linha "
+          f"vermelha: {CAIXA_MIN} L, o mínimo; abaixo dela, a bomba fica bloqueada até a caixa voltar a "
+          f"{CAIXA_RETOMA} L. "
+          f"A névoa também tira água da caixa ({Q_NEBLINA} L/h), mas não passa pelo medidor. A água da aspersão "
+          f"no período é a área sob a vazão.",
           None, None, legenda=True,
           sobreposicoes=[campo("caixa", custom__fillOpacity=0, custom__lineWidth=2),
                          campo("vazão", color=fixa("bomba"), unit="suffix: L/min", custom__axisPlacement="right",

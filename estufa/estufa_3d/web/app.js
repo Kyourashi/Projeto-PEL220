@@ -20,9 +20,10 @@ const FRIO = 18;                                           // °C: abaixo disso,
 const VPD_FAIXA = [0.45, 1.25, 1.5];                       // kPa: úmido | faixa | atenção | estresse
 const LUX_SOL = 50000;                                     // lx: meio-dia lá fora, na simulação (escurece a cena à noite)
 const NOITE_LUX = 500;                                     // lx no teto: abaixo disso é noite
-const RESERVA = [0.2, 0.4];                                // fração da caixa: vermelho | laranja | verde
+const RESERVA = 0.4;                                       // fração da caixa: laranja abaixo disso (vermelho: o mínimo)
+const VAZAO_BAIXA = 12.5;                                  // L/min: ≈ 70 % dos 18 L/min de projeto (o alerta do Orion)
 const PADRAO = { fanOnTemperature: 24, fanOffTemperature: 22,
-                 irrigationOnSoilMoisture: 30, irrigationOffSoilMoisture: 45,
+                 irrigationOnSoilMoisture: 30, irrigationOffSoilMoisture: 45, irrigationMinTankVolume: 100,
                  lampOnOutdoorIlluminance: 15000, lampOffOutdoorIlluminance: 20000,
                  mistOnVaporPressureDeficit: 1.25, mistOffVaporPressureDeficit: 0.95 };
 const COR = { verde: 0x73bf69, azul: 0x5794f2, laranja: 0xff9830, vermelho: 0xf2495c,
@@ -547,19 +548,22 @@ function aplicar(estado) {
   preencher(rot.vent, ventOn ? 'verde' : 'cinza', `Exaustor · ${num(no.fanRatedPower, 0)} W`,
             ventOn ? 'Ligado' : 'Desligado', `liga ≥ ${e.fanOnTemperature} °C · desliga ≤ ${e.fanOffTemperature} °C`);
 
+  const capacidade = no.tankCapacity || 500, litros = no.tankWaterVolume, minimo = e.irrigationMinTankVolume;
+  const noMinimo = litros != null && litros < minimo;         // a ESP32 bloqueia a bomba: não roda a seco
   bombaLigada = no.pumpState === 'ON';
   mat.tubo.color.setHex(bombaLigada ? 0x3ea8ff : 0x2b3036);
-  preencher(rot.bomba, bombaLigada ? 'azul' : 'cinza', `Aspersão · bomba ${num(no.pumpRatedPower, 0)} W`,
-            `${bombaLigada ? 'Ligada' : 'Desligada'} · ${num(no.waterFlow)} L/min`,
-            bombaLigada && no.waterFlow != null && no.waterFlow < 0.5 * (no.pumpFlowRate || 1500) / 60
-              ? 'vazão baixa: caixa vazia ou cano entupido?' : '');
+  preencher(rot.bomba, bombaLigada ? 'azul' : noMinimo ? 'vermelho' : 'cinza',
+            `Aspersão · bomba ${num(no.pumpRatedPower, 0)} W`,
+            `${bombaLigada ? 'Ligada' : noMinimo ? 'Bloqueada' : 'Desligada'} · ${num(no.waterFlow)} L/min`,
+            noMinimo ? `caixa abaixo de ${num(minimo, 0)} L: não roda a seco`
+              : bombaLigada && no.waterFlow != null && no.waterFlow < VAZAO_BAIXA
+                ? 'vazão baixa: filtro ou cano entupido?' : '');
 
-  const capacidade = no.tankCapacity || 500, litros = no.tankWaterVolume;
   const fracaoCaixa = litros == null ? 0 : Math.min(1, Math.max(0, litros / capacidade));
-  const cc = litros == null ? 'cinza' : fracaoCaixa < RESERVA[0] ? 'vermelho' : fracaoCaixa < RESERVA[1] ? 'laranja' : 'verde';
+  const cc = litros == null ? 'cinza' : noMinimo ? 'vermelho' : fracaoCaixa < RESERVA ? 'laranja' : 'verde';
   pintar(mCaixa, cc);
   preencher(rot.caixa, cc, `Caixa d'água · ${num(capacidade, 0)} L`, `${num(litros, 0)} L`,
-            `${num(fracaoCaixa * 100, 0)} % · ultrassom na tampa`);
+            `${num(fracaoCaixa * 100, 0)} % · ${noMinimo ? 'bomba bloqueada' : 'ultrassom na tampa'}`);
   alvoAgua = fracaoCaixa;
 
   ultimaMedida = no.TimeInstant ? new Date(no.TimeInstant).toLocaleTimeString('pt-BR') : null;

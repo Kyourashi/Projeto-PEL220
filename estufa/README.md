@@ -31,10 +31,11 @@ O painel do Grafana mostra o **passado** (MySQL). A página `http://localhost:30
 - **Limites lidos do Orion:** as cores usam os limites da `AgriGreenhouse` (`fanOnTemperature`, `irrigationOnSoilMoisture`…). Se o grupo mudar um limite no Orion, a cena muda junto.
 - **Atuadores:**
   - o exaustor gira quando `fanState = ON`;
-  - os 12 aspersores no alto jogam água nos canteiros quando `pumpState = ON`; a cor da terra segue o `soilMoisture`; o rótulo da bomba mostra a vazão medida e avisa se a bomba está ligada com menos da metade da vazão de catálogo;
+  - os 12 aspersores no alto jogam água nos canteiros quando `pumpState = ON`; a cor da terra segue o `soilMoisture`; o rótulo da bomba mostra a vazão medida, avisa se a bomba está ligada com menos de 12,5 L/min e mostra **Bloqueada** com a caixa abaixo do mínimo;
   - as lâmpadas LED acendem quando `lampState = ON` e iluminam os canteiros;
   - a névoa sai dos 10 bicos no alto e evapora quando `mistState = ON`.
-- **Caixa d'água:** a água sobe e desce com o `tankWaterVolume`, e a cor segue a reserva: vermelho abaixo de 20 %, laranja abaixo de 40 %.
+- **Caixa d'água:** a água sobe e desce com o `tankWaterVolume`, e a cor segue a reserva: vermelho abaixo do mínimo da bomba (`irrigationMinTankVolume` = 100 L), laranja abaixo de 40 %.
+- **Para ver a proteção da bomba:** `cd fiware && CAIXA_INICIAL=90 docker compose up -d esp32-estufa` começa com 90 L na caixa. A bomba aparece **Bloqueada**, e um `pumpOn` responde `ERRO - caixa abaixo do mínimo, bomba bloqueada`. Para voltar ao normal: `docker compose up -d esp32-estufa`.
 - **Dia e noite:** a luz da cena segue o BH1750 do teto (`outdoorIlluminance`), que só vê o sol.
 - **Rótulos:** quando dois se encostam na tela, o de cima sobe, em qualquer ângulo da câmera.
 - **Lá fora:** a estação do lado de fora mostra a `WeatherObserved` gravada pelo `gravador-clima`.
@@ -114,7 +115,7 @@ As cores da Pergunta 1:
 | Umidade do solo | a partir de 45 % (a aspersão deve desligar) | 30 a 45 % | — | abaixo de 30 % (a aspersão deve ligar) |
 | VPD | abaixo de 0,45 kPa (ar úmido demais) | 0,45 a 1,25 kPa | 1,25 a 1,5 kPa (a névoa deve estar ligada) | acima de 1,5 kPa (estresse) |
 | DLI (24 h) | — | 14 a 18 mol/m²/dia | fora da faixa | — |
-| Caixa d'água (500 L) | — | a partir de 40 % (200 L) | 20 a 40 % | abaixo de 20 % (100 L) |
+| Caixa d'água (500 L) | — | a partir de 40 % (200 L) | 20 a 40 % | abaixo de 20 % (100 L): a bomba fica bloqueada |
 
 Umidade do ar, luz e vazão ficam sem faixa, só com a curva do período. Quem julga o ar é o VPD, e quem julga a luz é o DLI. Vazão zero é normal com a bomba desligada; o problema é a bomba ligada com vazão baixa (consulta no Orion mais abaixo).
 
@@ -247,7 +248,7 @@ WHERE attrValue = 'ON' AND anterior = 'OFF'
 ```sql
 SELECT
   541  * 5 * SUM(attrName = 'fanState'  AND attrValue = 'ON') / 3600 AS "ventilador",
-  180  * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS "bomba",
+  750  * 5 * SUM(attrName = 'pumpState' AND attrValue = 'ON') / 3600 AS "bomba",
   2000 * 5 * SUM(attrName = 'lampState' AND attrValue = 'ON') / 3600 AS "lâmpadas",
   48   * 5 * SUM(attrName = 'mistState' AND attrValue = 'ON') / 3600 AS "nebulização",
   5 * SUM(CASE WHEN attrName = 'waterFlow' THEN CAST(attrValue AS DECIMAL(6,1)) ELSE 0 END) / 60 AS "água da aspersão",
@@ -281,7 +282,7 @@ E = \frac{P \cdot \Delta t \cdot \sum s_i}{3600}
 $$
 
 - **E:** energia no período (Wh).
-- **P:** potência nominal (W). Vem dos atributos estáticos da ESP32: `fanRatedPower` = 541 W, `pumpRatedPower` = 180 W, `lampRatedPower` = 2.000 W e `mistRatedPower` = 48 W.
+- **P:** potência nominal (W). Vem dos atributos estáticos da ESP32: `fanRatedPower` = 541 W, `pumpRatedPower` = 750 W, `lampRatedPower` = 2.000 W e `mistRatedPower` = 48 W.
 - **Δt = 5 s:** intervalo entre amostras.
 - **Σ s_i:** número de amostras `ON` do relé no período.
 - **3600:** converte segundos em horas.
@@ -299,10 +300,10 @@ $$
 
 Exemplo para 30 min (360 amostras), com o ventilador ligado em 72 e a bomba em 36, a 18 L/min:
 - ventilador: E = 541 × 5 × 72 / 3600 = **54,1 Wh**;
-- bomba: E = 180 × 5 × 36 / 3600 = **9,0 Wh**, e V = 5 × (36 × 18) / 60 = **54 L**;
+- bomba: E = 750 × 5 × 36 / 3600 = **37,5 Wh**, e V = 5 × (36 × 18) / 60 = **54 L**;
 - lâmpadas ligadas em 40: E = 2000 × 5 × 40 / 3600 = **111,1 Wh**, mais que o ventilador e a bomba juntos.
 
-Pela vazão de catálogo (`pumpFlowRate` = 1.500 L/h = 25 L/min), a conta daria 75 L: 39 % a mais. A vazão de catálogo é a máxima; na aspersão, a pressão dos aspersores e a perda de carga levam a bomba a um ponto de operação de vazão menor (curva da bomba × curva do sistema). Os 18 L/min da simulação (12 aspersores × 90 L/h) são premissa; o medidor mostra o valor real.
+Pela vazão de catálogo (`pumpFlowRate` = 3.000 L/h = 50 L/min), a conta daria 150 L: quase o triplo. A vazão de catálogo é a máxima, sem pressão na saída da bomba; na aspersão, o regulador de pressão segura os aspersores em 2,3 bar e a vazão fica nos 18 L/min de projeto ([a conta](#a-bomba-chega-à-pressão-dos-aspersores)). Os 18 L/min da simulação (12 aspersores × 90 L/h) são premissa; o medidor mostra o valor real.
 
 **Litros na caixa** (ultrassom na tampa). O sensor mede a distância até a água, e a ESP32 converte em litros:
 
@@ -424,18 +425,19 @@ A conta é a definição do DLI quando as 24 h estão no histórico. Com menos t
 | BH1750 | 1 a 65.535 lx, ±20 % | [folha de dados AZ-Delivery](https://cdn.shopify.com/s/files/1/1509/1638/files/GY-302_Licht_Sensor_Modul_Datenblatt_AZ-Delivery_Vertriebs_GmbH.pdf) |
 | Ventilação necessária | 1 renovação do ar por minuto; para 50 m² × 3 m de pé-direito (premissa), 150 m³/min | [Hortidaily](https://www.hortidaily.com/article/9857497/a-guide-to-greenhouse-ventilation-sizing/) |
 | Ventilador: `fanRatedPower` | **541 W** = 6.604 cfm ÷ 12,2 cfm/W (J&D VNS30S850, 30", ½ HP). Entrega 187 m³/min, ou 1,25 renovação/min | [catálogo J&D](https://www.greenhousemegastore.com/j-d-typhoon-exhaust-fan-fa--vns) |
-| Bomba: `pumpRatedPower` | **180 W** (Ferrari IDB-35, ¼ cv) | [catálogo do revendedor](https://www.lojadomecanico.com.br/produto/607325/33/619/bomba-periferica-idb-35-14cv-24-mca-110220v-ferrari-aab1010024) |
-| Bomba: `pumpFlowRate` | **1.500 L/h**, a vazão máxima do catálogo. Na pressão dos aspersores, a vazão real é menor (a real vem do medidor, `waterFlow`) | o mesmo catálogo |
+| Bomba: `pumpRatedPower` | **750 W** (Ferrari IDB-50 Premium, 1 cv, até 60 mca). A IDB-35 (¼ cv) não chega à pressão dos aspersores ([a conta](#a-bomba-chega-à-pressão-dos-aspersores)) | [catálogo do revendedor](https://www.lojadomecanico.com.br/produto/595900/33/619/bomba-dagua-periferica-idb-50-premium-1-cv-bivolt-ferrari-aab1010028) |
+| Bomba: `pumpFlowRate` | **3.000 L/h**, a vazão máxima do catálogo, sem pressão na saída. Na aspersão, a vazão é a do ponto de operação (a real vem do medidor, `waterFlow`) | o mesmo catálogo |
 | Bomba: vazão na aspersão | **18 L/min** = 12 aspersores × 90 L/h | premissa da simulação (`VAZAO_LPM`) |
 | Aspersores | invertidos, pendurados no alto: 4 por canteiro, a 1,7 m. O Netafim SpinNet tem vazões de 50 a 200 L/h (nominal a 2,3 bar) e trabalha de 2,0 a 3,0 bar | [Netafim SpinNet](https://www.ghlinc.com/documents/T_Irrigation/Irrigation_Netafim_aspersion_SpinNet_FT_EN.pdf) |
-| Pressão da bomba | 2,0 bar no aspersor ≈ 20,4 mca, mais 2 m de altura: ≈ 22,4 mca antes das perdas no cano. A IDB-35 dá no máximo 24 mca, sem vazão: **confira na curva da bomba** se ela chega lá com 18 L/min | cálculo (1 bar = 10,2 mca) |
-| Caixa d'água: `tankCapacity` | **500 L**, cilíndrica, D = 0,92 m; reserva: vermelho abaixo de 20 %, laranja abaixo de 40 % | premissa do grupo |
+| Pressão da bomba | a aspersão pede **≈ 25,5 mca** a 18 L/min; a IDB-50 Premium dá ≈ 38 mca, e um **regulador de pressão de ≈ 2,5 bar** na saída da bomba deixa 2,3 bar no aspersor | [a conta](#a-bomba-chega-à-pressão-dos-aspersores) |
+| Caixa d'água: `tankCapacity` | **500 L**, cilíndrica, D = 0,92 m; reserva: laranja abaixo de 40 % | premissa do grupo |
+| Caixa: mínimo da bomba (`irrigationMinTankVolume`) | **100 L** (20 %): abaixo disso, a ESP32 bloqueia a bomba, também no comando manual (`pumpOn` responde `ERRO - caixa abaixo do mínimo, bomba bloqueada`). Só libera com **150 L**, para não ficar liga-desliga perto do mínimo | premissa do grupo (`CAIXA_MINIMA`, `CAIXA_RETOMA`) |
 | Reposição pela boia | **3 L/min**, da rede | premissa da simulação (`BOIA_LPM`) |
 | Nível da caixa | ultrassom à prova d'água JSN-SR04T: 20 a 600 cm, zona cega de 20 cm | [folha de dados JSN-SR04T-2.0](https://www.mikrocontroller.net/attachment/541933/JSN-SR04T-2.0.pdf) |
 | Vazão | YF-S201 (efeito Hall): 1 a 30 L/min, 450 pulsos/L, ±10 % | [Components101](https://components101.com/sensors/yf-s201-water-flow-measurement-sensor) |
 | Irrigação | **aspersão por cima**, escolha do grupo: molha a estufa toda | se a cultura for alface, a [Embrapa](https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1042266/1/cot179.pdf) recomenda evitar folhas molhadas por muito tempo e preferir o gotejamento |
 | Nebulização: bicos | **10 bicos × 6 L/h = 60 L/h** (`mistFlowRate`), de 3,1 a 4,1 bar | [guia de nebulizadores da Hunter](https://agriculture.hunterirrigation.com/sites/senninger.hunterindustries.com/files/fogger-installation-guide.pdf): 6,05 L/h por bico; o número de bicos é premissa |
-| Nebulização: bomba | **48 W** (`mistRatedPower`) = 12 V × 4 A, bomba de diafragma de 70 psi (4,8 bar) e 2,7 L/min. A bomba da aspersão (24 mca, ≈ 2,4 bar) não chega à pressão dos bicos | [anúncio da Seaflo 21S](https://www.casasbahia.com.br/bomba-de-pressurizacao-12v-seaflo-07-gpm-21s-70psi/p/1572832984) |
+| Nebulização: bomba | **48 W** (`mistRatedPower`) = 12 V × 4 A, bomba de diafragma de 70 psi (4,8 bar) e 2,7 L/min. A IDB-50 da aspersão teria pressão, mas gastaria 750 W para dar 1 L/min | [anúncio da Seaflo 21S](https://www.casasbahia.com.br/bomba-de-pressurizacao-12v-seaflo-07-gpm-21s-70psi/p/1572832984) |
 | Nebulização: quando | liga com VPD ≥ 1,25 kPa (o fim da faixa verde) e desliga com VPD ≤ 0,95 kPa | premissa do grupo; a névoa costuma ser comandada pelo VPD ([Greenhouse Management](https://www.greenhousemag.com/article/cooling-your-greenhouse-with-fog)) |
 | Lâmpadas: `lampRatedPower` | **2.000 W** = 100 µmol/m²/s × 50 m² ÷ 2,5 µmol/J | premissa; mínimo da DLC: 1,9 µmol/J ([Universidade de Kentucky](https://greenhousehort.ca.uky.edu/sites/greenhousehort.ca.uky.edu/files/2022-03/LED%20Efficacy.pdf)) |
 | Lâmpadas: quando | ligam com menos de 15 klx no teto e desligam acima de 20 klx; à noite (abaixo de 500 lx), desligadas: só completam o dia | premissa do grupo |
@@ -445,7 +447,43 @@ A conta é a definição do DLI quando as 24 h estão no histórico. Com menos t
 
 **A água já é medida; a energia ainda é nominal.** O próximo passo é o sensor de energia (PZEM-004T na rede AC, ou INA219 em 12 V), e então a energia também vira atributo de origem **medida**.
 
-**Escala:** os valores são da estufa de 50 m² do modelo. Para uma maquete, troque os números nominais em `modelo-dados/provisionamento/dispositivo.json` (potências, vazões e capacidade da caixa) e as premissas da simulação no `fiware/docker-compose.override.yml` (`CAIXA_LITROS`, `VAZAO_LPM`, `BOIA_LPM`, `NEBLINA_LPM`, `LAMPADA_LUX`). Depois, rode o `configurar.py` e o `gerar_painel.py`.
+**Escala:** os valores são da estufa de 50 m² do modelo. Para uma maquete, troque os números nominais em `modelo-dados/provisionamento/dispositivo.json` (potências, vazões e capacidade da caixa) e as premissas da simulação no `fiware/docker-compose.override.yml` (`CAIXA_LITROS`, `CAIXA_MINIMA`, `CAIXA_RETOMA`, `VAZAO_LPM`, `BOIA_LPM`, `NEBLINA_LPM`, `LAMPADA_LUX`), com o `irrigationMinTankVolume` em `modelo-dados/exemplos/AgriGreenhouse.json`. Depois, rode o `configurar.py` e o `gerar_painel.py`.
+
+### A bomba chega à pressão dos aspersores?
+
+A bomba precisa vencer a pressão do aspersor, a altura até o bico e as perdas no cano:
+
+$$
+H = \frac{p}{\rho \, g} + \Delta z + h_f \, (1 + k)
+$$
+
+- **H:** altura manométrica que a bomba precisa dar (mca), com a vazão de projeto Q = 18 L/min = 1,08 m³/h (12 aspersores × 90 L/h, premissa).
+- **p = 230 kPa (2,3 bar):** pressão em que o SpinNet dá a vazão nominal ([folha de dados Netafim](https://www.ghlinc.com/documents/T_Irrigation/Irrigation_Netafim_aspersion_SpinNet_FT_EN.pdf)); p/(ρ·g) = 23,5 m.
+- **ρ = 998 kg/m³, g = 9,81 m/s²:** água a 20 °C.
+- **Δz = 1,7 m:** do fundo da caixa, no chão, até o bico, a 1,68 m (traçado da estufa 3D; conservador).
+- **h_f = 0,27 m:** perda distribuída (Hazen-Williams), PVC 25 mm (diâmetro interno de 21,6 mm), C = 140, no caminho de ≈ 16 m até o último aspersor, com a vazão caindo a cada ramal (premissas).
+- **k = 0,3:** perdas localizadas (curvas e tês), 30 % das distribuídas (premissa).
+
+H = 23,5 + 1,7 + 0,27 × 1,3 ≈ **25,5 mca** a 1,08 m³/h (22,5 mca com o mínimo de 2,0 bar no aspersor).
+
+O catálogo da bomba periférica dá só as duas pontas da curva. Entre elas, a curva desse tipo de bomba é quase uma reta (aproximação, até ter a curva do fabricante):
+
+$$
+H_b(Q) = H_{max} \left(1 - \frac{Q}{Q_{max}}\right)
+$$
+
+- **H_b(Q):** altura que a bomba dá com a vazão Q (mca).
+- **H_max:** altura máxima, com vazão zero (catálogo).
+- **Q_max:** vazão máxima (catálogo).
+
+| Bomba | H_max | Q_max | H_b a 1,08 m³/h | Chega a 25,5 mca? |
+|---|---|---|---|---|
+| Ferrari IDB-35, ¼ cv ([anúncio 1](https://www.lojadomecanico.com.br/produto/607325/33/619/bomba-periferica-idb-35-14cv-24-mca-110220v-ferrari-aab1010024)) | 24 mca | 1,5 m³/h | 6,7 mca | não |
+| Ferrari IDB-35, ¼ cv ([anúncio 2](https://www.lojadomecanico.com.br/produto/81841/33/619/bomba-d-agua-periferica-14-cv---bivolt-ferrari-idb-35-14cv)) | 28 mca | 1,8 m³/h | 11,2 mca | não |
+| Ferrari IDB-50 Premium, 1 cv ([anúncio](https://www.lojadomecanico.com.br/produto/595900/33/619/bomba-dagua-periferica-idb-50-premium-1-cv-bivolt-ferrari-aab1010028)) | 60 mca | 3,0 m³/h | 38,4 mca | sim |
+
+- **A IDB-35 não chega.** A altura máxima dela, sem vazão, é de 24 a 28 mca: praticamente a altura pedida. Para dar 1,08 m³/h a 25,5 mca, a curva teria de ser quase plana, e a da bomba periférica é íngreme. Pela reta, ela ficaria em ≈ 0,7 a 0,8 m³/h, com 1,0 a 1,3 bar no aspersor: abaixo dos 2,0 bar mínimos. Molhar um canteiro por vez (6 L/min) também não resolve: ≈ 18 a 22 mca, contra ≈ 25 mca.
+- **Troca: IDB-50 Premium.** Dá ≈ 38 mca a 1,08 m³/h. Sobra pressão: sem regulador, a bomba iria a ≈ 1,27 m³/h, com ≈ 3,2 bar no aspersor (tratando o bico como orifício, vazão ∝ √p), acima dos 3,0 bar do SpinNet. Com um **regulador de pressão de ≈ 2,5 bar** na saída da bomba (os 25,5 mca), o aspersor fica em 2,3 bar e a vazão nos 18 L/min. O custo é a potência: 750 W, contra 180 W da IDB-35.
 
 ## As três perguntas do marco da Aula 7
 
@@ -463,8 +501,8 @@ A conta é a definição do DLI quando as 24 h estão no histórico. Com menos t
 | alerta de estresse hídrico | `GET /v2/entities?type=Device&q=vaporPressureDeficit>1.5` |
 | os nós de uma estufa (pai → filhos) | `GET /v2/entities?q=controlledAsset==urn:ngsi-ld:AgriGreenhouse:001` |
 | relés ligados | `GET /v2/entities?type=Device&q=fanState==ON` |
-| caixa baixa (abaixo de 20 %) | `GET /v2/entities?type=Device&q=tankWaterVolume<100` |
-| bomba ligada sem vazão (menos da metade do catálogo) | `GET /v2/entities?type=Device&q=pumpState==ON;waterFlow<12.5` |
+| caixa abaixo do mínimo: bomba bloqueada | `GET /v2/entities?type=Device&q=tankWaterVolume<100` |
+| bomba ligada com vazão baixa (abaixo de 12,5 L/min, ≈ 70 % dos 18 L/min de projeto) | `GET /v2/entities?type=Device&q=pumpState==ON;waterFlow<12.5` |
 | lâmpadas ligadas | `GET /v2/entities?type=Device&q=lampState==ON` |
 | névoa ligada com o ar já úmido (comando esquecido) | `GET /v2/entities?type=Device&q=mistState==ON;vaporPressureDeficit<0.95` |
 | só medidas em °C | `GET /v2/entities?type=Device&mq=temperature.unitCode==CEL` |
@@ -522,7 +560,7 @@ Por isso, no tenant `estufa`, o `gravador-clima` faz a troca:
 - **Luz em lux, não em PAR:** o BH1750 mede lux. O fator 0,0185 vale para a luz do sol; com LED, ele muda com o espectro, e o DLI das horas com lâmpadas vira aproximação. Um sensor quântico (PAR) resolve.
 - **BH1750 do teto ao sol pleno:** ao meio-dia de céu limpo, a luz pode passar dos 65.535 lx do sensor. A folha de dados estende a faixa até 100.000 lx com o ajuste do tempo de medida (MTreg).
 - **Calor das lâmpadas:** não entra na simulação.
-- **Bomba a seco:** com a caixa vazia, a ESP32 ainda liga a bomba, que passa a puxar só o que a boia repõe. Falta um intertravamento: não ligar a bomba com a caixa abaixo de um mínimo.
+- **Curva da bomba:** a conta da pressão usa a reta entre os dois pontos do catálogo (altura máxima e vazão máxima). Com a curva do fabricante, refazer o ponto de operação e o ajuste do regulador.
 - **Limites da bomba:** 30/45 % ainda não foram conferidos para a alface.
 - **Regra de controle:** hoje é **local**, na ESP32 (histerese com os limites da AgriGreenhouse). Na Aula 9, o controlador e o gêmeo digital passam a ler esses limites do Orion.
 - **Build local:** `docker compose up -d --build esp32-estufa` precisa de acesso ao PyPI (`pip install paho-mqtt`). No Codespace, funciona. O `gravador-clima` só usa a biblioteca padrão do Python.

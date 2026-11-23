@@ -50,6 +50,8 @@
    lâmpadas    ligam com e <= LIGA_LUZ     e desligam com e >= DESLIGA_LUZ;
                de noite (e < NOITE_LUX), desligadas: só completam o dia
    nebulização liga com v >= LIGA_NEBLINA  e desliga com v <= DESLIGA_NEBLINA
+   proteção    bomba bloqueada com a < CAIXA_MINIMA, até a >= CAIXA_RETOMA,
+               para não rodar a seco; vale também para o comando manual
  Fora da faixa, a regra manda no relé a cada leitura. Entre os dois limites,
  ela não mexe: ali, um comando manual vale.
 
@@ -65,7 +67,7 @@
      e sobe com o solo úmido, com a água da aspersão e com a névoa;
    - o solo seca devagar e a aspersão, no alto, o molha depressa, se houver água;
    - a bomba tira VAZAO_LPM da caixa e a névoa, NEBLINA_LPM; a boia repõe
-     BOIA_LPM até encher; com a caixa vazia, a vazão cai ao que a boia repõe.
+     BOIA_LPM até encher.
 
  Variáveis de ambiente (padrão entre parênteses):
    DEVICE_ID (estufa001)  APIKEY (estufa)  MQTT_HOST (mosquitto)  MQTT_PORT (1883)
@@ -74,6 +76,7 @@
    LIGA_NEBLINA (1.25) kPa · DESLIGA_NEBLINA (0.95) kPa
    PERIODO_LUZ (600) s · PICO_LUX (50000) lx · TRANSMISSAO (0.68) · LAMPADA_LUX (5400) lx
    CAIXA_LITROS (500) · VAZAO_LPM (18) · BOIA_LPM (3) · NEBLINA_LPM (1)
+   CAIXA_MINIMA (100) · CAIXA_RETOMA (150) · CAIXA_INICIAL (vazio: sorteada entre 92 e 98 %)
 ============================================================================
 """
 
@@ -108,6 +111,9 @@ TRANSMISSAO = float(os.getenv("TRANSMISSAO", "0.68"))    # fração da luz de fo
 LAMPADA_LUX = float(os.getenv("LAMPADA_LUX", "5400"))    # luz das lâmpadas no sensor de dentro (premissa)
 FIM_DE_ESCALA_BH1750 = 65535                            # 16 bits, 1 lx por contagem
 CAIXA_LITROS = float(os.getenv("CAIXA_LITROS", "500"))   # capacidade da caixa d'água
+CAIXA_MINIMA = float(os.getenv("CAIXA_MINIMA", "100"))   # bomba bloqueada daqui para baixo (irrigationMinTankVolume)
+CAIXA_RETOMA = float(os.getenv("CAIXA_RETOMA", "150"))   # ...até a caixa voltar a este nível (premissa)
+CAIXA_INICIAL = os.getenv("CAIXA_INICIAL", "")           # litros no começo; vazio = sorteado
 VAZAO_LPM = float(os.getenv("VAZAO_LPM", "18"))          # aspersão: 12 aspersores × 90 L/h (premissa)
 BOIA_LPM = float(os.getenv("BOIA_LPM", "3"))             # reposição pela boia, da rede (premissa)
 NEBLINA_LPM = float(os.getenv("NEBLINA_LPM", "1"))       # 10 nebulizadores × 6 L/h (premissa)
@@ -123,10 +129,11 @@ inicio = time.time()
 temperatura = random.uniform(20.5, 22.5)
 umidade = random.uniform(0.76, 0.82)                     # umidade relativa do ar, de 0 a 1
 solo = random.uniform(36.0, 42.0)
-caixa = CAIXA_LITROS * random.uniform(0.92, 0.98)        # litros na caixa
+caixa = float(CAIXA_INICIAL) if CAIXA_INICIAL else CAIXA_LITROS * random.uniform(0.92, 0.98)   # litros na caixa
 vazao = 0.0                                              # L/min no cano depois da bomba
 ventilador = False                                      # estado seguro: tudo começa desligado
 bomba = False
+bomba_bloqueada = False                                 # proteção: caixa no mínimo
 lampadas = False
 neblina = False
 
@@ -175,14 +182,24 @@ def calcular_vpd(t, ur):
 
 def regra_local(fora, vpd):
     """Histerese na borda: fora da faixa, manda no relé; entre os limites, não mexe."""
-    global ventilador, bomba, lampadas, neblina
+    global ventilador, bomba, bomba_bloqueada, lampadas, neblina
     if temperatura >= LIGA_VENT and not ventilador:
         ventilador = True
         print(f"regra   -> ventilador ON  (t = {temperatura:.1f} °C)", flush=True)
     elif temperatura <= DESLIGA_VENT and ventilador:
         ventilador = False
         print(f"regra   -> ventilador OFF (t = {temperatura:.1f} °C)", flush=True)
-    if solo <= LIGA_BOMBA and not bomba:
+    if caixa < CAIXA_MINIMA and not bomba_bloqueada:
+        bomba_bloqueada = True
+        print(f"proteção -> bomba bloqueada (caixa = {caixa:.0f} L)", flush=True)
+    elif caixa >= CAIXA_RETOMA and bomba_bloqueada:
+        bomba_bloqueada = False
+        print(f"proteção -> bomba liberada (caixa = {caixa:.0f} L)", flush=True)
+    if bomba_bloqueada:
+        if bomba:
+            bomba = False
+            print(f"regra   -> bomba OFF (caixa abaixo do mínimo, {caixa:.0f} L)", flush=True)
+    elif solo <= LIGA_BOMBA and not bomba:
         bomba = True
         print(f"regra   -> bomba ON  (m = {solo:.1f} %)", flush=True)
     elif solo >= DESLIGA_BOMBA and bomba:
@@ -219,6 +236,8 @@ def executar(comando):
 
     O Orion recusa < > " ' = ; ( ) nos valores: o texto não pode tê-los.
     """
+    if comando == "pumpOn" and bomba_bloqueada:
+        return "ERRO - caixa abaixo do mínimo, bomba bloqueada"
     for prefixo, (variavel, ligado, desligado) in RELES.items():
         if comando in (prefixo + "On", prefixo + "Off"):
             liga = comando.endswith("On")

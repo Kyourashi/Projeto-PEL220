@@ -182,7 +182,7 @@
         {
           "name": "pumpRatedPower",
           "type": "Number",
-          "value": 180,
+          "value": 750,
           "metadata": {
             "unitCode": {
               "type": "Text",
@@ -215,7 +215,7 @@
         {
           "name": "pumpFlowRate",
           "type": "Number",
-          "value": 1500,
+          "value": 3000,
           "metadata": {
             "unitCode": {
               "type": "Text",
