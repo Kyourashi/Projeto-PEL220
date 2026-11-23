@@ -539,6 +539,10 @@ $$
 
 O nó grava cerca de 207 mil linhas por dia. É o custo do esquema "uma linha por atributo, tudo em texto", que é a questão de pesquisa da Aula 8. O clima grava no máximo 20 linhas por hora: se a leitura não mudou, o Orion não notifica (conferimos), e o histórico não ganha linha repetida.
 
+### Questão de pesquisa da Aula 8: quanto custa esse esquema?
+
+O Cygnus grava cada atributo de cada medida numa linha de nove colunas `TEXT` (até o instante, `recvTimeTs`, é texto), numa tabela sem chave e sem índice. Medimos no MySQL 8.0 da Base com o `ferramentas/custo_cygnus.sql`, que replica o histórico real da estufa até ter 1 e 7 dias de medidas a cada 5 s. Cada linha ocupa ≈ 260 bytes, porque repete o id da entidade, o tipo, o nome do atributo e os metadados: um dia do nó (207.360 linhas) dá 54 MB, ≈ 20 GB por ano. Um banco de séries temporais guarda o nome da série uma vez e, por medida, só o par instante–valor, comprimido: no Gorilla, do Facebook, esse par cai de 16 bytes para 1,37 byte em média ([Pelkonen et al., VLDB 2015](https://www.vldb.org/pvldb/vol8/p1816-teller.pdf)), cerca de 190 vezes menos. No tempo, sem índice, toda consulta lê a tabela inteira e converte texto em número linha a linha (o `EXPLAIN` dá `type = ALL`): a mesma janela de 30 min levou ≈ 0,2 s com 1 dia de histórico e ≈ 1,2 s com 7 dias, e o painel da estufa faz 26 consultas a cada 10 s. O banco de séries temporais guarda cada série em blocos de tempo e lê só os blocos da janela, então o tempo depende do período pedido, e não de todo o histórico. Para os dias de histórico do projeto, o esquema do Cygnus basta; para meses, ele vira o gargalo.
+
 ## O clima externo: gravador, não registro
 
 Na Base, o clima chega por **registro**: o Orion não guarda o valor e pergunta ao provedor a cada leitura. Registro não notifica, e sem notificação o Cygnus não grava (Aula 7).
